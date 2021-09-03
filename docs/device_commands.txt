@@ -1,0 +1,34 @@
+[I] = input parameter
+[O] = output parameter
+
+INIT ($01)
+
+no command block
+
+STATUS ($02)
+
+0-1 : [I] output buffer pointer
+2   : [O] number of units
+
+The output buffer will be filled with an array of 32-byte unit descriptors:
+
+    0 : unit #
+    1 : status, 1 = online, 0 = offline
+  2-5 : unit size in blocks
+ 6-31 : unit name, null-terminated
+
+FORMAT ($03)
+
+0 : [I] unit #
+
+READ_BLOCK ($04)
+
+  0 : [I] unit #
+1-4 : [I] block number 
+5-6 : [I] block buffer pointer
+
+WRITE_BLOCK ($05)
+
+  0 : [I] unit #
+1-4 : [I] block number 
+5-6 : [I] block buffer pointer

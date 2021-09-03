@@ -1,0 +1,93 @@
+two types: character and block
+devices will use the bios direct page
+
+The console will retain is dedicated COP syscalls to minimize overhead.
+
+reserved device ids:
+
+0 = currently attached console, an target of SYS_CONSOLE_XXXX calls
+1 = vga console
+2 = serial console
+
+dispatcher:
+
+- dispatcher needs to know device id and function id. Put device id in accumulator
+  and function id in the parameter block. This will allow reusing param blocks across
+  calls and across devices.
+
+User space calling methods:
+
+- for simple functions like read/write byte we'll use the accumulator
+- for everything else, push address of param block onto stack and make the COP call.
+- calls will route through dispatcher
+
+BIOS calling methods:
+
+- same style as cole-1...put address of param block into known DP locations and call via JSL
+- use special internal dispatcher that doesn't do direct page save/restore
+
+device block format
+-------------------
+
++0: [16] device name, 1-15 chars plus null
++16: [1] device type. For all types, bit 7 = 1 if block or 0 if char
++17: [1] number of supported functions
++18: function pointers, 4 bytes x number of functions
+
+functions common to all devices types
+-------------------------------------
+
+0 = startup
+1 = shutdown
+2 = reserved
+3 = reserved
+
+character devices functions
+---------------------------
+
+4 = read byte
+5 = write byte
+6 = multibyte read
+7 = multibyte write
+8 = get read buffer count
+9 = get write buffer space
+10 = set comm params
+
+TODO:
+    - control handshaking lines
+    - maybe some GPIO stuff, could be useful on NXP UART and also possibly VIA driver
+
+block devices functions
+-----------------------
+
+4 = read block
+5 = write block
+6 = device status
+7 = eject device
+8 = format device
+
+System Calls
+------------
+
+INSTALL_DEVICE:     
+    pea .hiword(device_block)
+    pea .loword(device_block)
+    call SYS_INSTALL_DEVICE
+    sta  my_device_id           ; if needed
+
+REMOVE_DEVICE:
+    lda my_device_id
+    call SYS_REMOVE_DEVICE
+
+FIND_DEVICE:
+    pea .hiword(device_name)
+    pea .loword(device_name)
+    call SYS_FIND_DEVICE
+
+    if found, returns device_id in A and carry clear; otherwise carry set and error in A.
+
+CALL_DEVICE:
+    pea .hiword(command_block)
+    pea .loword(command_block)
+    lda my_device_id
+    call SYS_CALL_DEVICE

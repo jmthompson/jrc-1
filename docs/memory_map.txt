@@ -1,0 +1,44 @@
+|--------------------------------| $00/0000
+|         Base RAM (60K)         |
+|--------------------------------| $00/F000
+|         I/O Area (2K)          |
+|--------------------------------| $00/F800
+|         Boot ROM (2K)          |
+|--------------------------------| $01/0000
+|      Extended RAM (944K)       |
+|--------------------------------| $0F/C000
+|        Video RAM (16K)         |
+|--------------------------------| $10/0000
+|            Reserved            |
+|--------------------------------| $E0/0000
+|            Reserved            |
+|--------------------------------| $F8/0000
+|       System ROM (512K)        |
+|--------------------------------| $FF/FFFF
+
+------
+Bank 0
+------
+
+$0000 - $CFFF : [ unused, available for application use ]
+$D000 - $E6FF : System buffers
+$E700 - $E7FF : System direct page
+$E800 - $EFFF : System stack
+$F000 - $F7FF : I/O (see table below)
+$F800 - $FFFF : Low ROM (boot/interrupt vectors, I/O drivers)
+
+Note that EhBASIC is considered an application and makes use of all of the
+"reserved for application use" areas.
+
+All devices are assigned a 32-byte I/O window as follows:
+
+$F000 - $F01F : VIA
+$F020 - $F03F : SPI65
+$F040 - $F05F : UART
+$F060 - $F07F : TIVI
+$F080 - $F09F : reserved
+$F0A0 - $F0BF : reserved
+$F0C0 - $F0DF : reserved
+$F0E0 - $F0FF : CSC
+
+A8-A10 are not decoded, so the $F000-$F0FF region will repeat through $F7FF.
