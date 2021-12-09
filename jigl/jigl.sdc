@@ -38,7 +38,6 @@ set_time_format -unit ns -decimal_places 3
 # Create Clock
 #**************************************************************
 
-create_clock -name {PHI2} -period 50.000 -waveform { 0.000 25.000 } [get_ports { PHI2 }]
 
 
 #**************************************************************
