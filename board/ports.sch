@@ -526,12 +526,8 @@ Wire Wire Line
 	9600 1150 10200 1150
 Wire Wire Line
 	8800 2650 8650 2650
-Text GLabel 8650 2650 0    50   Input ~ 0
-WRB
 Wire Wire Line
 	8800 2550 8650 2550
-Text GLabel 8650 2550 0    50   Input ~ 0
-RDB
 Wire Wire Line
 	10200 3150 10200 3100
 Wire Wire Line
@@ -664,8 +660,6 @@ Wire Wire Line
 	8650 2050 8800 2050
 Wire Wire Line
 	8800 2450 8650 2450
-Text GLabel 8650 2450 0    50   Input ~ 0
-RWB
 Wire Wire Line
 	9600 2250 9750 2250
 Text GLabel 9750 2250 2    50   Output ~ 0
@@ -676,8 +670,6 @@ Text GLabel 8650 2250 0    50   Input ~ 0
 SLOT3SELB
 Wire Wire Line
 	8800 2350 8650 2350
-Text GLabel 8650 2350 0    50   Input ~ 0
-PHI2
 Wire Wire Line
 	9600 2050 9750 2050
 Text GLabel 9750 2050 2    50   BiDi ~ 0
@@ -716,7 +708,7 @@ U 1 1 6201EE28
 P 9200 2150
 F 0 "J9" H 9200 3500 50  0000 C CNN
 F 1 "SLOT 3" H 9200 3400 50  0000 C CNN
-F 2 "Connector_Samtec_HLE_THT:Samtec_HLE-120-02-xx-DV-TE_2x20_P2.54mm_Horizontal" H 9200 2150 50  0001 C CNN
+F 2 "jrc:JRC_Expansion_Slot" H 9200 2150 50  0001 C CNN
 F 3 "" H 9200 2150 50  0001 C CNN
 	1    9200 2150
 	1    0    0    -1  
@@ -943,7 +935,7 @@ U 1 1 62014313
 P 6750 2150
 F 0 "J8" H 6750 3500 50  0000 C CNN
 F 1 "SLOT 2" H 6750 3400 50  0000 C CNN
-F 2 "Connector_Samtec_HLE_THT:Samtec_HLE-120-02-xx-DV-TE_2x20_P2.54mm_Horizontal" H 6750 2150 50  0001 C CNN
+F 2 "jrc:JRC_Expansion_Slot" H 6750 2150 50  0001 C CNN
 F 3 "" H 6750 2150 50  0001 C CNN
 	1    6750 2150
 	1    0    0    -1  
@@ -1170,7 +1162,7 @@ U 1 1 625CB7D5
 P 4350 2150
 F 0 "J6" H 4350 3500 50  0000 C CNN
 F 1 "SLOT 1" H 4350 3400 50  0000 C CNN
-F 2 "Connector_Samtec_HLE_THT:Samtec_HLE-120-02-xx-DV-TE_2x20_P2.54mm_Horizontal" H 4350 2150 50  0001 C CNN
+F 2 "jrc:JRC_Expansion_Slot" H 4350 2150 50  0001 C CNN
 F 3 "" H 4350 2150 50  0001 C CNN
 	1    4350 2150
 	1    0    0    -1  
@@ -1730,4 +1722,12 @@ Wire Wire Line
 Connection ~ 9450 5700
 Wire Wire Line
 	9450 5700 9650 5700
+Text GLabel 8650 2650 0    50   Input ~ 0
+XWRB
+Text GLabel 8650 2550 0    50   Input ~ 0
+XRDB
+Text GLabel 8650 2450 0    50   Input ~ 0
+XRWB
+Text GLabel 8650 2350 0    50   Input ~ 0
+XPHI2
 $EndSCHEMATC

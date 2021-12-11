@@ -1,4 +1,4 @@
-17757292998847450
+17758932181526450
 Apple2-Bus
 Male_Card-Edge_50_pin__100_mil
 A2_BUS
@@ -80023,6 +80023,13 @@ varistor SIOV
 0
 2
 2
+jrc
+JRC_Expansion_Slot
+Samtec HLE .100" Tiger Beam Cost-effective Single Beam Socket Strip, HLE-120-02-xx-DV-TE, 20 Pins per row (http://suddendocs.samtec.com/prints/hle-1xx-02-xx-dv-xe-xx-mkt.pdf, http://suddendocs.samtec.com/prints/hle-thru.pdf), generated with kicad-footprint-generator
+connector Samtec HLE top entry
+0
+40
+40
 jrc
 TO-92_reverse
 TO-92 leads molded, narrow, drill 0.75mm (see NXP sot054_po.pdf)
