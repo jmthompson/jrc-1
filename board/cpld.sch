@@ -202,10 +202,6 @@ Wire Wire Line
 	4350 4750 4500 4750
 Wire Wire Line
 	4350 4850 4500 4850
-Text GLabel 4500 4050 2    50   Output ~ 0
-SLOTENB
-Wire Wire Line
-	4350 4050 4500 4050
 $Comp
 L jrc-1:SPI-65B U5
 U 1 1 62947BB2
@@ -640,4 +636,5 @@ Wire Wire Line
 	4350 3050 4500 3050
 Text GLabel 4500 3050 2    50   Output ~ 0
 RESET
+NoConn ~ 4350 4050
 $EndSCHEMATC
