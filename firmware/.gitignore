@@ -1,0 +1,5 @@
+buildinfo.s
+*.l
+*.o
+*.bin
+*.map
