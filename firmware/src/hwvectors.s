@@ -3,7 +3,7 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .import syscall
+        .import syscop
         .import sysbrk
         .import sysreset
         .import sysnmi
@@ -11,7 +11,7 @@
 
         .segment "HWVECTORS"
 
-        .addr   syscall             ; $FFE4 (cop native)
+        .addr   syscop              ; $FFE4 (cop native)
         .addr   sysbrk              ; $FFE6 (brk native)
         .addr   sysreset            ; $FFE8 (abort native)
         .addr   sysnmi              ; $FFEA (nmi native)

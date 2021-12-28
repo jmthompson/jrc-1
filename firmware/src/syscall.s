@@ -5,7 +5,7 @@
 
         .include "common.s"
 
-        .export syscall
+        .export syscop
         .export syscall_trampoline
 
         .import console_attach
@@ -26,12 +26,6 @@
 
         .importzp   param
 
-; Macro for declaring dispatch table entries
-.macro  syscall_entry func, psize
-        .faraddr    func
-        .byte       psize
-.endmacro
-
 ; Processor status register bits
 PREG_I      =   %00000100
 PREG_C      =   %00000001
@@ -42,22 +36,10 @@ syscall_trampoline: .res 4
 
         .segment "BOOTROM"
 
-syscall_table:
-        syscall_entry     console_attach, 0
-        syscall_entry     console_read, 0
-        syscall_entry     console_write, 0
-        syscall_entry     console_readln, 4
-        syscall_entry     console_writeln, 4
-        syscall_entry     getc_seriala, 0
-        syscall_entry     putc_seriala, 0
-        syscall_entry     getc_serialb, 0
-        syscall_entry     putc_serialb, 0
-        syscall_entry     install_device, 4
-        syscall_entry     remove_device, 0
-        syscall_entry     find_device, 4
-        syscall_entry     call_device, 4
+syscop:
+        jml     syscall
 
-syscall_max = (*-syscall_table)/4
+        .segment "OSROM"
 
 ;;
 ; COP handler; dispatches to the syscall indicated by the signature byte
@@ -80,9 +62,6 @@ syscall:
 @pb_reg  := @pc_reg + 2         ; PB
 @cop_size := @pb_reg + 1 - @p_reg
 @param   := @pb_reg + 1
-
-; Start of parameters passed by caller
-@params  := @pb_reg + 1
 
         longmx
 
@@ -188,3 +167,26 @@ syscall:
         plb
         rti
 @error: brk     $00
+
+; Macro for declaring dispatch table entries
+.macro  syscall_entry func, psize
+        .faraddr    func
+        .byte       psize
+.endmacro
+
+syscall_table:
+        syscall_entry     console_attach, 0
+        syscall_entry     console_read, 0
+        syscall_entry     console_write, 0
+        syscall_entry     console_readln, 4
+        syscall_entry     console_writeln, 4
+        syscall_entry     getc_seriala, 0
+        syscall_entry     putc_seriala, 0
+        syscall_entry     getc_serialb, 0
+        syscall_entry     putc_serialb, 0
+        syscall_entry     install_device, 4
+        syscall_entry     remove_device, 0
+        syscall_entry     find_device, 4
+        syscall_entry     call_device, 4
+
+syscall_max = (*-syscall_table)/4
