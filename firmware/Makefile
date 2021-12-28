@@ -11,7 +11,6 @@ ROMFILE  := rom.bin
 DUMPFILE := dump.bin
 RAMFILE  := ram.bin
 MAPFILE  := jrc-1.map
-
 CHIP     := W29C020C
 
 ${ROMFILE}: ${OBJS}
@@ -26,7 +25,7 @@ prog: ${ROMFILE}
 	minipro -p ${CHIP} -w ${ROMFILE}
 
 clean:
-	rm -f buildinfo.s vga_font.s ${OBJS} ${LISTINGS} ${MAPFILE} ${ROMFILE} ${RAMFILE}
+	rm -f buildinfo.s ${OBJS} ${LISTINGS} ${MAPFILE} ${ROMFILE} ${RAMFILE}
 
 buildinfo.s:
 	echo ".segment \"BOOTROM\"" > buildinfo.s

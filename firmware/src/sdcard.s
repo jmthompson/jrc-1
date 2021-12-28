@@ -22,7 +22,7 @@ jrtmp:      .res 2
 cmd51:
 csd:    .res    16
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 SD_DEVICE_ID = 0     ; SPI device ID
 SD_CMD_SIZE  = 6     ; acmd flag + cmd byte + 4 byte arg + CRC
@@ -32,12 +32,12 @@ driver_name:
         .byte   "SD Card", $00
 
 sdcard_driver:
-        .faraddr driver_name
-        .faraddr sdc_init
-        .faraddr sdc_status
-        .faraddr sdc_format
-        .faraddr sdc_rdblock
-        .faraddr sdc_wrblock
+        longaddr driver_name
+        longaddr sdc_init
+        longaddr sdc_status
+        longaddr sdc_format
+        longaddr sdc_rdblock
+        longaddr sdc_wrblock
 
 sdc_init:
         jsr     set_spi_mode
@@ -229,7 +229,7 @@ sdc_rdblock:
         dex
         bne     @copy
 
-        ; Coy pblock buffer pointer to jrtmp
+        ; Copy pblock buffer pointer to jrtmp
         lda     (device_cmd),Y
         sta     jrtmp
         iny

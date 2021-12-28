@@ -12,7 +12,7 @@
         .import getc_seriala
         .import putc_seriala
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 BELL     =  $07
 LBRACKET =  '['

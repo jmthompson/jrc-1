@@ -10,16 +10,6 @@
 BIOS_DB = $00
 BIOS_DP = __BIOS_DP_START__
 
-.macro  set_kernel_dp
-        longm
-        phd
-        pha
-        ldaw    #BIOS_DP
-        tcd
-        pla
-        shortm
-.endmacro
-
 .macro  syserr  code
         lda     #code
         sec
@@ -33,6 +23,11 @@ BIOS_DP = __BIOS_DP_START__
         bne     :+
         inc     addr+2
 :       shortm
+.endmacro
+
+.macro  longaddr addr
+        .faraddr addr
+        .byte 0
 .endmacro
 
 ;;

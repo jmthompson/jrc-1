@@ -28,7 +28,7 @@ ptr:    .res 4
 current_device: 
         .res 4
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 device_manager_init:
         lda     #0

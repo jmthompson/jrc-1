@@ -75,7 +75,7 @@
 
 Rbuff:  .res    132
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 ;
 ;^^^^^^^^^^^^^^^^^^^^^^ Start of Program ^^^^^^^^^^^^^^^^^^^^^^
 ;

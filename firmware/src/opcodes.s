@@ -1,5 +1,5 @@
 
-        .segment "RODATA"
+        .segment "OSROM"
 
         .include "disasm_constants.s"
 

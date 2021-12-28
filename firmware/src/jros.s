@@ -72,7 +72,7 @@ num_volumes:
 volumes:
         .res MAX_VOLUMES * VOLUME_STRUCT_SIZE
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 jros_init:
         puts    @banner

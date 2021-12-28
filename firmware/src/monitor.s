@@ -54,7 +54,7 @@ sr_reg:     .res    1
             .align 256
 ibuff:      .res   256
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 commands:
         .byte   'l'

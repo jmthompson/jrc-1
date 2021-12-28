@@ -14,6 +14,7 @@
         .export console_write
         .export console_writeln
         .export print_hex
+        .export print_decimal8
 
         .import vt100_reset
         .import getc_seriala
@@ -38,9 +39,11 @@ reset_vec:  .res 4
 read_vec:   .res 4
 write_vec:  .res 4
 
-        .segment "BIOSROM"
+        .segment "BOOTROM"
 
 console_init:
+        jsl console_attach
+        rts
 
 console_attach:
         set_vector  reset_vec, vt100_reset
@@ -50,6 +53,7 @@ console_attach:
 
 console_reset:
         jml     reset_vec
+
 ;;
 ; Try to read a character from the console. If data is availble,
 ; returns the char in A and carry is set. Otherwise, returns with
@@ -107,6 +111,38 @@ console_writeln:
         iny
         bne     @loop
 @exit:  rtl
+
+;;
+; Print the 8-bit number in the accumulator in decimal
+;
+; Accumulator is corrupted on exit
+;
+print_decimal8:
+        ldx     #$ff
+        sec
+@pr100: inx
+        sbc     #100
+        bcs     @pr100
+        adc     #100
+        cpx     #0
+        beq     @skip100
+        jsr     @digit
+@skip100: ldx     #$ff
+        sec
+@pr10:  inx
+        sbc     #10
+        bcs     @pr10
+        adc     #10
+        cpx     #0
+        beq     @skip10
+        jsr     @digit
+@skip10: tax
+@digit: pha
+        txa
+        ora     #'0'
+        call    SYS_CONSOLE_WRITE
+        pla 
+        rts
 
 ;;
 ; Print the contents of the accumulator as a two-digit hexadecimal number.

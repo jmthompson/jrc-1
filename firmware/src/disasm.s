@@ -28,7 +28,7 @@
 
 instr = start_loc
 
-        .segment "BIOSROM"
+        .segment "OSROM"
 
 PREG_M  = $20
 PREG_X  = $10
