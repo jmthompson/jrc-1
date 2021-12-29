@@ -16,24 +16,14 @@
         .export print_hex
         .export print_decimal8
 
-        .import vt100_reset
-        .import getc_seriala
-        .import vt100_write
+        .import get_device_func
+        .import device_func : far
 
         .importzp   param
 
-.macro  set_vector  vector, address
-        lda     #$5C    ; JML
-        sta     vector
-        lda     #<address
-        sta     vector+1
-        lda     #>address
-        sta     vector+2
-        lda     #^address
-        sta     vector+3
-.endmacro
-
         .segment "SYSDATA": far
+
+console_device: .res 1
 
 reset_vec:  .res 4
 read_vec:   .res 4
@@ -42,17 +32,80 @@ write_vec:  .res 4
         .segment "BOOTROM"
 
 console_init:
+        lda #$5C
+        sta reset_vec
+        sta read_vec
+        sta write_vec
+
+        lda #1  ; SERIAL A
         jsl console_attach
         rts
 
 console_attach:
-        set_vector  reset_vec, vt100_reset
-        set_vector  read_vec, getc_seriala
-        set_vector  write_vec, vt100_write
-@cont:  jml     console_reset
+        sta console_device
+
+        ldx #2
+        jsl get_device_func
+        lda device_func
+        sta reset_vec+1
+        lda device_func+1
+        sta reset_vec+2
+        lda device_func+2
+        sta reset_vec+3
+
+        lda console_device
+        ldx #4
+        jsl get_device_func
+        lda device_func
+        sta read_vec+1
+        lda device_func+1
+        sta read_vec+2
+        lda device_func+2
+        sta read_vec+3
+
+        lda console_device
+        ldx #5
+        jsl get_device_func
+        lda device_func
+        sta write_vec+1
+        lda device_func+1
+        sta write_vec+2
+        lda device_func+2
+        sta write_vec+3
+
+        ; fall through
 
 console_reset:
-        jml     reset_vec
+        jsl     reset_vec
+
+        lda     #ESC
+        jsl     write_vec
+        lda     #'c'
+        jsl     write_vec
+        ; Enable line wrap
+        lda     #ESC
+        jsl     write_vec
+        lda     #LBRACKET
+        jsl     write_vec
+        lda     #'7'
+        jsl     write_vec
+        lda     #'h'
+        jsl     write_vec
+        ; Set character set G1 to the line drawing chars
+        lda     #ESC
+        jsl     write_vec
+        lda     #')'
+        jsl     write_vec
+        lda     #'0'
+        jsl     write_vec
+        lda     #ESC
+        jsl     write_vec
+        lda     #LBRACKET
+        jsl     write_vec
+        lda     #'2'
+        jsl     write_vec
+        lda     #'J'
+        jml     write_vec
 
 ;;
 ; Try to read a character from the console. If data is availble,
@@ -98,7 +151,14 @@ console_readln:
 ; Output character in A to the console
 ;
 console_write:
-        jml     write_vec
+        pha
+        jsl     write_vec
+        pla
+        cmp     #CR
+        bne     @exit
+        lda     #LF
+        jsl     write_vec
+@exit:  rtl
 
 ;;
 ; Print a null-terminated string up to 255 characters in length.
@@ -107,7 +167,7 @@ console_writeln:
         ldy     #0
 @loop:  lda     [param],y
         beq     @exit
-        jsl     write_vec
+        jsl     console_write
         iny
         bne     @loop
 @exit:  rtl

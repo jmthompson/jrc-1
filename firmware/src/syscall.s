@@ -180,10 +180,6 @@ syscall_table:
         syscall_entry     console_write, 0
         syscall_entry     console_readln, 4
         syscall_entry     console_writeln, 4
-        syscall_entry     getc_seriala, 0
-        syscall_entry     putc_seriala, 0
-        syscall_entry     getc_serialb, 0
-        syscall_entry     putc_serialb, 0
         syscall_entry     install_device, 4
         syscall_entry     remove_device, 0
         syscall_entry     find_device, 4

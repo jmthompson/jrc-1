@@ -11,7 +11,14 @@
         .export remove_device
         .export find_device
         .export call_device
-        .export bios_call_device
+
+        .export get_device_func
+        .export device_func
+
+        .import seriala_device
+        .import serialb_device
+
+        .importzp param
 
 MAX_DEVICES = 64
 
@@ -19,21 +26,31 @@ MAX_DEVICES = 64
 
 devices: .res MAX_DEVICES * 4
 num_devices: .res 1
-
-ptmp:   .res 4        ; for saving stuff from the syscall DP
+device_func: .res 4
 
         .segment "ZEROPAGE"
 
 ptr:    .res 4
-current_device: 
-        .res 4
+device: .res 4
 
         .segment "OSROM"
 
+.macro  install id,descriptor
+        ldaw    #.loword(descriptor)
+        sta     devices+(id*4)
+        ldaw    #.hiword(descriptor)
+        sta     devices+(id*4)+2
+.endmacro
+
 device_manager_init:
-        lda     #0
+        lda     #3
         sta     num_devices
-        ; todo: regiser all built-in hardware devices
+        
+        longm
+        install 1,seriala_device
+        install 2,serialb_device
+        shortm
+
         rtl
 
 ;;
@@ -53,9 +70,9 @@ install_device:
         asl
         tax
         longm
-        lda     $1
+        lda     param
         sta     devices,x
-        lda     $3
+        lda     param+2
         sta     devices+2,x
         shortm
         lda     num_devices     ; get device_id we just installed
@@ -84,26 +101,14 @@ remove_device:
 ; A = device ID or error
 ;
 find_device:
-        longm
-        lda     $01
-        sta     ptmp        ; Copy pointer to name to search for
-        lda     $03
-        sta     ptmp+2      ; into a temporary spot
-        ldaw    #BIOS_DP
-        tcd                 ; and then switch to the BIOS DP
-        lda     ptmp
-        sta     ptr         ; Now put name pointer in ptr
-        lda     ptmp+2
-        sta     ptr+2
-        shortm
         ldx     #0
 @loop:  txa
         cmp     num_devices ; are at the end of the table?
         beq     @error      ; yes, so exit with error
-        jsr     set_current_device
+        jsr     set_device
         ldy     #0
-@check: lda     [current_device],y
-        cmp     [ptr],y     ; does this device's name match what was requested?
+@check: lda     [device],y
+        cmp     [param],y   ; does this device's name match what was requested?
         bne     @next       ; if not try the next device
         cmp     #0          ; ok they matchd...are we at the end of the name?
         beq     @match      ; if so, this is the one we want
@@ -119,23 +124,43 @@ find_device:
 call_device:
         rtl
 
-bios_call_device:
-        rtl
-
 ;;
-; Given a device_id in X, set current_device to point to its device descriptor
+; Given a device_id in A, set device to point to its device descriptor
 ;
-set_current_device:
+set_device:
         phx
-        txa
         asl
         asl
         tax
         longm
         lda     devices,x
-        sta     current_device
+        sta     device
         lda     devices+2,x
-        sta     current_device+2
+        sta     device+2
         shortm
         plx
         rts
+
+; Given a device ID in A and a function number in X, retrieve the
+; entry point for that function and store it in device_func.
+;
+; This is primarily used by the console to obtain the read/write
+; functions for the selected console device.
+;
+get_device_func:
+        jsr     set_device
+        txa
+        asl
+        asl
+        clc
+        adc     #16    ; skip header
+        tay
+        longm
+        lda     [device],y
+        sta     device_func
+        iny
+        iny
+        lda     [device],y
+        sta     device_func+2
+        shortm
+        rtl

@@ -4,17 +4,15 @@
 ; *******************************
 
         .include "common.s"
-        .include "hw/nxp_uart.s"
         .include "sys/devices.s"
+        .include "hw/nxp_uart.s"
 
         .importzp   jiffies
 
-        .export     uart_init
-        .export     uart_irq
-        .export     getc_seriala
-        .export     getc_serialb
-        .export     putc_seriala
-        .export     putc_serialb
+        .export uart_init
+        .export uart_irq
+        .export seriala_device
+        .export serialb_device
 
 buffer_size = 256
 
@@ -50,42 +48,6 @@ rxb_ibuf: .res    buffer_size
 
         .segment "BOOTROM"
 
-;;
-; Device descriptors for both serial ports
-;
-;com1_device:
-;        .byte   "COM1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-;        .byte   DEVICE_TYPE_SERIAL_PORT
-;        .byte   11  ; number of functions
-;
-;        device_function startup_seriala
-;        device_function shutdown_seriala
-;        device_function 0
-;        device_function 0
-;        device_function getc_seriala
-;        device_function putc_seriala
-;        device_function read_seriala
-;        device_function write_seriala
-;        device_function rdcheck_seriala
-;        device_function wrcheck_seriala
-;        device_function set_params_seriala
-;
-;com2_device:
-;        .byte   "COM2", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-;        .byte   DEVICE_TYPE_SERIAL_PORT
-;        .byte   11  ; number of functions
-;
-;        device_function startup_serialb
-;        device_function shutdown_serialb
-;        device_function 0
-;        device_function 0
-;        device_function getc_serialb
-;        device_function putc_serialb
-;        device_function read_serialb
-;        device_function write_serialb
-;        device_function rdcheck_serialb
-;        device_function wrcheck_serialb
-;        device_function set_params_serialb
 ;
 ; Initialize the UART as well as our Rx buffers and the system timekeeping
 ;
@@ -257,6 +219,96 @@ rxb_irq:
         pla
         rts
 
+;PHILIPS/NXP DUAL UART INITIALIZATION DATA
+;
+;   ————————————————————————————————————————————————————————————————————————
+;   The following data table is used to initialize the 26C92 & 28L92 DUARTs
+;   following reset.  Each entry in this table consists of a chip register
+;   offset paired with the parameter that is to be loaded into the register.
+;   Table entries are read in reverse order during device setup.
+;
+;   Parameters are defined in include_hardware/uart/nxp_constants.asm & are
+;   to be modified there, not here.  Only edit this table if you need to add
+;   or remove an entry.  Be sure to back up nxp_constants.asm before editing
+;   it!
+;
+;   NOTE: The data in nxp_constants.asm cannot be used to configure the 2692
+;         DUART, as it does not have TxD FIFOs.
+;   ————————————————————————————————————————————————————————————————————————
+
+nxpsutab:
+        .byte nx_imr, nxpiqmsk  ;IMR (enables IRQs)
+        .byte nx_ctu, nxpctdhi  ;CTU
+        .byte nx_ctl, nxpctdlo  ;CTL
+        .byte nx_crb, nxpcrrte  ;CRB
+        .byte nx_csrb,nxpcsdef  ;CSRB
+        .byte nx_mrb, nxpm2def  ;MR2B
+        .byte nx_mrb, nxpm1def  ;MR1B
+        .byte nx_crb, nxpcrmr1  ;CRB
+        .byte nx_mrb, nxpm0def  ;MR0B
+        .byte nx_crb, nxpcrmr0  ;CRB
+        .byte nx_cra, nxpcrrsa  ;CRA
+        .byte nx_cra, nxpcrrte  ;CRA
+        .byte nx_csra,nxpcsdef  ;CSRA
+        .byte nx_mra, nxpm2def  ;MR2A
+        .byte nx_mra, nxpm1def  ;MR1A
+        .byte nx_cra, nxpcrmr1  ;CRA
+        .byte nx_mra, nxpm0def  ;MR0A
+        .byte nx_cra, nxpcrmr0  ;CRA
+        .byte nx_acr, nxparbrt  ;ACR
+        .byte nx_opcr,nxpopdef  ;OPCR
+        .byte nx_crb, nxpcrtmd  ;CRB
+        .byte nx_crb, nxpcresr  ;CRB
+        .byte nx_crb, nxpcrbir  ;CRB
+        .byte nx_crb, nxpcrtxr  ;CRB
+        .byte nx_crb, nxpcrrxr  ;CRB
+        .byte nx_crb, nxpcrrsd  ;CRB
+        .byte nx_cra, nxpcrtmd  ;CRA
+        .byte nx_cra, nxpcresr  ;CRA
+        .byte nx_cra, nxpcrbir  ;CRA
+        .byte nx_cra, nxpcrtxr  ;CRA
+        .byte nx_cra, nxpcrrxr  ;CRA
+        .byte nx_cra, nxpcrrsd  ;CRA
+        .byte nx_cra, nxpcrpdd  ;CRA
+        .byte nx_imr, 0         ;IMR (disables all IRQs)
+s_nxptab = *-nxpsutab
+
+        .segment "OSROM"
+
+;;
+; Device descriptors for both serial ports
+;
+seriala_device:
+        .byte   "SERIAL A", 0, 0, 0, 0, 0, 0, 0
+        .byte   DEVICE_TYPE_SERIAL_PORT
+        longaddr noop           ; startup
+        longaddr noop           ; shutdown
+        longaddr noop           ; reset
+        longaddr noop           ; status
+        longaddr getc_seriala   ; read
+        longaddr putc_seriala   ; write
+        longaddr noop           ; rdcheck
+        longaddr noop           ; wrcheck
+        longaddr noop           ; get params
+        longaddr noop           ; set_params
+
+serialb_device:
+        .byte   "SERIAL B", 0, 0, 0, 0, 0, 0, 0
+        .byte   DEVICE_TYPE_SERIAL_PORT
+        longaddr noop           ; startup
+        longaddr noop           ; shutdown
+        longaddr noop           ; reset
+        longaddr noop           ; status
+        longaddr getc_serialb   ; read
+        longaddr putc_serialb   ; write
+        longaddr noop           ; rdcheck
+        longaddr noop           ; wrcheck
+        longaddr noop           ; get params
+        longaddr noop           ; set_params
+
+noop:   clc
+        rtl
+
 ;
 ; Get next character from serial channel A. On exit, C=0 if
 ; no character was available; otherwise, C=1 and the character
@@ -343,57 +395,3 @@ putc_serialb:
         sta     nxp_base+nx_crb     ; Enable transmitter
 :       plx
         rtl
-
-;PHILIPS/NXP DUAL UART INITIALIZATION DATA
-;
-;   ————————————————————————————————————————————————————————————————————————
-;   The following data table is used to initialize the 26C92 & 28L92 DUARTs
-;   following reset.  Each entry in this table consists of a chip register
-;   offset paired with the parameter that is to be loaded into the register.
-;   Table entries are read in reverse order during device setup.
-;
-;   Parameters are defined in include_hardware/uart/nxp_constants.asm & are
-;   to be modified there, not here.  Only edit this table if you need to add
-;   or remove an entry.  Be sure to back up nxp_constants.asm before editing
-;   it!
-;
-;   NOTE: The data in nxp_constants.asm cannot be used to configure the 2692
-;         DUART, as it does not have TxD FIFOs.
-;   ————————————————————————————————————————————————————————————————————————
-
-nxpsutab:
-        .byte nx_imr, nxpiqmsk  ;IMR (enables IRQs)
-        .byte nx_ctu, nxpctdhi  ;CTU
-        .byte nx_ctl, nxpctdlo  ;CTL
-        .byte nx_crb, nxpcrrte  ;CRB
-        .byte nx_csrb,nxpcsdef  ;CSRB
-        .byte nx_mrb, nxpm2def  ;MR2B
-        .byte nx_mrb, nxpm1def  ;MR1B
-        .byte nx_crb, nxpcrmr1  ;CRB
-        .byte nx_mrb, nxpm0def  ;MR0B
-        .byte nx_crb, nxpcrmr0  ;CRB
-        .byte nx_cra, nxpcrrsa  ;CRA
-        .byte nx_cra, nxpcrrte  ;CRA
-        .byte nx_csra,nxpcsdef  ;CSRA
-        .byte nx_mra, nxpm2def  ;MR2A
-        .byte nx_mra, nxpm1def  ;MR1A
-        .byte nx_cra, nxpcrmr1  ;CRA
-        .byte nx_mra, nxpm0def  ;MR0A
-        .byte nx_cra, nxpcrmr0  ;CRA
-        .byte nx_acr, nxparbrt  ;ACR
-        .byte nx_opcr,nxpopdef  ;OPCR
-        .byte nx_crb, nxpcrtmd  ;CRB
-        .byte nx_crb, nxpcresr  ;CRB
-        .byte nx_crb, nxpcrbir  ;CRB
-        .byte nx_crb, nxpcrtxr  ;CRB
-        .byte nx_crb, nxpcrrxr  ;CRB
-        .byte nx_crb, nxpcrrsd  ;CRB
-        .byte nx_cra, nxpcrtmd  ;CRA
-        .byte nx_cra, nxpcresr  ;CRA
-        .byte nx_cra, nxpcrbir  ;CRA
-        .byte nx_cra, nxpcrtxr  ;CRA
-        .byte nx_cra, nxpcrrxr  ;CRA
-        .byte nx_cra, nxpcrrsd  ;CRA
-        .byte nx_cra, nxpcrpdd  ;CRA
-        .byte nx_imr, 0         ;IMR (disables all IRQs)
-s_nxptab = *-nxpsutab
