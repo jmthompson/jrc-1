@@ -15,6 +15,9 @@
         .export get_device_func
         .export device_func
 
+        .export noop
+
+        .import console_device
         .import seriala_device
         .import serialb_device
 
@@ -42,11 +45,16 @@ device: .res 4
         sta     devices+(id*4)+2
 .endmacro
 
+; For unimplemented device functions
+noop:   clc
+        rtl
+
 device_manager_init:
         lda     #3
         sta     num_devices
         
         longm
+        install 0,console_device
         install 1,seriala_device
         install 2,serialb_device
         shortm

@@ -5,6 +5,7 @@
 
         .include "common.s"
         .include "sys/ascii.s"
+        .include "sys/devices.s"
         .include "sys/io.s"
 
         .export console_init
@@ -13,17 +14,17 @@
         .export console_readln
         .export console_write
         .export console_writeln
-        .export print_hex
-        .export print_decimal8
+        .export console_device
 
         .import get_device_func
         .import device_func : far
+        .import noop
 
         .importzp   param
 
         .segment "SYSDATA": far
 
-console_device: .res 1
+console_device_id: .res 1
 
 reset_vec:  .res 4
 read_vec:   .res 4
@@ -42,7 +43,10 @@ console_init:
         rts
 
 console_attach:
-        sta console_device
+        cmp #0
+        bne :+
+        syserr  ERR_NOT_SUPPORTED
+:       sta console_device_id
 
         ldx #2
         jsl get_device_func
@@ -53,7 +57,7 @@ console_attach:
         lda device_func+2
         sta reset_vec+3
 
-        lda console_device
+        lda console_device_id
         ldx #4
         jsl get_device_func
         lda device_func
@@ -63,7 +67,7 @@ console_attach:
         lda device_func+2
         sta read_vec+3
 
-        lda console_device
+        lda console_device_id
         ldx #5
         jsl get_device_func
         lda device_func
@@ -172,62 +176,16 @@ console_writeln:
         bne     @loop
 @exit:  rtl
 
-;;
-; Print the 8-bit number in the accumulator in decimal
-;
-; Accumulator is corrupted on exit
-;
-print_decimal8:
-        ldx     #$ff
-        sec
-@pr100: inx
-        sbc     #100
-        bcs     @pr100
-        adc     #100
-        cpx     #0
-        beq     @skip100
-        jsr     @digit
-@skip100: ldx     #$ff
-        sec
-@pr10:  inx
-        sbc     #10
-        bcs     @pr10
-        adc     #10
-        cpx     #0
-        beq     @skip10
-        jsr     @digit
-@skip10: tax
-@digit: pha
-        txa
-        ora     #'0'
-        call    SYS_CONSOLE_WRITE
-        pla 
-        rts
-
-;;
-; Print the contents of the accumulator as a two-digit hexadecimal number.
-;
-; On exit:
-;
-; All registers preserved
-;
-print_hex:
-        pha
-        pha
-        lsr
-        lsr
-        lsr
-        lsr
-        jsr     @digit
-        pla
-        and     #$0f
-        jsr     @digit
-        pla
-        rtl
-@digit: and     #$0f
-        ora     #'0'
-        cmp     #'9'+1
-        blt     @print
-        adc     #6
-@print: jsl     console_write
-        rts
+console_device:
+        .byte   "CONSOLE", 0, 0, 0, 0, 0, 0, 0, 0
+        .byte   DEVICE_TYPE_CONSOLE
+        longaddr noop           ; startup
+        longaddr noop           ; shutdown
+        longaddr console_reset  ; reset
+        longaddr noop           ; status
+        longaddr console_read   ; read
+        longaddr console_write  ; write
+        longaddr noop           ; rdcheck
+        longaddr noop           ; wrcheck
+        longaddr noop           ; get params
+        longaddr noop           ; set_params

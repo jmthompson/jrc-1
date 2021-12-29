@@ -1,6 +1,6 @@
 ; *******************************
 ; *  JRC-1 65816 SBC Firmware   *
-; * (C) 2019 Joshua M. Thompson *
+; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
         .include "common.s"

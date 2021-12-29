@@ -7,12 +7,14 @@
         .include "sys/devices.s"
         .include "hw/nxp_uart.s"
 
-        .importzp   jiffies
-
         .export uart_init
         .export uart_irq
         .export seriala_device
         .export serialb_device
+
+        .import noop
+
+        .importzp   jiffies
 
 buffer_size = 256
 
@@ -305,9 +307,6 @@ serialb_device:
         longaddr noop           ; wrcheck
         longaddr noop           ; get params
         longaddr noop           ; set_params
-
-noop:   clc
-        rtl
 
 ;
 ; Get next character from serial channel A. On exit, C=0 if

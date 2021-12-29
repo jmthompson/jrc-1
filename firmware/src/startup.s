@@ -90,7 +90,7 @@ startup_banner:
         ; HW Revision
         puts    @hwrev
         lda     hw_revision
-        jsr     print_decimal8
+        jsl     print_decimal8
         puts    @hwrev2
 
         ; ROM Version
@@ -100,11 +100,11 @@ startup_banner:
         lsr
         lsr
         lsr
-        jsr     print_decimal8
+        jsl     print_decimal8
         putc    #'.'
         lda     rom_version
         and     #$0f
-        jsr     print_decimal8
+        jsl     print_decimal8
         putc    #' '
         putc    #'('
         puts    rom_date
