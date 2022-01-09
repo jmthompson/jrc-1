@@ -162,7 +162,12 @@ parse_line:
 @find:  getc
         bne     @found
         lda     #'m'        ; if no command given default to 'm'
-@found: sta     cmd
+@found: cmp     #'A'
+        blt     :+
+        cmp     #'Z'+1
+        bge     :+
+        ora     #$20        ; force lowercase
+:       sta     cmd
         ldx     #0
 @loop:  lda     f:commands,x
         cmp     cmd
