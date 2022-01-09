@@ -8,6 +8,7 @@
         .include "sys/util.s"
 
         .import disassemble
+        .import assemble
         .import read_line
         .import parse_address
         .import parse_hex
@@ -52,6 +53,7 @@ commands:
         .byte   '<'
         .byte   '>'
         .byte   ':'
+        .byte   '!'
 
 num_commands = *-commands
 
@@ -64,6 +66,7 @@ handlers:
         .addr   xmodem_receive-1
         .addr   xmodem_send-1
         .addr   set_memory-1
+        .addr   assemble-1
 
 brk_banner:
         .byte   "*** Break ***", CR, 0
