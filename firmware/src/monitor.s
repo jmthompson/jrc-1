@@ -37,7 +37,7 @@
         inc      ibuffp
 .endmacro
 
-maxhex  = 8
+maxhex  = 4
 
         .segment "SYSDATA": far
 
@@ -132,7 +132,6 @@ monitor_nmi:
 monitor_loop:        
         puteol
         putc    #'*'
-        putc    #'>'
         jsr     read_line
         puteol
         jsr     parse_line
@@ -162,7 +161,6 @@ dispatch:
 parsehex:
         longm
         stz     arg 
-        stz     arg+2
         shortm
         ldy     #0
 @next:  getc
@@ -180,13 +178,9 @@ parsehex:
         bge     @done
 @store: longm
         asl     arg
-        rol     arg+2
         asl     arg
-        rol     arg+2
         asl     arg
-        rol     arg+2
         asl     arg
-        rol     arg+2
         shortm
         ora     arg
         sta     arg
@@ -236,19 +230,34 @@ read_line:
 ;
 parse_line:
         jsr     parsehex
-        longm
-        bcc     @nostart
+        bcc     @cont
+
+        getc
+        cmp     #'/'        ; Set bank byte?
+        bne     @addr
 
         lda     arg
+        sta     start_loc+2 ; set bank byte
+
+        nextc
+        getc
+        bne     :+
+        sec
+        rts
+:       jsr     parsehex
+        bcc     @bad
+
+@addr:  longm
+        lda     arg
         sta     start_loc
-        lda     arg+1       ; overlap so we only copy three bytes
-        sta     start_loc+1
-@nostart:
+        shortm
+
+@cont:  longm
         lda     start_loc
         sta     end_loc
-        lda     start_loc+1
-        sta     end_loc+1
         shortm
+        lda     start_loc+2
+        sta     end_loc+2
 
         getc
         cmp     #'.'            ; did they specify a memory range?
@@ -259,9 +268,9 @@ parse_line:
         longm
         lda     arg
         sta     end_loc
-        lda     arg+1
-        sta     end_loc+1
         shortm
+        lda     arg+2
+        sta     end_loc+2
 
 @find:  getc
         bne     @found
