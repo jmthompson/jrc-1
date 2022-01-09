@@ -23,12 +23,13 @@
         .exportzp   len
         .exportzp   cmd
         .exportzp   arg
+        .exportzp   maxhex
         .exportzp   address
         .exportzp   start_loc
         .exportzp   end_loc
         .exportzp   row_end
         .exportzp   ibuffp
-        .exportzp   spi_byte
+        .exportzp   ibuffsz
         .exportzp   jiffies
         .exportzp   lastblk
         .exportzp   blkno
@@ -69,14 +70,15 @@ len:            .res    1
 ; System nonitoir variables
 cmd:            .res    1
 arg:            .res    4
+maxhex:         .res    1
 address:        .res    3
 start_loc:      .res    3
 end_loc:        .res    3
 row_end:        .res    1
 ibuffp:         .res    3
+ibuffsz:        .res    1
 
 ; VIA driver variables
-spi_byte:       .res    1
 jiffies:        .res    4
 
 ; Xmodem routines variables

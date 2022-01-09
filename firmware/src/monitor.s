@@ -5,39 +5,29 @@
 
         .include "common.s"
         .include "sys/console.s"
+        .include "sys/util.s"
 
         .import disassemble
+        .import read_line
+        .import parse_address
+        .import parse_hex
+        .import print_spaces
+        .import skip_whitespace
         .import XModemSend
         .import XModemRcv
         ;.import flash_update
 
         .importzp   cmd
         .importzp   arg
-        .importzp   address
         .importzp   start_loc
         .importzp   end_loc
         .importzp   row_end
-        .importzp   ibuffp
         .importzp   xmptr
         .importzp   xmeofp
 
         .export monitor_start
         .export monitor_brk
         .export monitor_nmi
-
-        .export print_spaces
-
-; Get a single character
-.macro  getc
-        lda     [ibuffp]
-.endmacro
-
-; Advance to the next character
-.macro  nextc
-        inc      ibuffp
-.endmacro
-
-maxhex  = 4
 
         .segment "SYSDATA": far
 
@@ -50,9 +40,6 @@ pc_reg:     .res    2
 pb_reg:     .res    1
 db_reg:     .res    1
 sr_reg:     .res    1
-
-            .align 256
-ibuff:      .res   256
 
         .segment "OSROM"
 
@@ -86,8 +73,6 @@ start_banner:
         .byte   "Monitor Ready.", CR, 0
 
 monitor_start:
-        ;phk
-        ;plb
         puts    start_banner
         bra     monitor_loop
 
@@ -148,111 +133,12 @@ dispatch:
         shortm
         rts
 
-;;
-;
-; Attempt to parse up to six hex digits at the current ibuff
-; and store the result in arg.
-;
-; On exit:
-;
-;   c : Set if at least one digit was parsed
-;   Y : number of digits parsed. 0 -> 8
-;
-parsehex:
-        longm
-        stz     arg 
-        shortm
-        ldy     #0
-@next:  getc
-        cmp     #' '+1
-        blt     @done
-        sec
-        sbc     #'0'
-        cmp     #10
-        blt     @store
-        ora     #$20            ; shift uppercase to lowercase
-        sbc     #'a'-'0'-10
-        cmp     #10
-        blt     @done
-        cmp     #16
-        bge     @done
-@store: longm
-        asl     arg
-        asl     arg
-        asl     arg
-        asl     arg
-        shortm
-        ora     arg
-        sta     arg
-        nextc
-        iny
-        cpy     #maxhex
-        bne     @next
-@done:  cpy     #1
-        rts
-
-read_line:
-        lda     #<ibuff
-        sta     ibuffp
-        lda     #>ibuff
-        sta     ibuffp+1
-        lda     #^ibuff
-        sta     ibuffp+2
-        ldy     #0
-@loop:  call    SYS_CONSOLE_READ
-        bcc     @loop
-        cmp     #BS
-        beq     @bs
-        cmp     #CR
-        beq     @eol
-        cmp     #CLS
-        beq     @cls
-        cmp     #' '
-        bcc     @loop
-        sta     [ibuffp],y
-        call    SYS_CONSOLE_WRITE
-        iny
-        bne     @loop
-        dey
-@eol:   lda     #0
-        sta     [ibuffp],y
-        rts
-@bs:    cpy     #0
-        beq     @loop
-        call    SYS_CONSOLE_WRITE
-        dey
-        bra     @loop
-@cls:   call    SYS_CONSOLE_WRITE
-        bra     @loop
-
 ;
 ; Parse the current input line
 ;
 parse_line:
-        jsr     parsehex
-        bcc     @cont
-
-        getc
-        cmp     #'/'        ; Set bank byte?
-        bne     @addr
-
-        lda     arg
-        sta     start_loc+2 ; set bank byte
-
-        nextc
-        getc
-        bne     :+
-        sec
-        rts
-:       jsr     parsehex
-        bcc     @bad
-
-@addr:  longm
-        lda     arg
-        sta     start_loc
-        shortm
-
-@cont:  longm
+        jsr     parse_address
+        longm
         lda     start_loc
         sta     end_loc
         shortm
@@ -263,8 +149,9 @@ parse_line:
         cmp     #'.'            ; did they specify a memory range?
         bne     @find
         nextc
-        jsr     parsehex       ; get end range
-        bcc     @bad
+        ldy     #4
+        jsr     parse_hex       ; get end range
+        beq     @bad
         longm
         lda     arg
         sta     end_loc
@@ -306,38 +193,6 @@ syntax_error:
         rts
 
 @msg:   .byte   " Error", CR, 0
-
-;
-; Print out a string of space whose length is given in the X register.
-; X may be zero, in which case nothing is printed.
-;
-print_spaces:
-        cpx     #0
-        beq     @exit
-        pha
-        phx
-@loop:  lda     #' '
-        call    SYS_CONSOLE_WRITE
-        dex
-        bne     @loop
-        plx
-        pla
-@exit:  rts
-
-;
-; Skip input_index ahead to either the first non-whitespace character,
-; or the end of line NULL, whichever occurs first.
-;
-skip_whitespace:
-        pha
-@loop:  getc
-        beq     @exit
-        cmp     #' '+1
-        bge     @exit
-        nextc
-        bra     @loop
-@exit:  pla
-        rts
 
 ;
 ; Display the values of the saved CPU registers.
@@ -475,8 +330,9 @@ set_memory:
         shortm
         bra     @ascii
 @hex:   jsr     skip_whitespace
-        jsr     parsehex
-        bcc     @done
+        ldy     #4
+        jsr     parse_hex
+        beq     @done
         lda     arg
         sta     [start_loc]
         longm
