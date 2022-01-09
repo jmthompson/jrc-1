@@ -9,8 +9,10 @@
 
         .export uart_init
         .export uart_irq
-        .export seriala_device
-        .export serialb_device
+        .export getc_seriala
+        .export getc_serialb
+        .export putc_seriala
+        .export putc_serialb
 
         .import noop
 
@@ -276,37 +278,6 @@ nxpsutab:
 s_nxptab = *-nxpsutab
 
         .segment "OSROM"
-
-;;
-; Device descriptors for both serial ports
-;
-seriala_device:
-        .byte   "SERIAL A", 0, 0, 0, 0, 0, 0, 0
-        .byte   DEVICE_TYPE_SERIAL_PORT
-        longaddr noop           ; startup
-        longaddr noop           ; shutdown
-        longaddr noop           ; reset
-        longaddr noop           ; status
-        longaddr getc_seriala   ; read
-        longaddr putc_seriala   ; write
-        longaddr noop           ; rdcheck
-        longaddr noop           ; wrcheck
-        longaddr noop           ; get params
-        longaddr noop           ; set_params
-
-serialb_device:
-        .byte   "SERIAL B", 0, 0, 0, 0, 0, 0, 0
-        .byte   DEVICE_TYPE_SERIAL_PORT
-        longaddr noop           ; startup
-        longaddr noop           ; shutdown
-        longaddr noop           ; reset
-        longaddr noop           ; status
-        longaddr getc_serialb   ; read
-        longaddr putc_serialb   ; write
-        longaddr noop           ; rdcheck
-        longaddr noop           ; wrcheck
-        longaddr noop           ; get params
-        longaddr noop           ; set_params
 
 ;
 ; Get next character from serial channel A. On exit, C=0 if

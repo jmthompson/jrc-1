@@ -8,20 +8,13 @@
         .export syscop
         .export syscall_trampoline
 
-        .import console_attach
         .import console_reset
-        .import console_read
-        .import console_write
         .import console_writeln
         .import install_device
         .import remove_device
         .import find_device
-        .import call_device
-
         .import getc_seriala
         .import putc_seriala
-        .import getc_serialb
-        .import putc_serialb
 
         .importzp   param
 
@@ -174,14 +167,14 @@ unsupported_syscall:
         syserr  ERR_NOT_SUPPORTED
 
 syscall_table:
-        syscall_entry     console_attach, 0
-        syscall_entry     console_read, 0
-        syscall_entry     console_write, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     getc_seriala, 0
+        syscall_entry     putc_seriala, 0
         syscall_entry     console_writeln, 4
         syscall_entry     install_device, 4
         syscall_entry     remove_device, 0
         syscall_entry     find_device, 4
-        syscall_entry     call_device, 4
+        syscall_entry     unsupported_syscall, 0
         syscall_entry     unsupported_syscall, 0
         syscall_entry     unsupported_syscall, 0
         syscall_entry     unsupported_syscall, 0

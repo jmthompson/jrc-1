@@ -17,10 +17,6 @@
 
         .export noop
 
-        .import console_device
-        .import seriala_device
-        .import serialb_device
-
         .importzp param
 
 MAX_DEVICES = 64
@@ -53,12 +49,6 @@ device_manager_init:
         lda     #3
         sta     num_devices
         
-        longm
-        install 0,console_device
-        install 1,seriala_device
-        install 2,serialb_device
-        shortm
-
         rtl
 
 ;;
