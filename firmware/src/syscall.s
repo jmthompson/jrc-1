@@ -11,7 +11,6 @@
         .import console_attach
         .import console_reset
         .import console_read
-        .import console_readln
         .import console_write
         .import console_writeln
         .import install_device
@@ -98,8 +97,6 @@ syscall:
         sta     @copsig+2
 
         lda     [@copsig]
-        cmp     #syscall_max
-        bge     @error
         longm
         andw    #255
         asl
@@ -166,7 +163,6 @@ syscall:
         pld
         plb
         rti
-@error: brk     $00
 
 ; Macro for declaring dispatch table entries
 .macro  syscall_entry func, psize
@@ -174,15 +170,262 @@ syscall:
         .byte       psize
 .endmacro
 
+unsupported_syscall:
+        syserr  ERR_NOT_SUPPORTED
+
 syscall_table:
         syscall_entry     console_attach, 0
         syscall_entry     console_read, 0
         syscall_entry     console_write, 0
-        syscall_entry     console_readln, 4
         syscall_entry     console_writeln, 4
         syscall_entry     install_device, 4
         syscall_entry     remove_device, 0
         syscall_entry     find_device, 4
         syscall_entry     call_device, 4
-
-syscall_max = (*-syscall_table)/4
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0
+        syscall_entry     unsupported_syscall, 0

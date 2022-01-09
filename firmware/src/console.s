@@ -11,7 +11,6 @@
         .export console_init
         .export console_attach
         .export console_read
-        .export console_readln
         .export console_write
         .export console_writeln
         .export console_device
@@ -118,38 +117,6 @@ console_reset:
 ;
 console_read:
         jml     read_vec
-
-;;
-; Interactively read a line of text from the console into the given input
-; buffer.
-;
-console_readln:
-        ldy     #0
-@loop:  jsl     console_read
-        bcc     @loop
-        cmp     #BS
-        beq     @bs
-        cmp     #CR
-        beq     @eol
-        cmp     #CLS
-        beq     @cls
-        cmp     #' '
-        bcc     @loop
-        sta     [param],y
-        jsl     console_write 
-        iny
-        bne     @loop
-        dey
-@eol:   lda     #0
-        sta     [param],y
-        rtl
-@bs:    cpy     #0
-        beq     @loop
-        jsl     console_write 
-        dey
-        bra     @loop
-@cls:   jsl     console_write
-        bra     @loop
 
 ;;
 ; Output character in A to the console

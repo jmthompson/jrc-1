@@ -133,9 +133,9 @@ monitor_loop:
         puteol
         putc    #'*'
         putc    #'>'
-        gets    ibuff
+        jsr     read_line
         puteol
-        jsr     parse_ibuff
+        jsr     parse_line
         bcs     monitor_loop
         jsr     dispatch
         bra     monitor_loop
@@ -197,16 +197,44 @@ parsehex:
 @done:  cpy     #1
         rts
 
-;
-; Parse the current ibuff
-;
-parse_ibuff:
+read_line:
         lda     #<ibuff
         sta     ibuffp
         lda     #>ibuff
         sta     ibuffp+1
         lda     #^ibuff
         sta     ibuffp+2
+        ldy     #0
+@loop:  call    SYS_CONSOLE_READ
+        bcc     @loop
+        cmp     #BS
+        beq     @bs
+        cmp     #CR
+        beq     @eol
+        cmp     #CLS
+        beq     @cls
+        cmp     #' '
+        bcc     @loop
+        sta     [ibuffp],y
+        call    SYS_CONSOLE_WRITE
+        iny
+        bne     @loop
+        dey
+@eol:   lda     #0
+        sta     [ibuffp],y
+        rts
+@bs:    cpy     #0
+        beq     @loop
+        call    SYS_CONSOLE_WRITE
+        dey
+        bra     @loop
+@cls:   call    SYS_CONSOLE_WRITE
+        bra     @loop
+
+;
+; Parse the current input line
+;
+parse_line:
         jsr     parsehex
         longm
         bcc     @nostart

@@ -9,13 +9,6 @@
         putc    #CR
 .endmacro
 
-; Read a single line of input into the input buffer
-.macro  gets    buffer
-        pea     .hiword(buffer)
-        pea     .loword(buffer)
-        call    SYS_CONSOLE_READLN
-.endmacro
-
 ; Output a null-terminated string
 .macro  puts    string
         pea     .hiword(string)
