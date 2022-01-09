@@ -82,7 +82,7 @@ startup_banner:
         puts    @line
         putc    #'k'
         putc    #SHIFT_IN
-        putc    #CR
+        puteol
 
         ; System ID
         puts    @sysid
@@ -117,7 +117,7 @@ startup_banner:
         puts    @line
         putc    #'j'
         putc    #SHIFT_IN
-        putc    #CR
+        puteol
 
         puteol
         puteol
@@ -131,10 +131,10 @@ startup_banner:
 
 @sysid:  .byte  SHIFT_OUT, "x", SHIFT_IN
          .byte  " JRC-1 Single Board Computer   "
-         .byte  SHIFT_OUT, "x", SHIFT_IN, CR, 0
+         .byte  SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
 @hwrev:  .byte  SHIFT_OUT, "x", SHIFT_IN, " Hardware Revision ", 0
-@hwrev2: .byte  "           ", SHIFT_OUT, "x", SHIFT_IN, CR, 0
+@hwrev2: .byte  "           ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
 @romver:  .byte SHIFT_OUT, "x", SHIFT_IN, " ROM Version ", 0
-@romver2: .byte "  ", SHIFT_OUT, "x", SHIFT_IN, CR, 0
+@romver2: .byte "  ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0

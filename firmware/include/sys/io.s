@@ -7,6 +7,7 @@
 ; Output a CR
 .macro  puteol
         putc    #CR
+        putc    #LF
 .endmacro
 
 ; Output a null-terminated string

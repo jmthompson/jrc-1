@@ -3,7 +3,6 @@
         cop     funcid
 .endmacro
 
-SYS_CONSOLE_ATTACH  = $00
 SYS_CONSOLE_READ    = $01
 SYS_CONSOLE_WRITE   = $02
 SYS_CONSOLE_WRITELN = $03
