@@ -17,9 +17,8 @@
         .import spi_deselect
         .import spi_transfer
 
+        .export syscall_table_init
         .export syscall_table
-
-        .segment "OSROM"
 
 ; Macro for declaring dispatch table entries
 .macro  syscall_entry func, psize
@@ -27,10 +26,27 @@
         .byte       psize
 .endmacro
 
+        .segment "SYSDATA"
+        .align 256
+syscall_table: .res 4*256
+
+        .segment "BOOTROM"
+
+syscall_table_init:
+        longmx
+        ldxw    #.loword(default_table)
+        ldyw    #.loword(syscall_table)
+        ldaw    #256*4
+        mvn     default_table,syscall_table
+        shortmx
+        rts
+
+        .segment "OSROM"
+
 unsupported_syscall:
         syserr  ERR_NOT_SUPPORTED
 
-syscall_table:
+default_table:
         syscall_entry   unsupported_syscall, 0      ; $00
         syscall_entry   unsupported_syscall, 0      ; $01
         syscall_entry   unsupported_syscall, 0      ; $02

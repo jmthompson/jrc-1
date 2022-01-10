@@ -93,14 +93,14 @@ syscop:
         tax
 
         shortm
-        lda     f:syscall_table+3,x     ; Parameter frame size
+        lda     syscall_table+3,x       ; Parameter frame size
         sta     @cf_size
         stz     @cf_size+1
 
-        lda     f:syscall_table+2,x     ; Bank byte of handler
+        lda     syscall_table+2,x       ; Bank byte of handler
         sta     syscall_trampoline+3
         longm
-        lda     f:syscall_table,x       ; Bank address of handler
+        lda     syscall_table,x         ; Bank address of handler
         sta     syscall_trampoline+1
         phd                             ; save our DP for after dispatch
 

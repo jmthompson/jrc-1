@@ -15,6 +15,7 @@
         .import via_init
         .import console_init
         .import jros_init
+        .import syscall_table_init
         .import device_manager_init
         .import syscall_trampoline 
         .import print_decimal8
@@ -56,6 +57,7 @@ sysreset:
         jsr     via_init
         jsr     spi_init
         jsr     uart_init
+        jsr     syscall_table_init
 
         cli
 
