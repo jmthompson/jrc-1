@@ -11,13 +11,13 @@
         .export spi_deselect
         .export spi_transfer
 
-; VIA register numbers
+spi_base := $F010
+
+; 65SPI register numbers
 spi_data   = $00    ; (R/W) SPI data register
 spi_status = $01    ; (R) SPI status register
 spi_ctrl   = $01    ; (R/W) SPI control register
 spi_ss     = $03    ; (R/W) slave select
-
-spi_base := $F010
 
 ; Bits in the control/status register
 SPI_TC      = $80   ; transmission complete
@@ -59,16 +59,15 @@ spi_irq:
         rts
 
 ;;
-; Select slave 0-3. Slave number is in A
+; Select slave 0-7. Slave number is in A
 ;
 spi_select:
-        phx
-        and     #$03
+        and     #$07
         tax
         lda     @slave,X
         sta     spi_base+spi_ss
-        plx
-        rts
+        clc
+        rtl
 @slave: .byte   SPI_SS0
         .byte   SPI_SS1
         .byte   SPI_SS2
@@ -82,11 +81,10 @@ spi_select:
 ; Deselect all slaves
 ;
 spi_deselect:
-        pha
         lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
         sta     spi_base+spi_ss
-        pla
-        rts
+        clc
+        rtl
 
 ;;
 ; Send byte in A to the currently selected slave,
@@ -95,7 +93,8 @@ spi_deselect:
 spi_transfer:
         sta     spi_base+spi_data   ; send byte
         lda     #SPI_TC
-@wait:  bit     spi_base+spi_status
-        beq     @wait               ; wait for TC=1
+:       bit     spi_base+spi_status
+        beq     :-                  ; wait for TC=1
         lda     spi_base+spi_data   ; get received byte
-        rts
+        clc
+        rtl
