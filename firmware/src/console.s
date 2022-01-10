@@ -28,7 +28,7 @@ console_init:
 
 console_reset:
         ldx     #0
-:       lda     @reset,x
+:       lda     f:@reset,x
         beq     :+
         jsl     putc_seriala
         inx

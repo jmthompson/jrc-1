@@ -51,8 +51,6 @@ via_init:
         stz     via_base+via_porta
         stz     via_base+via_portb
         stz     via_base+via_ddra
-        lda     #PB_ACT_LED
-        sta     via_base+via_ddrb
 
         rts
 

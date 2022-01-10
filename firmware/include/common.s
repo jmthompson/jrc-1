@@ -6,9 +6,11 @@
         .include "sys/error.s"
 
         .import __BIOS_DP_START__
+        .import __SYSRAM_START__
 
-BIOS_DB = $00
-BIOS_DP = __BIOS_DP_START__
+IRQ_DB  = $00
+OS_DB   = .bankbyte(__SYSRAM_START__)
+OS_DP   = __BIOS_DP_START__
 
 .macro  syserr  code
         lda     #code

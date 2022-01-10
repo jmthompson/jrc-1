@@ -17,7 +17,7 @@ device: .res    4
 drive:  .res    2
 unit:   .res    2
 
-        .segment "SYSDATA": far
+        .segment "SYSDATA"
 
 devicenr:
         .res  1

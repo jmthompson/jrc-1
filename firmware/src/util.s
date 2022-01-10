@@ -24,7 +24,7 @@
 
         .import console_write
 
-        .segment "SYSDATA": far
+        .segment "SYSDATA"
 
         .align 256
 ibuff:  .res   256

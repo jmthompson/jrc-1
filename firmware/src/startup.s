@@ -16,10 +16,9 @@
         .import console_init
         .import jros_init
         .import device_manager_init
-        .import syscall_trampoline : far
+        .import syscall_trampoline 
         .import print_decimal8
 
-        .import __SYSDP_START__
         .import __SYSSTACK_START__
         .import __SYSSTACK_SIZE__
 
@@ -44,27 +43,31 @@ sysreset:
         shortx
 
         longm
-        ldaw    #BIOS_DP
+        ldaw    #OS_DP
         tcd
         ldaw    #STACKTOP
         tcs
         shortm
 
-        lda     #BIOS_DB
+        lda     #IRQ_DB
         pha
         plb
 
-        lda     #$5C                ; JML $xxyyzz
-        sta     syscall_trampoline  ; Init syscall trampoline vector
-
-        jsl     device_manager_init
-        
         jsr     via_init
         jsr     spi_init
         jsr     uart_init
 
         cli
 
+        lda     #OS_DB
+        pha
+        plb
+
+        lda     #$5C                ; JML $xxyyzz
+        sta     syscall_trampoline  ; Init syscall trampoline vector
+
+        ;jsl     device_manager_init
+        
         jsr     console_init
         jsr     startup_banner
 
@@ -89,20 +92,20 @@ startup_banner:
 
         ; HW Revision
         puts    @hwrev
-        lda     hw_revision
+        lda     f:hw_revision
         jsl     print_decimal8
         puts    @hwrev2
 
         ; ROM Version
         puts    @romver
-        lda     rom_version
+        lda     f:rom_version
         lsr
         lsr
         lsr
         lsr
         jsl     print_decimal8
         putc    #'.'
-        lda     rom_version
+        lda     f:rom_version
         and     #$0f
         jsl     print_decimal8
         putc    #' '

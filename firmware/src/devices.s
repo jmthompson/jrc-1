@@ -21,7 +21,7 @@
 
 MAX_DEVICES = 64
 
-        .segment "SYSDATA": far
+        .segment "SYSDATA"
 
 devices: .res MAX_DEVICES * 4
 num_devices: .res 1

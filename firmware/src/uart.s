@@ -98,11 +98,7 @@ uart_init:
 ; appropriate handler to service the interrupt.
 ;
 uart_irq:
-        lda     #$FF
-        sta     $F003
-        sta     $F001
         lda     nxp_base+nx_isr
-        sta     $F001
         beq     @done               ; Exit early if nothing is interrupting
         bit     #nxpctirq
         beq     :+
@@ -119,9 +115,7 @@ uart_irq:
 :       bit     #nxpbrirq
         beq     @done
         jsr     rxb_irq
-@done:  lda     #$08
-        sta     $F001
-        rts
+@done:  rts
 
 ;
 ; Timer interrupt handler
@@ -289,7 +283,7 @@ getc_seriala:
         ldx     rxa_rdi
         cpx     rxa_wri
         beq     @empty
-        lda     rxa_ibuf,X
+        lda     f:rxa_ibuf,X
         inx
         stx     rxa_rdi
         sec
@@ -308,7 +302,7 @@ getc_serialb:
         ldx     rxb_rdi
         cpx     rxb_wri
         beq     @empty
-        lda     rxb_ibuf,X
+        lda     f:rxb_ibuf,X
         inx
         stx     rxb_rdi
         sec
@@ -331,14 +325,14 @@ putc_seriala:
         ;wai                         ; yes, so wait for an interrupt to hopefully clear some space
         bra     @wait               ; and then check again
 @store: dex
-        sta     txa_ibuf,x          ; Store the byte in the output buffer
+        sta     f:txa_ibuf,x        ; Store the byte in the output buffer
         inx
         stx     txa_wri             ; ... and update write index
         lda     #$80
         tsb     txa_on              ; is the transmitter enabled?
         bne     :+                  ; if yes, we're done
         lda     #nxpcrtxe
-        sta     nxp_base+nx_cra     ; Enable transmitter
+        sta     f:nxp_base+nx_cra     ; Enable transmitter
 :       plx
         rtl
 ;
@@ -355,13 +349,13 @@ putc_serialb:
         ;wai                         ; yes, so wait for an interrupt to hopefully clear some space
         bra     @wait               ; and then check again
 @store: dex
-        sta     txb_ibuf,x          ; Store the byte in the output buffer
+        sta     f:txb_ibuf,x        ; Store the byte in the output buffer
         inx
         stx     txb_wri             ; ... and update write index
         lda     #$80
         tsb     txb_on              ; is the transmitter enabled?
         bne     :+                  ; if yes, we're done
         lda     #nxpcrtxe
-        sta     nxp_base+nx_crb     ; Enable transmitter
+        sta     f:nxp_base+nx_crb     ; Enable transmitter
 :       plx
         rtl

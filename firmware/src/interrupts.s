@@ -27,7 +27,7 @@
 PREG_I      =   %00000100
 PREG_C      =   %00000001
 
-        .segment "SYSDATA": far
+        .segment "SYSDATA"
 
 syscall_trampoline: .res 4
 
@@ -66,7 +66,7 @@ syscop:
 
         shortm
 
-        lda     #BIOS_DB
+        lda     #OS_DB
         pha
         plb                     ; Set kernel data bank
 
@@ -110,7 +110,7 @@ syscop:
         pha
         ldaw    @param+2
         pha
-        ldaw    #BIOS_DP
+        ldaw    #OS_DP
         tcd
         pla
         sta     param+2
@@ -160,10 +160,11 @@ sysirq:
         pha
         phx
         phy
-        ldaw    #BIOS_DP
+        ldaw    #OS_DP
         tcd
         sep     #$30
-        pha                 ; Low byte of BIOS_DP will always be $00
+        lda     #IRQ_DB
+        pha
         plb                 ; Set interrupt data bank
 
         jsr     via_irq
@@ -186,10 +187,10 @@ sysnmi:
         pha
         phx
         phy
-        ldaw    #BIOS_DP
+        ldaw    #OS_DP
         tcd
         shortmx
-        lda     #BIOS_DB
+        lda     #OS_DB
         pha
         plb
         cli
@@ -202,10 +203,10 @@ sysbrk:
         pha
         phx
         phy
-        ldaw    #BIOS_DP
+        ldaw    #OS_DP
         tcd
         shortmx
-        lda     #BIOS_DB
+        lda     #OS_DB
         pha
         plb
         cli

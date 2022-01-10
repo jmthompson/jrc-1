@@ -30,7 +30,7 @@
         .export monitor_brk
         .export monitor_nmi
 
-        .segment "SYSDATA": far
+        .segment "SYSDATA"
 
 a_reg:      .res    2
 x_reg:      .res    2
