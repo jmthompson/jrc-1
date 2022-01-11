@@ -34,10 +34,10 @@ SPI_SS0     = $01   ; /SS0
 SPI_SS1     = $02   ; /SS1
 SPI_SS2     = $04   ; /SS2
 SPI_SS3     = $08   ; /SS3
-SPI_SS4     = $01   ; /SS4
-SPI_SS5     = $02   ; /SS5
-SPI_SS6     = $04   ; /SS6
-SPI_SS7     = $08   ; /SS7
+SPI_SS4     = $10   ; /SS4
+SPI_SS5     = $20   ; /SS5
+SPI_SS6     = $40   ; /SS6
+SPI_SS7     = $80   ; /SS7
 
         .segment "BOOTROM"
 
@@ -65,6 +65,7 @@ spi_select:
         and     #$07
         tax
         lda     f:@slave,X
+        eor     #$FF
         sta     f:spi_base+spi_ss
         clc
         rtl
