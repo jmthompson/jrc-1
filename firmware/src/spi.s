@@ -47,11 +47,11 @@ SPI_SS7     = $08   ; /SS7
 spi_init:
         ; Reset chip to defaults
         lda     #SPI_SR
-        sta     spi_base+spi_ctrl
+        sta     f:spi_base+spi_ctrl
 
         ; Disable all slaves
         lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
-        sta     spi_base+spi_ss
+        sta     f:spi_base+spi_ss
 
         rts
 
@@ -64,8 +64,8 @@ spi_irq:
 spi_select:
         and     #$07
         tax
-        lda     @slave,X
-        sta     spi_base+spi_ss
+        lda     f:@slave,X
+        sta     f:spi_base+spi_ss
         clc
         rtl
 @slave: .byte   SPI_SS0
@@ -82,7 +82,7 @@ spi_select:
 ;
 spi_deselect:
         lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
-        sta     spi_base+spi_ss
+        sta     f:spi_base+spi_ss
         clc
         rtl
 
@@ -91,10 +91,10 @@ spi_deselect:
 ; and return the received byte back in A
 ;
 spi_transfer:
-        sta     spi_base+spi_data   ; send byte
-        lda     #SPI_TC
-:       bit     spi_base+spi_status
-        beq     :-                  ; wait for TC=1
-        lda     spi_base+spi_data   ; get received byte
+        sta     f:spi_base+spi_data     ; send byte
+:       lda     f:spi_base+spi_status
+        and     #SPI_TC
+        beq     :-                      ; wait for TC=1
+        lda     f:spi_base+spi_data     ; get received byte
         clc
         rtl
