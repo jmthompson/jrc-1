@@ -7,41 +7,46 @@
         .include "sys/console.s"
 
         .import sdcard_driver
+        .import trampoline
+
+        .importzp   device_cmd
 
         .export jros_init
 
+;;
+; Device/drive/volume limits. The limits are set up to allow
+; for up to four drives per device, and four volumes pe
+; drive (assuming standard PC partioning)
+;
+MAX_DEVICES = 4
+MAX_DRIVES  = MAX_DEVICES*4
+MAX_VOLUMES = MAX_DRIVES*4
+
+DRIVE_STRUCT_SIZE  = 8
+VOLUME_STRUCT_SIZE = 16
+
         .segment "ZEROPAGE"
 
-device_cmd: .res 4
-device: .res    4
-drive:  .res    2
-unit:   .res    2
+device:     .res    4
+devicenr:   .res    1
+drive:      .res    4
+drivenr:    .res    1
+unit:       .res    4
+unitnr:     .res    1
 
         .segment "SYSDATA"
 
-devicenr:
-        .res  1
-unitnr: .res  1
+cmd_buffer:     .res    32
+block_buffer:   .res    512
 
-cmd_buffer:
-        .res    32
-
-block_buffer:
-        .res    512
-
-trampoline:
-        .res    4
-
+;;
 ; The device list is a list of pointers to device driver
 ; structure.
 
-MAX_DEVICES = 4
+num_devices:    .res 1
+devices:        .res MAX_DEVICES*2
 
-num_devices:
-        .res 1
-devices:
-        .res MAX_DEVICES*2
-
+;;
 ; Drive structure is 8 bytes:
 ;
 ; 0 : drive ID ($DU)
@@ -49,13 +54,8 @@ devices:
 ; 2-5 : num_blocks
 ; 6-7 : reserved
 
-MAX_DRIVES = 4
-DRIVE_STRUCT_SIZE = 8
-
-num_drives:
-        .res 1
-drives:
-        .res MAX_DRIVES * DRIVE_STRUCT_SIZE
+num_drives: .res    1
+drives:     .res    MAX_DRIVES * DRIVE_STRUCT_SIZE
 
 ; Volume structure is 16 bytes:
 ;
@@ -64,13 +64,8 @@ drives:
 ;  5-8 : number of blocks
 ; 9-15 : reserved
 
-MAX_VOLUMES = 4
-VOLUME_STRUCT_SIZE = 16
-
-num_volumes:
-        .res 1
-volumes:
-        .res MAX_VOLUMES * VOLUME_STRUCT_SIZE
+num_volumes:    .res    1
+volumes:        .res    MAX_VOLUMES * VOLUME_STRUCT_SIZE
 
         .segment "OSROM"
 
@@ -82,22 +77,18 @@ jros_init:
         sta     num_drives
         sta     num_volumes
 
-        lda     #$5C        ; JML
-        sta     trampoline
-
         pea     .hiword(sdcard_driver)
         pea     .loword(sdcard_driver)
         jsr     register_device
 
         puteol
 
-        jsr     enumerate_drives
+        ;jsr     enumerate_drives
         ;jsr     enumerate_volumes
 
-        rts
+        rtl
 @banner:
-        .byte   "JR/OS Version 0.1", $0d, $0d, $00
-
+        .byte   "JR/OS Version 0.1", CR, LF, 0
 
 ; Register a device.
 ;
@@ -115,34 +106,33 @@ register_device:
         sta     device
         lda     5,s
         sta     device+2
+        lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
         shortm
 
+        pea     0
+        pea     0       ; no params
         ldy     #1      ; INIT
         jsr     call_device
         bcs     @error
 
         lda     num_devices
         asl
+        asl
         tax
+        longm
         lda     device
         sta     devices,X
-        iny
-        lda     device+1
-        sta     devices,X
-        lda     num_devices
-        inc
-        sta     num_devices
-        clc
-        rts
-
-@error: 
-        jsr     print_device_name
-        puts    @failure
-        sec
-        rts
-
-@failure:
-        .byte " failed init", $0d, $0d, $00
+        lda     device+2
+        sta     devices+2,X
+        shortm
+        inc     num_devices
+@exit:  rts
+@error: rts
 
 ; For each registered device, perform a STATUS call and register all
 ; online drives
@@ -233,35 +223,46 @@ register_drive:
 select_device:
         asl
         tax
+        longm
         lda     devices,X
         sta     device
-        lda     devices+1,X
-        sta     device+1
+        lda     devices+2,X
+        sta     device+2
+        shortm
         rts
 
 ; Select drive whose #is in A.
 
 select_drive:
+        longm
+        andw    #255
         asl                 ; x8 (DRIVE_STRUCT_SIZE)
         asl
         asl
         clc
-        adc     #<drives
+        adcw    #.loword(drives)
         sta     drive
-        lda     #>drives
-        adc     #0
-        sta     drive+1
+        ldaw    #.hiword(drives)
+        adcw    #0
+        sta     drive+2
+        shortm
         rts
 
 ; Call function Y in the currently selected device, using
-; command block in A/X.
+; command block passed on the stack
 
 call_device:
         longm
         lda     3,s
         sta     device_cmd
         lda     5,s
-        sta     device_cmd+1
+        sta     device_cmd+2
+        lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
         shortm
         tya
         asl
@@ -275,7 +276,8 @@ call_device:
         iny
         lda     [device],Y
         sta     trampoline+3
-        jml     trampoline
+        jsl     trampoline
+        rts
 
 ; Print the name of the currently selected device
 
@@ -283,9 +285,8 @@ print_device_name:
         longm
         ldy     #2
         lda     [device],Y
-        dey
-        dey
-        lda     [device],Y
+        pha
+        lda     [device]
         pha
         shortm
         call    SYS_CONSOLE_WRITELN

@@ -4,23 +4,30 @@
 ; *******************************
 
         .include "common.s"
+        .include "sys/console.s"
 
-        .import spi_select
         .import spi_deselect
         .import spi_transfer
+        .import spi_select
         .import wait_ms
+
+        .importzp device_cmd
+        .importzp ptr
+        .importzp tmp
 
         .export sdcard_driver
 
-        .segment "ZEROPAGE"
+.macro  send    bytes
+        pea     .hiword(bytes)
+        pea     .loword(bytes)
+        jsr     send_cmd
+.endmacro
 
-device_cmd:
-jrtmp:      .res 2
-
-        .segment "BUFFERS"
+        .segment "SYSDATA"
 
 cmd51:
-csd:    .res    16
+csd:        .res    16
+nr_sectors: .res    4
 
         .segment "OSROM"
 
@@ -29,7 +36,7 @@ SD_CMD_SIZE  = 6     ; acmd flag + cmd byte + 4 byte arg + CRC
 SD_FILL      = $ff   ; fill byte
 
 driver_name:
-        .byte   "SD Card", $00
+        .byte   "SD CARD", 0
 
 sdcard_driver:
         longaddr driver_name
@@ -39,17 +46,16 @@ sdcard_driver:
         longaddr sdc_rdblock
         longaddr sdc_wrblock
 
+;;
+; INIT
+;
+; Initialize the SD card
 sdc_init:
         jsr     set_spi_mode
         jsr     set_idle
-        bcc     @tryinit
-        brl     @error
-
-@tryinit:
-        jsr     send_cmd
-        .faraddr @cmd08
-        bcs     @initv1             ; Might be an older card
-
+        bcs     @error
+:       send    @cmd08
+        bcs     @v1             ; Might be an older card
         jsl     spi_transfer
         bne     @error
         jsl     spi_transfer
@@ -60,159 +66,118 @@ sdc_init:
         jsl     spi_transfer
         cmp     #$AA
         bne     @error
-
         ldx     #255
-@initv2:
+@v2:    jsr     deselect
+        send    @cmd55
+        bcs     @v1
         jsr     deselect
-        jsr     send_cmd
-        .faraddr @cmd55
-        bcs     @initv1
-
-        jsr     deselect
-        jsr     send_cmd
-        .faraddr @acmd41
-        beq     @setblksize
+        send    @acmd41
+        beq     @blksz
         lda     #15
         jsl     wait_ms
         dex
-        bne     @initv2
+        bne     @v2
         bra     @error
-
-@initv1:
-        jsr     send_cmd
-        .faraddr @cmd01
-        bcc     @setblksize
+@v1:    send    @cmd01
+        bcc     @blksz
         lda     #15
         jsl     wait_ms
         dex
-        bne     @initv1
+        bne     @v1
         bra     @error
-
-@cmd01: .byte   $41,$00,$00,$00,$00,$01
-@cmd08: .byte   $48,$00,$00,$01,$AA,$87
-@cmd55: .byte   $77,$00,$00,$00,$00,$65
-@acmd41: .byte   $69,$40,$00,$00,$00,$01
-
-@setblksize:
-        jsr     deselect
-        jsr     send_cmd
-        .faraddr @cmd16
+@blksz: jsr     deselect
+        send    @cmd16
         bne     @error
-
         jsr     deselect
         clc
         rtl
-
-@cmd16: .byte   $50,$00,$00,$02,$00,$01
-
 @error: jsr     deselect
+        puts    @errmsg
         sec
         rtl
+@errmsg: .byte "SD card not detected", CR, LF, 0
 
-; STATUS command, returns a list of all units, their offline status,
-; and the device size in sectors
+@cmd16:     .byte   $50,$00,$00,$02,$00,$01
+@cmd01:     .byte   $41,$00,$00,$00,$00,$01
+@cmd08:     .byte   $48,$00,$00,$01,$AA,$87
+@cmd55:     .byte   $77,$00,$00,$00,$00,$65
+@acmd41:    .byte   $69,$40,$00,$00,$00,$01
 
+;;
+; STATUS
+;
+; Returns online/offline status and the device size in sectors
+;
 sdc_status:
-        jsr     send_cmd
-        .faraddr @cmd09
-        beq     @ok
-@error2:
-        jmp     @error
-
-@ok:    jsr     wait_data
-        bcs     @error2
-
+        send    @cmd09
+        bne     @error
+        jsr     wait_data
+        bcs     @error
         ldx     #0
-@read:  lda     #SD_FILL
+:       lda     #SD_FILL
         jsl     spi_transfer
         sta     csd,X
         inx
         cpx     #16
-        bne     @read
-
-        dex
-        bit     csd,X           ; check CSD structure bits
-        bmi     @error
-        bvs     @v1
-
-        stz     csd+6
-        lda     csd+7
-        and     #%00000011      ; clear reserved bits, just in case
-        sta     csd+7
-
-        lda     csd+9
-        clc
-        adc     #1
-        sta     csd+9
-        lda     csd+8
-        adc     #0
-        sta     csd+8
-        lda     csd+7
-        adc     #0
-        sta     csd+7
-        lda     csd+6
-        adc     #0
-        sta     csd+6
-
-        ldx     #9              ; (C_SIZE+1) * 1024 = NR_SECTORS
-@mult:  asl     csd+9
-        rol     csd+8
-        rol     csd+7
-        rol     csd+6
-        dex
-        bpl     @mult
-
-        ldy     #0
-        lda     (device_cmd),Y
-        sta     jrtmp           ; Set up output buffer pointer in jrtmp
+        bne     :-
+        jsl     spi_transfer
+        jsl     spi_transfer    ; Eat CRC
+        bit     csd
+        bmi     @error          ; reserved bit must be 0
+        lda     csd+5
+        and     #$0F            ; Mask off RD_BLK_LEN
+        cmp     #9              ; Is it 2^9 (512 bytes)?
+        bne     @error          ; If not we can't use this card
+        bit     csd             ; Check CSD version to parse C_SIZE
+        bvs     @v2             ; if bit 6 is set it's v2
+        jsr     get_nr_sectors_v1
+        bra     @cont
+@v2:    jsr     get_nr_sectors_v2
+@cont:  lda     #1
+        sta     [device_cmd];   ; oneline
+        longm
+        ldy     #1
+        lda     nr_sectors
+        sta     [device_cmd],Y
         iny
-        lda     (device_cmd),Y
-        sta     jrtmp+1
         iny
-        lda     #1
-        sta     (device_cmd),Y  ; 1 unit
-
-        ldy     #0
-        tya
-        sta     (jrtmp),Y       ; unit #0
+        lda     nr_sectors+2
+        sta     [device_cmd],Y
+        shortm
         iny
-        tya
-        sta     (jrtmp),Y       ; unit is online
         iny
-        ldx     #3
-@copy2: lda     csd+6,X
-        sta     (jrtmp),Y       ; copy block count in LE order
-        iny
-        dex
-        bpl     @copy2
-
-@name:  lda     driver_name-6,Y
-        sta     (jrtmp),Y       ; Copy driver name as unit name
+        ldx     #0
+:       lda     f:driver_name,X
+        sta     [device_cmd],Y  ; Copy driver name as unit name
         beq     @exit
+        inx
         iny
-        bra     @name
-
-@v1:    ; TODO implement v1 parsing
-
-@error: ldy     #2
-        lda     #0
-        sta     (device_cmd),Y  ; 0 units
+        bra     :-
+@error: lda     #0
+        sta     [device_cmd]    ; Offline
+        longm
+        ldy     #1
+        ldaw    #0
+        sta     [device_cmd],Y
+        iny
+        iny
+        sta     [device_cmd],Y
+        shortm
 @exit:  jsr     deselect
         clc
         rtl
-
 @cmd09: .byte   $49,$00,$00,$00,$00,$01
 
 sdc_format:
         sec
-        rts
+        rtl
 
 sdc_rdblock:
         ldy     #0
-        lda     (device_cmd),Y
+        lda     [device_cmd],Y
         beq     @ok             ; only supports unit 0
         sec
-        rts
+        rtl
 
 ; Build CMD51 with device number in command block
 
@@ -229,15 +194,14 @@ sdc_rdblock:
         dex
         bne     @copy
 
-        ; Copy pblock buffer pointer to jrtmp
+        ; Copy pblock buffer pointer to ptr
         lda     (device_cmd),Y
-        sta     jrtmp
+        sta     ptr
         iny
         lda     (device_cmd),Y
-        sta     jrtmp+1
+        sta     ptr+1
 
-        jsr     send_cmd
-        .faraddr cmd51
+        send    cmd51
         bne     @error
         jsr     wait_data
         bcc     @recv
@@ -247,45 +211,44 @@ sdc_rdblock:
 @recv:  ldy     #0
 @recv1: lda     #SD_FILL
         jsl     spi_transfer
-        sta     (jrtmp),Y
+        sta     (ptr),Y
         iny
         bne     @recv1
-        inc     jrtmp+1
+        inc     ptr+1
 @recv2: lda     #SD_FILL
         jsl     spi_transfer
-        sta     (jrtmp),Y
+        sta     (ptr),Y
         iny
         bne     @recv2
         jsr     deselect
         clc
-@exit:  rts
+@exit:  rtl
 
 sdc_wrblock:
         sec
-        rts
+        rtl
 
 ; Put the SD card into SPI mode
 
 set_spi_mode:
         jsr     deselect
         ldx     #10
-@loop:  lda     #SD_FILL
+:       lda     #SD_FILL
         jsl     spi_transfer
         dex
-        bne     @loop
+        bne     :-
         rts
 
 ; Tell the SD card to go into the idle state
 
 set_idle:
         ldx     #8
-@retry: jsr     send_cmd
-        .faraddr @cmd00
+:       send    @cmd00
         bcc     @r1
         lda     #1
         jsl     wait_ms
         dex
-        bne     @retry
+        bne     :-
 @error: jsr     deselect
         sec
         rts
@@ -300,12 +263,12 @@ set_idle:
 
 wait_rdy:
         lda     #$ff
-        sta     jrtmp
+        sta     ptr
 @loop:  lda     #SD_FILL
         jsl     spi_transfer
         cmp     #SD_FILL
         beq     @ready
-        dec     jrtmp
+        dec     ptr
         bne     @loop
         sec
         rts
@@ -327,46 +290,41 @@ wait_data:
 @ok:    clc
         rts
 
-; Send a command to the SD card. The pointer to the command to send should be the
-; two bytes immediately following the JSR instruction
-
+;;
+; Send a command to the SD card. The pointer to the command to send should be
+; on the stack.
+;
 send_cmd:
+        longm
+        lda     3,s
+        sta     ptr
+        lda     5,s
+        sta     ptr+2
+        lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
+        shortm
+
         phx
         phy
-
-        tsx
-        lda     $0103,X
-        sta     jrtmp
-        clc
-        adc     #2
-        sta     $0103,X
-        lda     $0104,X
-        sta     jrtmp+1
-        adc     #0
-        sta     $0104,X
-
-        ldy     #2
-        lda     (jrtmp),Y
-        tax
-        dey
-        lda     (jrtmp),Y
-        sta     jrtmp
-        stx     jrtmp+1
 
         jsr     select
 
         ldy     #0
-@send:  lda     (jrtmp),Y
+:       lda     [ptr],Y
         jsl     spi_transfer
         iny
         cpy     #SD_CMD_SIZE
-        bne     @send
+        bne     :-
         ldy     #17
-@wait:  lda     #SD_FILL
+:       lda     #SD_FILL
         jsl     spi_transfer
         bpl     @r1
         dey
-        bne     @wait
+        bne     :-
         pha
 @error: jsr     deselect
         pla
@@ -380,19 +338,122 @@ send_cmd:
 @exit:  ply
         plx
         ora     #0          ; set N/Z flags for caller
+        sta     $020000
         rts
 
+;;
 ; Select the SD card interface board
-
+;
 select:
-        ldx     #SD_DEVICE_ID
+        lda     #SD_DEVICE_ID
         jsl     spi_select
         rts
 
+;;
 ; Deselect the SD card interface board
-
+;
 deselect:
         jsl     spi_deselect
         lda     #SD_FILL
         jsl     spi_transfer        ; give SD card time to release DO
+        rts
+
+:
+;; Calculate the number of sectors from a v1 CSD
+;
+; For V2 the formula is NR_SECTORS = (C_SIZE+1)*(2^(C_MULT+2))
+;
+; CSIZE is bits 73-62 in the CSD, which is the lower two bits of csd[6],
+; all of csd[7], and the upper two bits of csd[8]. And iike all CSD values
+; it's in big-endiannd order so we need to reverse it before doing the math.
+;
+; CSIZE_MULT is bits 49-47, aka lower two bits of csd[9] and the upper bit of
+; csd[10]
+;
+; On entry:
+;
+; csd populated
+;
+; On exit:
+;
+; nr_sectors populated
+; C,X,Y trashed
+;
+get_nr_sectors_v1:
+        stz     nr_sectors+3
+        stz     nr_sectors+2    ; Bits 31-15 are all zero
+        lda     csd+6
+        and     #$03
+        sta     nr_sectors+1    ; Bits 11-10
+        lda     csd+7
+        sta     nr_sectors      ; Bits 9-2
+        lda     csd+8
+        and     #$C0            ; bits 1-0
+        asl
+        rol     nr_sectors      ; Rotate bits into position
+        rol     nr_sectors+1
+        asl
+        rol     nr_sectors
+        rol     nr_sectors+1
+        lda     csd+9
+        and     #$03            ; upper two bits of C_SIZE_MULT
+        sta     tmp
+        lda     csd+10
+        asl
+        rol     tmp
+        ldx     tmp
+        inx
+        inx                     ; C_SIZE_MULT+2
+        jmp     csize_to_nr_sectors
+
+;; Calculate the number of sectors from a v2 CSD
+;
+; For V2 the formula is NR_SECTORS = (C_SIZE+1)*1024
+;
+; CSIZE is bits 69-48 in the CSD, which is the lower six bits of csd[7]
+; and all of csd[8] and csd[9]. And like all CSD values it's in big-endian
+; order so we need to reverse it before doing the math.
+;
+; On entry:
+;
+; csd populated
+;
+; On exit:
+;
+; nr_sectors populated
+; C,X,Y trashed
+;
+get_nr_sectors_v2:
+        stz     nr_sectors+3    ; bits 31-24 are always 0 since C_SIZE is 22 bits
+        lda     csd+7
+        and     #%00111111
+        sta     nr_sectors+2    ; bits 23-16
+        lda     csd+8
+        sta     nr_sectors+1    ; bits 15-8
+        lda     csd+9
+        sta     nr_sectors      ; bits 7-0
+        ldx     #10             ; Multiplier is fixed at 2^10 for v2
+        ; fall through
+ 
+;;
+; Set nr_sectors = (nr_sectors+1)*(2^X)
+;
+; Inputs:
+;
+; nr_sectors contains raw C_SIZE
+; X = shift factor, must be >0
+;
+; Outputs;
+;
+; nr_sectors updated
+; X trashed
+;
+csize_to_nr_sectors:
+        longm
+        inc32   nr_sectors      ; Do the +1
+:       asl     nr_sectors
+        rol     nr_sectors+2    ; Shift left to multiply by 2^X
+        dex
+        bne     :-
+        shortm
         rts
