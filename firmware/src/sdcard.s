@@ -28,7 +28,7 @@
 
         .segment "SYSDATA"
 
-cmd51:
+cmd:
 csd:        .res    16
 nr_sectors: .res    4
 
@@ -175,63 +175,97 @@ sdc_status:
 @cmd09: .byte   $49,$00,$00,$00,$00,$01
 
 sdc_format:
-        sec
-        rtl
+        syserr  ERR_NOT_SUPPORTED
 
+;;
+; Issue a block read call (CMD 17) to the card
+;
 sdc_rdblock:
-        ldy     #0
-        lda     [device_cmd],Y
-        beq     @ok             ; only supports unit 0
-        sec
-        rtl
-
-; Build CMD51 with device number in command block
-
-@ok:    lda     #$51
-        sta     cmd51
-        lda     #$01
-        sta     cmd51+5
-
+        lda     #17
+        sta     cmd
         ldx     #4
-        iny
-@copy:  lda     (device_cmd),Y
-        sta     cmd51,X
+        ldy     #0
+:       lda     [device_cmd],Y
+        sta     cmd,X           ; flip byte order
         iny
         dex
-        bne     @copy
-
-        ; Copy pblock buffer pointer to ptr
-        lda     (device_cmd),Y
+        bne     :-
+        longm
+        lda     [device_cmd],Y
         sta     ptr
         iny
-        lda     (device_cmd),Y
-        sta     ptr+1
-
-        send    cmd51
+        iny
+        lda     [device_cmd],Y
+        sta     ptr+2
+        shortm
+        send    cmd
         bne     @error
         jsr     wait_data
-        bcc     @recv
-@error: jsr     deselect
-        sec
-        bra     @exit
-@recv:  ldy     #0
-@recv1: lda     #SD_FILL
+        bcs     @error
+        longx
+        ldyw    #0
+:       lda     #SD_FILL
         jsl     spi_transfer
-        sta     (ptr),Y
+        sta     [ptr],Y
         iny
-        bne     @recv1
-        inc     ptr+1
-@recv2: lda     #SD_FILL
-        jsl     spi_transfer
-        sta     (ptr),Y
-        iny
-        bne     @recv2
+        cpyw    #512
+        bne     :-
+        shortx
         jsr     deselect
         clc
-@exit:  rtl
-
-sdc_wrblock:
+        rtl
+@error: jsr     deselect
         sec
+        rtl
+
+;;
+; Issue a block write call (CMD 24) to the card
+;
+sdc_wrblock:
+        lda     #24
+        sta     cmd
+        ldx     #4
+        ldy     #0
+:       lda     [device_cmd],Y
+        sta     cmd,X           ; flip byte order
+        iny
+        dex
+        bne     :-
+        longm
+        lda     [device_cmd],Y
+        sta     ptr
+        iny
+        iny
+        lda     [device_cmd],Y
+        sta     ptr+2
+        shortm
+        send    cmd
+        bne     @error
+        lda     #$FE
+        jsl     spi_transfer
+        longx
+        ldyw    #0
+:       lda     [ptr],Y
+        jsl     spi_transfer
+        iny
+        cpyw    #512
+        bne     :-
+        shortx
+        jsr     wait_rdy
+        bcs     @error
+        and     #$1F
+        cmp     #$05
+        bne     @error
+        ldx     #255
+:       lda     #SD_FILL
+        jsl     spi_transfer
+        bne     @exit           ; exit when non-zero byte received
+        dex
+        bpl     :-
+@error: jsr     deselect
+        sec
+        rtl
+@exit:  clc
         rtl
 
 ; Put the SD card into SPI mode
@@ -265,35 +299,49 @@ set_idle:
         rts
 @cmd00: .byte   $40,$00,$00,$00,$00,$95
 
-; Wait for the SD card to be ready. Returns carry clear on success or set on failure
-
+;;
+; Wait for the SD card to be ready (return something other than $FF)
+; 
+; On exit:
+;
+; X trashed
+; C contains received byte
+; c=0 on success, 1 on failure
+;
 wait_rdy:
-        lda     #$ff
-        sta     ptr
-@loop:  lda     #SD_FILL
+        ldx     #255
+@wait:  lda     #SD_FILL
         jsl     spi_transfer
         cmp     #SD_FILL
-        beq     @ready
-        dec     ptr
-        bne     @loop
+        beq     @done
+        dex
+        bpl     @wait
         sec
         rts
-@ready: clc
+@done:  clc
         rts
 
 ; Wait for data to be ready. Returns carry set on error.
 
+;;
+; Wait for the data start token ($FE)
+; 
+; On exit:
+;
+; C,X trashed
+; c=0 on success, 1 on failure
+;
 wait_data:
         ldx     #255
 @wait:  lda     #SD_FILL
         jsl     spi_transfer
         cmp     #$FE
-        beq     @ok
+        beq     @done
         dex
         bne     @wait
         sec
         rts
-@ok:    clc
+@done:  clc
         rts
 
 ;;

@@ -93,6 +93,8 @@ spi_deselect:
 ; Send byte in A to the currently selected slave,
 ; and return the received byte back in A
 ;
+; This routine can be called with X=0 (long registers)
+;
 spi_transfer:
         sta     f:spi_base+spi_data     ; send byte
 :       lda     f:spi_base+spi_status
