@@ -20,11 +20,10 @@ OS_DP   = __BIOS_DP_START__
 
 ; Increment a 32-bit value in memory
 .macro  inc32   addr
-        longm
         inc     addr
         bne     :+
         inc     addr+2
-:       shortm
+:       
 .endmacro
 
 .macro  longaddr addr

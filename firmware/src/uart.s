@@ -122,7 +122,9 @@ uart_irq:
 ;
 timer_irq:
         bit     nxp_base+nx_rct     ; reset the interrupt
+        longm
         inc32   jiffies
+        shortm
         rts
 
 ;
