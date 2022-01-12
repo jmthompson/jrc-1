@@ -9,6 +9,9 @@
         .import spi_deselect
         .import spi_transfer
         .import spi_select
+        .import spi_slow_speed
+        .import spi_fast_speed
+
         .import wait_ms
 
         .importzp device_cmd
@@ -51,10 +54,11 @@ sdcard_driver:
 ;
 ; Initialize the SD card
 sdc_init:
+        jsl     spi_slow_speed
         jsr     set_spi_mode
         jsr     set_idle
         bcs     @error
-:       send    @cmd08
+        send    @cmd08
         bcs     @v1             ; Might be an older card
         jsl     spi_transfer
         bne     @error
@@ -89,10 +93,12 @@ sdc_init:
         send    @cmd16
         bne     @error
         jsr     deselect
+        jsl     spi_fast_speed
         clc
         rtl
 @error: jsr     deselect
         puts    @errmsg
+        jsl     spi_fast_speed
         sec
         rtl
 @errmsg: .byte "SD card not detected", CR, LF, 0
@@ -358,7 +364,6 @@ deselect:
         jsl     spi_transfer        ; give SD card time to release DO
         rts
 
-:
 ;; Calculate the number of sectors from a v1 CSD
 ;
 ; For V2 the formula is NR_SECTORS = (C_SIZE+1)*(2^(C_MULT+2))

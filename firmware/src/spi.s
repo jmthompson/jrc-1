@@ -10,6 +10,8 @@
         .export spi_select
         .export spi_deselect
         .export spi_transfer
+        .export spi_slow_speed
+        .export spi_fast_speed
 
 spi_base := $F010
 
@@ -46,7 +48,7 @@ SPI_SS7     = $80   ; /SS7
 
 spi_init:
         ; Reset chip to defaults
-        lda     #SPI_SR|SPI_ECE
+        lda     #SPI_SR
         sta     f:spi_base+spi_ctrl
 
         ; Disable all slaves
@@ -98,4 +100,32 @@ spi_transfer:
         beq     :-                      ; wait for TC=1
         lda     f:spi_base+spi_data     ; get received byte
         clc
+        rtl
+
+;;
+; Set slow (400 kHZ) SPI mode
+;
+; On exit:
+;
+; SPI set to slow external clock
+; C trahed
+;
+spi_slow_speed:
+        lda     f:spi_base+spi_ctrl
+        ora     #SPI_ECE
+        sta     f:spi_base+spi_ctrl
+        rtl
+
+;;
+; Set fast (phi2) SPI mode
+;
+; On exit:
+;
+; SPI set to fast phi2 clock
+; C trahed
+;
+spi_fast_speed:
+        lda     f:spi_base+spi_ctrl
+        eor     #SPI_ECE
+        sta     f:spi_base+spi_ctrl
         rtl

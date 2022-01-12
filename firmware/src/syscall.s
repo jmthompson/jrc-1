@@ -16,6 +16,8 @@
         .import spi_select
         .import spi_deselect
         .import spi_transfer
+        .import spi_slow_speed
+        .import spi_fast_speed
 
         .export syscall_table_init
         .export syscall_table
@@ -104,8 +106,8 @@ default_table:
         syscall_entry   spi_select, 0               ; $30
         syscall_entry   spi_deselect, 0             ; $31
         syscall_entry   spi_transfer, 0             ; $32
-        syscall_entry   unsupported_syscall, 0      ; $33
-        syscall_entry   unsupported_syscall, 0      ; $34
+        syscall_entry   spi_slow_speed, 0           ; $33
+        syscall_entry   spi_fast_speed, 0           ; $34
         syscall_entry   unsupported_syscall, 0      ; $35
         syscall_entry   unsupported_syscall, 0      ; $36
         syscall_entry   unsupported_syscall, 0      ; $37
