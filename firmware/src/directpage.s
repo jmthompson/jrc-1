@@ -15,7 +15,7 @@
         .exportzp   tmp
         .exportzp   rx_rd_idx
         .exportzp   rx_wr_idx
-        .exportzp   current_device
+        .exportzp   device_cmd
         .exportzp   mwidth
         .exportzp   xwidth
         .exportzp   opcode
@@ -38,11 +38,6 @@
         .exportzp   xmptr
         .exportzp   xmeofp
         .exportzp   retry
-        .exportzp   vga_cmd
-        .exportzp   text_attr
-        .exportzp   first_row
-        .exportzp   cursor_x
-        .exportzp   cursor_y
 
         .segment "ZEROPAGE"
 
@@ -53,12 +48,12 @@ param:          .res    4
 ptr:            .res    4
 tmp:            .res    1
 
-; Read/write indexes for the ACIA receive buffer
+; Read/write indexes for the UART receive buffer
 rx_rd_idx:      .res    1
 rx_wr_idx:      .res    1
 
-; JR/OS current device ID
-current_device: .res    4
+; JR/OS
+device_cmd:     .res    4
 
 ; Disassembler variables
 mwidth:         .res    1
@@ -67,7 +62,7 @@ opcode:         .res    1
 am:             .res    1
 len:            .res    1
 
-; System nonitoir variables
+; System nonitor variables
 cmd:            .res    1
 arg:            .res    4
 maxhex:         .res    1
@@ -89,10 +84,3 @@ crc:            .res    2   ; CRC
 xmptr:          .res    3   ; data pointer (two byte variable)
 xmeofp:         .res    3   ; end of file address pointer (2 bytes)
 retry:          .res    2   ; retry counter 
-
-; VGA console driver
-vga_cmd:        .res    1
-text_attr:      .res    1
-first_row:      .res    1
-cursor_x:       .res    1
-cursor_y:       .res    1
