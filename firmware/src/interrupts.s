@@ -9,27 +9,23 @@
         .import monitor_brk
         .import monitor_nmi
 
-        .importzp   param
-
         .import uart_irq
         .import spi_irq
         .import via_irq
 
         .import syscall_table
+        .import trampoline
+
+        .importzp   param
 
         .export syscop
         .export sysirq
         .export sysnmi
         .export sysbrk
-        .export syscall_trampoline
 
 ; Processor status register bits
 PREG_I      =   %00000100
 PREG_C      =   %00000001
-
-        .segment "SYSDATA"
-
-syscall_trampoline: .res 4
 
         .segment "BOOTROM"
 
@@ -98,10 +94,10 @@ syscop:
         stz     @cf_size+1
 
         lda     syscall_table+2,x       ; Bank byte of handler
-        sta     syscall_trampoline+3
+        sta     trampoline+3
         longm
         lda     syscall_table,x         ; Bank address of handler
-        sta     syscall_trampoline+1
+        sta     trampoline+1
         phd                             ; save our DP for after dispatch
 
         lda     @a_reg                  ; Grab A; it might be a parameter
@@ -119,7 +115,7 @@ syscop:
         pla                             ; restore A from caller
 
         shortmx
-        jsl     syscall_trampoline
+        jsl     trampoline
         pld
         sta     @a_reg                  ; return value of A to caller
         bcc     @noerr

@@ -8,6 +8,7 @@
         .include "sys/io.s"
 
         .export sysreset
+        .export trampoline
 
         .import uart_init
         .import monitor_start
@@ -17,21 +18,16 @@
         .import jros_init
         .import syscall_table_init
         .import device_manager_init
-        .import syscall_trampoline 
         .import print_decimal8
-
-        .import __SYSSTACK_START__
-        .import __SYSSTACK_SIZE__
 
         ;; from buildinfo.s
         .import hw_revision
         .import rom_version
         .import rom_date
 
-STACKTOP    = __SYSSTACK_START__ + __SYSSTACK_SIZE__ - 1
+        .segment "SYSDATA"
 
-SHIFT_OUT   = 14
-SHIFT_IN    = 15
+trampoline:     .res    4
 
         .segment "BOOTROM"
 
@@ -46,14 +42,16 @@ sysreset:
         longm
         ldaw    #OS_DP
         tcd
-        ldaw    #STACKTOP
+        ldaw    #OS_STACKTOP
         tcs
         shortm
+
+        ; Hardware initialization is done first. note that the drivers
+        ; expect the DB register to be in bank $00.
 
         lda     #IRQ_DB
         pha
         plb
-
         jsr     via_init
         jsr     spi_init
         jsr     uart_init
@@ -61,19 +59,17 @@ sysreset:
 
         cli
 
+        ; Now do the remaining initialization. At this point all code
+        ; is running with DB set to the OS bank (SYSDATA segment)
+
         lda     #OS_DB
         pha
-        plb
-
+        plb                         ; Set the OS data bank
         lda     #$5C                ; JML $xxyyzz
-        sta     syscall_trampoline  ; Init syscall trampoline vector
-
-        ;jsl     device_manager_init
-        
+        sta     trampoline          ; Init trampoline vector
         jsr     console_init
         jsr     startup_banner
-
-        ;jsr     jros_init
+        jsl     jros_init
         jml     monitor_start
 
 ;;
