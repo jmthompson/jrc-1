@@ -46,7 +46,7 @@ SPI_SS7     = $80   ; /SS7
 
 spi_init:
         ; Reset chip to defaults
-        lda     #SPI_SR
+        lda     #SPI_SR|SPI_ECE
         sta     f:spi_base+spi_ctrl
 
         ; Disable all slaves

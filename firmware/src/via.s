@@ -52,6 +52,13 @@ via_init:
         stz     via_base+via_portb
         stz     via_base+via_ddra
 
+        ; SPI clock 400 kHZ
+        lda     #$C0
+        sta     via_base+via_acr
+        lda     #3
+        sta     via_base+via_t1cl
+        stz     via_base+via_t1ch
+
         rts
 
 via_irq:
