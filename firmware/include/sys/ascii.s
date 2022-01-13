@@ -13,3 +13,6 @@ SPC  = $20  ; space
 
 LBRACKET =  '['
 
+SHIFT_OUT   = 14
+SHIFT_IN    = 15
+
