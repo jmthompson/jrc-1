@@ -1,5 +1,3 @@
-; *******************************
-; *  JRC-1 65816 SBC Firmware   *
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
@@ -16,6 +14,7 @@
         .exportzp   rx_rd_idx
         .exportzp   rx_wr_idx
         .exportzp   device_cmd
+        .exportzp   blkbuff
         .exportzp   mwidth
         .exportzp   xwidth
         .exportzp   opcode
@@ -54,6 +53,7 @@ rx_wr_idx:      .res    1
 
 ; JR/OS
 device_cmd:     .res    4
+blkbuff:       .res    4
 
 ; Disassembler variables
 mwidth:         .res    1

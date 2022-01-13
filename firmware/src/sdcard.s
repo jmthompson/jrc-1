@@ -15,6 +15,7 @@
         .import wait_ms
 
         .importzp device_cmd
+        .importzp blkbuff
         .importzp ptr
         .importzp tmp
 
@@ -178,10 +179,10 @@ sdc_format:
         syserr  ERR_NOT_SUPPORTED
 
 ;;
-; Issue a block read call (CMD 17) to the card
+; Perform a READ_BLOCK (CMD17)
 ;
 sdc_rdblock:
-        lda     #17
+        lda     #$51            ; CMD17
         sta     cmd
         ldx     #4
         ldy     #0
@@ -192,11 +193,11 @@ sdc_rdblock:
         bne     :-
         longm
         lda     [device_cmd],Y
-        sta     ptr
+        sta     blkbuff
         iny
         iny
         lda     [device_cmd],Y
-        sta     ptr+2
+        sta     blkbuff+2
         shortm
         send    cmd
         bne     @error
@@ -206,11 +207,13 @@ sdc_rdblock:
         ldyw    #0
 :       lda     #SD_FILL
         jsl     spi_transfer
-        sta     [ptr],Y
+        sta     [blkbuff],Y
         iny
         cpyw    #512
         bne     :-
         shortx
+        jsl     spi_transfer
+        jsl     spi_transfer    ; Eat two-byte CRC
         jsr     deselect
         clc
         rtl
@@ -219,10 +222,10 @@ sdc_rdblock:
         rtl
 
 ;;
-; Issue a block write call (CMD 24) to the card
+; Perform a WRITE_BLOCK (CMD24)
 ;
 sdc_wrblock:
-        lda     #24
+        lda     #$58            ; CMD24
         sta     cmd
         ldx     #4
         ldy     #0
@@ -233,11 +236,11 @@ sdc_wrblock:
         bne     :-
         longm
         lda     [device_cmd],Y
-        sta     ptr
+        sta     blkbuff
         iny
         iny
         lda     [device_cmd],Y
-        sta     ptr+2
+        sta     blkbuff+2
         shortm
         send    cmd
         bne     @error
@@ -245,7 +248,7 @@ sdc_wrblock:
         jsl     spi_transfer
         longx
         ldyw    #0
-:       lda     [ptr],Y
+:       lda     [blkbuff],Y
         jsl     spi_transfer
         iny
         cpyw    #512
@@ -261,7 +264,7 @@ sdc_wrblock:
         jsl     spi_transfer
         bne     @exit           ; exit when non-zero byte received
         dex
-        bpl     :-
+        bne     :-
 @error: jsr     deselect
         sec
         rtl
@@ -310,18 +313,16 @@ set_idle:
 ;
 wait_rdy:
         ldx     #255
-@wait:  lda     #SD_FILL
-        jsl     spi_transfer
+        lda     #SD_FILL
+@wait:  jsl     spi_transfer
         cmp     #SD_FILL
-        beq     @done
+        bne     @done
         dex
-        bpl     @wait
+        bne     @wait
         sec
         rts
 @done:  clc
         rts
-
-; Wait for data to be ready. Returns carry set on error.
 
 ;;
 ; Wait for the data start token ($FE)
@@ -392,7 +393,6 @@ send_cmd:
 @exit:  ply
         plx
         ora     #0          ; set N/Z flags for caller
-        sta     $020000
         rts
 
 ;;
