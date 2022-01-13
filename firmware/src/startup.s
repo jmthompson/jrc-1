@@ -118,7 +118,6 @@ startup_banner:
         puts    @line
         putc    #'j'
         putc    #SHIFT_IN
-        puteol
 
         puteol
         puteol

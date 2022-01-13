@@ -6,36 +6,45 @@
         .include "common.s"
         .include "sys/console.s"
 
+        .import print_decimal8
         .import sdcard_driver
         .import trampoline
 
+        .importzp   param
         .importzp   device_cmd
 
         .export jros_init
+        .export jros_register_device
+        .export jros_mount_device
+        .export jros_eject_device
+        .export jros_format_device
+        .export jros_device_status
+        .export jros_read_block
+        .export jros_write_block
 
 ;;
-; Device/drive/volume limits. The limits are set up to allow
-; for up to four drives per device, and four volumes pe
-; drive (assuming standard PC partioning)
+; Device/drive/volume limits. The limits are set up to allow for up to four
+; volumes per device (assuming standard PC partioning)
 ;
 MAX_DEVICES = 4
-MAX_DRIVES  = MAX_DEVICES*4
-MAX_VOLUMES = MAX_DRIVES*4
+MAX_VOLUMES = MAX_DEVICES*4
 
-DRIVE_STRUCT_SIZE  = 8
-VOLUME_STRUCT_SIZE = 16
+; Device driver function numbers
+DEV_INIT    = $00
+DEV_STATUS  = $01
+DEV_MOUNT   = $02
+DEV_EJECT   = $03
+DEV_FORMAT  = $04
+DEV_RDBLOCK = $05
+DEV_WRBLOCK = $06
 
         .segment "ZEROPAGE"
 
 device:     .res    4
-devicenr:   .res    1
-drive:      .res    4
-drivenr:    .res    1
-unit:       .res    4
-unitnr:     .res    1
 
         .segment "SYSDATA"
 
+devicenr:       .res    1
 cmd_buffer:     .res    32
 block_buffer:   .res    512
 
@@ -47,22 +56,14 @@ num_devices:    .res 1
 devices:        .res MAX_DEVICES*2
 
 ;;
-; Drive structure is 8 bytes:
-;
-; 0 : drive ID ($DU)
-; 1 : unit status (0 = offline, 1 = online)
-; 2-5 : num_blocks
-; 6-7 : reserved
-
-num_drives: .res    1
-drives:     .res    MAX_DRIVES * DRIVE_STRUCT_SIZE
-
 ; Volume structure is 16 bytes:
 ;
-;    0 : drive ID ($DU)
+;    0 : device ID
 ;  1-4 : starting block
 ;  5-8 : number of blocks
 ; 9-15 : reserved
+
+VOLUME_STRUCT_SIZE = 16
 
 num_volumes:    .res    1
 volumes:        .res    MAX_VOLUMES * VOLUME_STRUCT_SIZE
@@ -72,53 +73,63 @@ volumes:        .res    MAX_VOLUMES * VOLUME_STRUCT_SIZE
 jros_init:
         puts    @banner
 
-        lda     #0
-        sta     num_devices
-        sta     num_drives
-        sta     num_volumes
+        stz     num_devices
+        stz     num_volumes
 
-        pea     .hiword(sdcard_driver)
-        pea     .loword(sdcard_driver)
-        jsr     register_device
+        ; pre-register the built-in devices
+        longm
+        ldaw    #.loword(sdcard_driver)
+        sta     param
+        ldaw    #.hiword(sdcard_driver)
+        sta     param+2
+        shortm
+        jsl     jros_register_device
 
-        puteol
+        ; For each registered drive, try to mount it, and display
+        ; its name and status
+        stz     devicenr
+@scan:  lda     devicenr
+        cmp     num_devices
+        beq     @done
+        jsr     select_device
+        jsr     print_device_name
+        jsr     mount_device
+        bcc     :+
+        putc    #'-'
+        bra     @next
+:       putc    #'.'
+@next:  puteol
+        inc     devicenr
+        bra     @scan
+@done:  rtl
 
-        ;jsr     enumerate_drives
-        ;jsr     enumerate_volumes
+@banner:    .byte   "JR/OS Initializing", CR, LF, CR, LF, 0
 
-        rtl
-@banner:
-        .byte   "JR/OS Version 0.1", CR, LF, 0
-
-; Register a device.
+;;
+; Register a device with JR/OS.
 ;
-; On entry four byte pointer to driver block is on the stack
+; On entry:
+; param is pointer to device structure
 ;
-; On exit carry is set on failure and clear on success
-
-register_device:
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+jros_register_device:
         lda     num_devices
         cmp     #MAX_DEVICES
-        beq     @error
-
-        longm
-        lda     3,s
+        bne     :+
+        syserr  ERR_NO_MORE_DEVICES
+:       longm
+        lda     param
         sta     device
-        lda     5,s
+        lda     param+2
         sta     device+2
-        lda     1,s
-        sta     5,s
-        tsc
-        clc
-        adcw    #4
-        tcs
         shortm
 
-        pea     0
-        pea     0       ; no params
-        ldy     #1      ; INIT
+        ldy     #DEV_INIT
         jsr     call_device
-        bcs     @error
+        bcs     @exit
 
         lda     num_devices
         asl
@@ -131,96 +142,114 @@ register_device:
         sta     devices+2,X
         shortm
         inc     num_devices
-@exit:  rts
-@error: rts
-
-; For each registered device, perform a STATUS call and register all
-; online drives
-;
-enumerate_drives:
-        lda     #0
-        sta     devicenr
-@devices:
-        lda     devicenr
-        cmp     num_devices
-        beq     @exit
-        jsr     select_device
-
-        lda     #<block_buffer
-        sta     cmd_buffer
-        lda     #>block_buffer
-        sta     cmd_buffer+1
-
-        lda     #<cmd_buffer
-        ldx     #>cmd_buffer
-        ldy     #2              ; STATUS
-        jsr     call_device
-        bcs     @nextdrive
-
-        lda     #<block_buffer
-        sta     unit
-        lda     #>block_buffer
-        sta     unit+1
-        lda     #0
-        sta     unitnr
-@units: lda     unitnr
-        cmp     cmd_buffer+2    ; unit count from STATUS call
-        beq     @exit
-        jsr     register_drive
-        lda     unitnr
-        inc
-        sta     unitnr
-        rep     #$20
-        inc     unit
-        sep     #$20
-        bra     @units
-
-@nextdrive:
-        lda     devicenr
-        inc
-        sta     devicenr
-        bra     @devices
-
-@exit:  rts
-
-; Register drive for unit whose descriptor is pointed to by unit ptr
-
-register_drive:
-        lda     num_drives
-        cmp     #MAX_DRIVES
-        beq     @error
-        jsr     select_drive
-
-        puts    @msg
-        lda     drive+1
-        jsl     print_hex
-        lda     drive
-        jsl     print_hex
-        puteol
-
-        ldy     #0
-        lda     devicenr
-        asl
-        asl
-        asl
-        asl
-        ora     (unit),Y        ; put unit # in low four bits
-        sta     (drive),Y
-        iny
-@copy:  lda     (unit),Y
-        sta     (drive),Y
-        iny
-        cpy     #6
-        bne     @copy
         clc
-        rts
-@error: sec
-        rts
-@msg:   .byte   "reg drive ",$00
+@exit:  rtl
 
-; Select device whose # is in A. Trashes X.
+;;
+; Attempt to mount any volumes on a device
+;
+; On entry:
+; A = device id
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+; On success any volumes found will be added to the volume list
+;
+jros_mount_device:
+        jsr     mount_device
+        bcs     @exit           ; don't scan if mount failed
+        jsr     scan_device
+        clc
+@exit:  rtl
 
+;;
+; Eject the media on a device, and unmount any volumes on it
+;
+; On entry:
+; A = device id
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+; On success any volumes on the device will be removed from the volume list
+;
+jros_eject_device:
+        clc
+        rtl
+
+;;
+; Format a device
+;
+; On entry:
+; A = device id
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+jros_format_device:
+        clc
+        rtl
+
+;;
+; Format a device
+;
+; On entry:
+; A = device id
+; Pointer to param block in param
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+jros_device_status:
+        clc
+        rtl
+
+;;
+; Attempt to read a block from a device
+;
+; On entry:
+; A = device id
+; Pointer to param block in param
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+jros_read_block:
+        clc
+        rtl
+
+;;
+; Attempt to write a block to a device
+;
+; On entry:
+; A = device id
+; Pointer to param block in param
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+jros_write_block:
+        clc
+        rtl
+
+;-------- Private methods --------;
+
+;;
+; Make a device the currently selecte device
+;
+; On entry:
+; A = device ID
+;
+; On exit:
+; C,X trashed
+;
 select_device:
+        sta     devicenr
         asl
         tax
         longm
@@ -231,42 +260,15 @@ select_device:
         shortm
         rts
 
-; Select drive whose #is in A.
-
-select_drive:
-        longm
-        andw    #255
-        asl                 ; x8 (DRIVE_STRUCT_SIZE)
-        asl
-        asl
-        clc
-        adcw    #.loword(drives)
-        sta     drive
-        ldaw    #.hiword(drives)
-        adcw    #0
-        sta     drive+2
-        shortm
-        rts
-
-; Call function Y in the currently selected device, using
-; command block passed on the stack
-
+;;
+; Call function Y in the currently selected device
+;
 call_device:
-        longm
-        lda     3,s
-        sta     device_cmd
-        lda     5,s
-        sta     device_cmd+2
-        lda     1,s
-        sta     5,s
-        tsc
-        clc
-        adcw    #4
-        tcs
-        shortm
         tya
         asl
         asl
+        clc
+        adc     #16         ; skip device name
         tay
         longm
         lda     [device],Y
@@ -279,14 +281,51 @@ call_device:
         jsl     trampoline
         rts
 
-; Print the name of the currently selected device
+;;
+; Attemp to mount the currently selected device
+;
+; On entry:
+; device points to device to mount
+;
+; On exit:
+; All registers trashed
+; c = 0 on success
+; c = 1 on failure
+;
+mount_device:
+        ldy     #DEV_MOUNT
+        jsr     call_device
+        rts
 
+;;
+; Scan the currently selected device for readable volumes
+;
+; On entry:
+; device points to device to mount
+;
+; On exit:
+; All registers trashed
+; c = 0 on success
+; c = 1 on failure
+;
+scan_device:
+        clc
+        rts
+
+;;
+; Print the name of the currently selected device
+;
+; On entry:
+; device points to current device
+; 
+; On exit:
+; A,Y trashed
+;
 print_device_name:
         longm
-        ldy     #2
-        lda     [device],Y
+        lda     device+2
         pha
-        lda     [device]
+        lda     device
         pha
         shortm
         call    SYS_CONSOLE_WRITELN
