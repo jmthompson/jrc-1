@@ -124,17 +124,17 @@ startup_banner:
 
         rts
 
-@line:  .repeat 31
+@line:  .repeat 32
         .byte   "q"
         .endrepeat
         .byte   0
 
 @sysid:  .byte  SHIFT_OUT, "x", SHIFT_IN
-         .byte  " JRC-1 Single Board Computer   "
+         .byte  " JRC-1 Single Board Computer    "
          .byte  SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
 @hwrev:  .byte  SHIFT_OUT, "x", SHIFT_IN, " Hardware Revision ", 0
-@hwrev2: .byte  "           ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
+@hwrev2: .byte  "            ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
-@romver:  .byte SHIFT_OUT, "x", SHIFT_IN, " ROM Version ", 0
-@romver2: .byte "  ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
+@romver:  .byte SHIFT_OUT, "x", SHIFT_IN, " JR/OS Version ", 0
+@romver2: .byte " ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0

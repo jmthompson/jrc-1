@@ -103,7 +103,7 @@ jros_init:
         bra     @scan
 @done:  rtl
 
-@banner:    .byte   "JR/OS Initializing", CR, LF, CR, LF, 0
+@banner:    .byte   "Scanning storage devices", CR, LF, CR, LF, 0
 
 ;;
 ; Register a device with JR/OS.
