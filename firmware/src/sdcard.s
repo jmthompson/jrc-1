@@ -80,10 +80,8 @@ sdc_mount:
         jsr     read_csd
         bcs     @error
         clc
-        rts
+        rtl
 @error: syserr  ERR_NO_MEDIA
-
-@errmsg: .byte "No SD card present", CR, LF, 0
 
 ;;
 ; EJECT
