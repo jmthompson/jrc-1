@@ -6,7 +6,7 @@
         .include "common.s"
         .include "sys/console.s"
 
-        .import print_decimal8
+        .import print_decimal32
         .import sdcard_driver
         .import trampoline
 
@@ -94,16 +94,32 @@ jros_init:
         jsr     select_device
         jsr     print_device_name
         jsr     mount_device
-        bcc     :+
-        putc    #'-'
+        lda     cmd_buffer
+        bne     @ok
+        puts    @offline
         bra     @next
-:       putc    #'.'
+@ok:    longm
+        ldx     #11
+:       lsr     cmd_buffer+3    ; Divide block count by 2048 to get MB
+        ror     cmd_buffer+1
+        dex
+        bne     :-
+        lda     cmd_buffer+3
+        pha
+        lda     cmd_buffer+1
+        pha
+        shortm
+        jsl     print_decimal32
+        puts    @mb
 @next:  puteol
         inc     devicenr
         bra     @scan
-@done:  rtl
-
+@done:  puteol
+        rtl
 @banner:    .byte   "Scanning storage devices", CR, LF, CR, LF, 0
+@offline:
+        .byte   " no media", 0
+@mb:    .byte   " MB", 0
 
 ;;
 ; Register a device with JR/OS.
@@ -157,6 +173,7 @@ jros_register_device:
 ; On success any volumes found will be added to the volume list
 ;
 jros_mount_device:
+        jsr     select_device
         jsr     mount_device
         bcs     @exit           ; don't scan if mount failed
         jsr     scan_device
@@ -204,7 +221,15 @@ jros_format_device:
 ; c = 1 on failure
 ;
 jros_device_status:
-        clc
+        jsr     select_device
+        longm
+        lda     param
+        sta     device_cmd
+        lda     param+2
+        sta     device_cmd+2
+        shortm
+        ldy     #DEV_STATUS
+        jsr     call_device
         rtl
 
 ;;
@@ -294,6 +319,14 @@ call_device:
 ;
 mount_device:
         ldy     #DEV_MOUNT
+        jsr     call_device
+        longm
+        ldaw    #.loword(cmd_buffer)
+        sta     device_cmd
+        ldaw    #.hiword(cmd_buffer)
+        sta     device_cmd+2
+        shortm
+        ldy     #DEV_STATUS
         jsr     call_device
         rts
 
