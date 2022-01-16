@@ -306,8 +306,8 @@ print_decimal32:
         jsr     @byte
         lda     bcd
         jsr     @byte
-        lda     tmp
-        bne     :+
+        bit     tmp
+        bmi     :+
         lda     #'0'
         call    SYS_CONSOLE_WRITE
 :       rtl
@@ -322,10 +322,11 @@ print_decimal32:
 @digit: cmp     #0
         bne     :+
         bit     tmp
-        bne     :+
+        bmi     :+
         rts
 :       clc
         adc     #'0'
-        sta     tmp
         call    SYS_CONSOLE_WRITE
+        lda     #$80
+        sta     tmp
         rts
