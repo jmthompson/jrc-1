@@ -100,10 +100,10 @@ sdc_eject:
 ; Returns online/offline status and the device size in sectors
 ;
 sdc_status:
-        bit     card_type
+        lda     card_type
         beq     @error
         lda     #1
-        sta     [device_cmd];   ; oneline
+        sta     [device_cmd];   ; online
         longm
         ldy     #1
         lda     nr_sectors
@@ -142,7 +142,7 @@ sdc_format:
 ; Read a single 512-byte block from the card
 ;
 sdc_rdblock:
-        bit     card_type
+        lda     card_type
         bne     :+
         syserr  ERR_NO_MEDIA
 :       lda     #$51            ; CMD17
@@ -189,7 +189,7 @@ sdc_rdblock:
 ; Write a single 512-byte block to the card
 ;
 sdc_wrblock:
-        bit     card_type
+        lda     card_type
         bne     :+
         syserr  ERR_NO_MEDIA
 :       lda     #$58            ; CMD24
