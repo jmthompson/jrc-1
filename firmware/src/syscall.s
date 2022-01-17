@@ -12,6 +12,8 @@
 
         .import getc_seriala
         .import putc_seriala
+        .import getc_serialb
+        .import putc_serialb
 
         .import spi_select
         .import spi_deselect
@@ -93,10 +95,10 @@ default_table:
         syscall_entry   unsupported_syscall, 0      ; $1F
 
         ; Serial ports
-        syscall_entry   unsupported_syscall, 0      ; $20
-        syscall_entry   unsupported_syscall, 0      ; $21
-        syscall_entry   unsupported_syscall, 0      ; $22
-        syscall_entry   unsupported_syscall, 0      ; $23
+        syscall_entry   getc_seriala, 0             ; $20
+        syscall_entry   putc_seriala, 0             ; $21
+        syscall_entry   getc_serialb, 0             ; $22
+        syscall_entry   putc_serialb, 0             ; $23
         syscall_entry   unsupported_syscall, 0      ; $24
         syscall_entry   unsupported_syscall, 0      ; $25
         syscall_entry   unsupported_syscall, 0      ; $26
