@@ -22,7 +22,6 @@
         .import spi_fast_speed
 
         .import jros_register_device
-        .import jros_mount_device
         .import jros_eject_device
         .import jros_format_device
         .import jros_device_status
@@ -131,13 +130,13 @@ default_table:
         syscall_entry   unsupported_syscall, 0      ; $3F
 
         ; JR/OS
-        syscall_entry   jros_register_device, 0     ; $40
-        syscall_entry   jros_mount_device, 0        ; $41
+        syscall_entry   jros_register_device, 4     ; $40
+        syscall_entry   jros_device_status, 4       ; $41
         syscall_entry   jros_eject_device, 0        ; $42
-        syscall_entry   jros_format_device, 0       ; $43
-        syscall_entry   jros_device_status, 0       ; $44
-        syscall_entry   jros_read_block, 0          ; $45
-        syscall_entry   jros_write_block, 0         ; $46
+        syscall_entry   jros_format_device, 4       ; $43
+        syscall_entry   jros_read_block, 4          ; $44
+        syscall_entry   jros_write_block, 4         ; $45
+        syscall_entry   unsupported_syscall, 0      ; $46
         syscall_entry   unsupported_syscall, 0      ; $47
         syscall_entry   unsupported_syscall, 0      ; $48
         syscall_entry   unsupported_syscall, 0      ; $49

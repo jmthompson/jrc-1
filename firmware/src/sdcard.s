@@ -42,6 +42,7 @@ cmd:
 csd:        .res    16
 nr_sectors: .res    4
 card_type:  .res    1
+retries:    .res    1
 
         .segment "OSROM"
 
@@ -50,7 +51,6 @@ sdcard_driver:
         .byte   "SD CARD        ",0
         longaddr sdc_init
         longaddr sdc_status
-        longaddr sdc_mount
         longaddr sdc_eject
         longaddr sdc_format
         longaddr sdc_rdblock
@@ -59,26 +59,17 @@ sdcard_driver:
 ;;
 ; INIT
 ;
-; Initialize the SD card. Nothing to do here since there may not be a card
-; inserted yet.
+; Initialize the SD card. This consists of placing it into SPI mode and trying
+; to read the CSD.
 ;
 sdc_init:
-        stz     card_type
-        clc
-        rtl
-
-;;
-; MOUNT
-;
-; Attempts to mount an SD card. This consists of initializing the card and
-; placing it into SPI mode
-;
-sdc_mount:
-        stz     card_type
+        stz     retries
+@try:   dec     retries
+        beq     @error
         jsr     init_card
-        bcs     @error
+        bcs     @try
         jsr     read_csd
-        bcs     @error
+        bcs     @try
         clc
         rtl
 @error: syserr  ERR_NO_MEDIA

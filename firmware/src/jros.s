@@ -15,7 +15,6 @@
 
         .export jros_init
         .export jros_register_device
-        .export jros_mount_device
         .export jros_eject_device
         .export jros_format_device
         .export jros_device_status
@@ -32,11 +31,10 @@ MAX_VOLUMES = MAX_DEVICES*4
 ; Device driver function numbers
 DEV_INIT    = $00
 DEV_STATUS  = $01
-DEV_MOUNT   = $02
-DEV_EJECT   = $03
-DEV_FORMAT  = $04
-DEV_RDBLOCK = $05
-DEV_WRBLOCK = $06
+DEV_EJECT   = $02
+DEV_FORMAT  = $03
+DEV_RDBLOCK = $04
+DEV_WRBLOCK = $05
 
         .segment "ZEROPAGE"
 
@@ -85,15 +83,14 @@ jros_init:
         shortm
         jsl     jros_register_device
 
-        ; For each registered drive, try to mount it, and display
-        ; its name and status
+        ; For each registered drive display its name and status
         stz     devicenr
 @scan:  lda     devicenr
         cmp     num_devices
         beq     @done
         jsr     select_device
         jsr     print_device_name
-        jsr     mount_device
+        jsr     get_device_status
         lda     cmd_buffer
         bne     @ok
         puts    @offline
@@ -158,25 +155,6 @@ jros_register_device:
         sta     devices+2,X
         shortm
         inc     num_devices
-        clc
-@exit:  rtl
-
-;;
-; Attempt to mount any volumes on a device
-;
-; On entry:
-; A = device id
-;
-; On exit:
-; c = 0 on success
-; c = 1 on failure
-; On success any volumes found will be added to the volume list
-;
-jros_mount_device:
-        jsr     select_device
-        jsr     mount_device
-        bcs     @exit           ; don't scan if mount failed
-        jsr     scan_device
         clc
 @exit:  rtl
 
@@ -307,19 +285,18 @@ call_device:
         rts
 
 ;;
-; Attemp to mount the currently selected device
+; Return the status of the currently selected evice
 ;
 ; On entry:
-; device points to device to mount
+; device points to device
 ;
 ; On exit:
 ; All registers trashed
+; cmd_buffer contains status result
 ; c = 0 on success
 ; c = 1 on failure
 ;
-mount_device:
-        ldy     #DEV_MOUNT
-        jsr     call_device
+get_device_status:
         longm
         ldaw    #.loword(cmd_buffer)
         sta     device_cmd
@@ -327,8 +304,7 @@ mount_device:
         sta     device_cmd+2
         shortm
         ldy     #DEV_STATUS
-        jsr     call_device
-        rts
+        jmp     call_device
 
 ;;
 ; Scan the currently selected device for readable volumes
