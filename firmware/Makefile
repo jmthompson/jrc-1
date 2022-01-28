@@ -4,7 +4,7 @@ HW_REVISION := 01
 AS := ca65
 LD := ld65
 
-SRCS     := $(wildcard src/*.s) buildinfo.s
+SRCS     := $(wildcard src/*/*.s) buildinfo.s
 OBJS   	 := ${SRCS:.s=.o}
 LISTINGS := ${SRCS:.s=.l}
 ROMFILE  := rom.bin
