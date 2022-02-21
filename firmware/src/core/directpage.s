@@ -11,8 +11,16 @@
         .exportzp   param
         .exportzp   ptr
         .exportzp   tmp
-        .exportzp   rx_rd_idx
-        .exportzp   rx_wr_idx
+        .exportzp   rxa_rdi
+        .exportzp   rxa_wri
+        .exportzp   txa_rdi
+        .exportzp   txa_wri
+        .exportzp   rxb_rdi
+        .exportzp   rxb_wri
+        .exportzp   txb_rdi
+        .exportzp   txb_wri
+        .exportzp   txa_on
+        .exportzp   txb_on
         .exportzp   device_cmd
         .exportzp   blkbuff
         .exportzp   mwidth
@@ -47,9 +55,19 @@ param:          .res    4
 ptr:            .res    4
 tmp:            .res    1
 
-; Read/write indexes for the UART receive buffer
-rx_rd_idx:      .res    1
-rx_wr_idx:      .res    1
+; Serial buffer r/w indices
+rxa_rdi: .res   1
+rxa_wri: .res   1
+txa_rdi: .res   1
+txa_wri: .res   1
+rxb_rdi: .res   1
+rxb_wri: .res   1
+txb_rdi: .res   1
+txb_wri: .res   1
+
+; UART tx status
+txa_on: .res    1
+txb_on: .res    1
 
 ; JR/OS
 device_cmd:     .res    4
