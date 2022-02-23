@@ -32,7 +32,7 @@ buffer_size = 256
 
 nxp_base := $F020
 
-        .segment "BUFFERS"
+        .segment "SYSDATA"
 
 ;
 ; Serial buffers
@@ -130,7 +130,7 @@ txa_irq:
         lda     nxp_base+nx_sra
         bit     #nxptxdr            ; is fifo space available?
         beq     @done               ; nope, so exit
-        lda     txa_ibuf,x
+        lda     f:txa_ibuf,x
         sta     nxp_base+nx_fifoa
         inx
         stx     txa_rdi
@@ -152,7 +152,7 @@ txb_irq:
         lda     nxp_base+nx_srb
         bit     #nxptxdr            ; is fifo space available?
         beq     @done               ; nope, so exit
-        lda     txb_ibuf,x
+        lda     f:txb_ibuf,x
         sta     nxp_base+nx_fifob
         inx
         stx     txb_rdi
@@ -179,7 +179,7 @@ rxa_irq:
         cmp     rxa_rdi
         beq     @load               ; buffer full; drop character
         xba
-        sta     rxa_ibuf,x
+        sta     f:rxa_ibuf,x
         xba
         tax
         bra     @load
@@ -203,7 +203,7 @@ rxb_irq:
         cmp     rxb_rdi
         beq     @load               ; buffer full; drop character
         xba
-        sta     rxb_ibuf,x
+        sta     f:rxb_ibuf,x
         xba
         tax
         bra     @load

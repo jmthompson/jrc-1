@@ -70,7 +70,7 @@
 ; non-zero page variables and buffers
 ;
 ;
-        .segment "BUFFERS"
+        .segment "SYSDATA"
         .align 256
 
 Rbuff:  .res    132
