@@ -33,8 +33,10 @@
 
 ; Macro for declaring dispatch table entries
 .macro  DEFINE_SYSCALL func, psize
-        .faraddr    func
-        .byte       psize
+        .faraddr    func        ; syscall handler address
+        .byte       0           ; padding to make func four bytes
+        .word       psize       ; size of input parameters on stack frame
+        .word       0           ; reserved for now, pads entry to 8 bytes
 .endmacro
 
         .segment "SC_TABLE"
@@ -46,7 +48,7 @@ syscall_table_init:
         longmx
         ldxw    #.loword(default_table)
         ldyw    #.loword(syscall_table)
-        ldaw    #256*4
+        ldaw    #256*8
         mvn     default_table,syscall_table
         shortmx
         rts

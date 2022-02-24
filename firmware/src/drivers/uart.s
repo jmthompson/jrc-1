@@ -273,18 +273,20 @@ s_nxptab = *-nxpsutab
 ; code is in A.
 ;
 getc_seriala:
-        phx
+        php
+        shortmx
         ldx     rxa_rdi
         cpx     rxa_wri
         beq     @empty
         lda     f:rxa_ibuf,X
         inx
         stx     rxa_rdi
+        plp
         sec
-@exit:  plx
         rtl
-@empty: clc
-        bra     @exit
+@empty: plp
+        clc
+        rtl
 
 ;
 ; Get next character from serial channel B. On exit, C=0 if
@@ -292,18 +294,20 @@ getc_seriala:
 ; code is in A.
 ;
 getc_serialb:
-        phx
+        php
+        shortmx
         ldx     rxb_rdi
         cpx     rxb_wri
         beq     @empty
         lda     f:rxb_ibuf,X
         inx
         stx     rxb_rdi
+        plp
         sec
-@exit:  plx
         rtl
-@empty: clc
-        bra     @exit
+@empty: plp
+        clc
+        rtl
 
 ;
 ; Transmit character in A on serial channel A. This is a blocking
@@ -311,7 +315,8 @@ getc_serialb:
 ; have an empty slot before returning.
 ;
 putc_seriala:
-        phx
+        php
+        shortmx
         ldx     txa_wri
         inx
 @wait:  cpx     txa_rdi             ; is the buffer full?
@@ -327,7 +332,7 @@ putc_seriala:
         bne     :+                  ; if yes, we're done
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_cra     ; Enable transmitter
-:       plx
+:       plp
         rtl
 ;
 ; Transmit character in A on serial channel B. This is a blocking
@@ -335,7 +340,8 @@ putc_seriala:
 ; have an empty slot before returning.
 ;
 putc_serialb:
-        phx
+        php
+        shortmx
         ldx     txb_wri
         inx
 @wait:  cpx     txb_rdi             ; is the buffer full?
@@ -351,5 +357,5 @@ putc_serialb:
         bne     :+                  ; if yes, we're done
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_crb     ; Enable transmitter
-:       plx
+:       plp
         rtl

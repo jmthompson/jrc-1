@@ -33,7 +33,9 @@ console_reset:
         ldx     #0
 :       lda     f:@reset,x
         beq     :+
+        phx
         jsl     putc_seriala
+        plx
         inx
         bne     :-
 :       clc

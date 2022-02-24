@@ -48,7 +48,6 @@ syscop:
 @params  := @pb_reg + 1
 
         longmx
-
         phb
         phd
         pha
@@ -59,44 +58,33 @@ syscop:
         pha                     ; """
         tsc
         tcd                     ; DP now points to our local stack frame
-
         shortm
-
         lda     #OS_DB
         pha
         plb                     ; Set kernel data bank
-
         lda     @p_reg
         and     #~PREG_C&$FF    ; clear carry
         sta     @p_reg
         bit     #PREG_I         ; were interrupts disabled?
-        bne     @noirq
+        bne     :+
         cli                     ; no, so re-enable them
-
-@noirq: longm
+:       longm
         lda     @pc_reg
         dec
         sta     @copsig
-        shortm
         lda     @pb_reg
         sta     @copsig+2
-
         lda     [@copsig]
-        longm
         andw    #255
         asl
         asl
+        asl
         tax
-
-        shortm
-        lda     syscall_table+3,x       ; Parameter frame size
+        lda     syscall_table+4,x       ; Parameter frame size
         sta     @cf_size
-        stz     @cf_size+1
-
-        lda     syscall_table+2,x       ; Bank byte of handler
+        lda     syscall_table+2,x       ; Top word of handler address
         sta     trampoline+3
-        longm
-        lda     syscall_table,x         ; Bank address of handler
+        lda     syscall_table,x         ; Low word of handler address
         sta     trampoline+1
         phd                             ; save our DP for after dispatch
         lda     @a_reg                  ; Grab A; it might be a parameter

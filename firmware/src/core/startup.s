@@ -27,7 +27,11 @@
 
         .segment "SYSDATA"
 
-trampoline:     .res    4
+; General purpose JML trampoline for calling functions. First byte
+; is always a JML instruction, the last four bytes are for the
+; function address.  Using four bytes makes this easier to manipulate
+; with wide registers
+trampoline:     .res    5
 
         .segment "BOOTROM"
 
