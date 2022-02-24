@@ -16,7 +16,7 @@
         .import syscall_table
         .import trampoline
 
-        .importzp   param
+        .importzp params
 
         .export syscop
         .export sysirq
@@ -45,7 +45,7 @@ syscop:
 @pc_reg  := @p_reg  + 1         ; PC
 @pb_reg  := @pc_reg + 2         ; PB
 @cop_size := @pb_reg + 1 - @p_reg
-@param   := @pb_reg + 1
+@params  := @pb_reg + 1
 
         longmx
 
@@ -99,21 +99,17 @@ syscop:
         lda     syscall_table,x         ; Bank address of handler
         sta     trampoline+1
         phd                             ; save our DP for after dispatch
-
         lda     @a_reg                  ; Grab A; it might be a parameter
         pha
-        ldaw    @param
-        pha
-        ldaw    @param+2
-        pha
+        phd                             ; save for params calc
         ldaw    #OS_DP
         tcd
-        pla
-        sta     param+2
-        pla
-        sta     param
+        pla                             ; get original DP
+        clc
+        adcw    #@params
+        sta     params                  ; [params] now points to caller's params
+        stz     params+2
         pla                             ; restore A from caller
-
         shortmx
         jsl     trampoline
         pld

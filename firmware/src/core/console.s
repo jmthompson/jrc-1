@@ -17,7 +17,10 @@
         .import getc_seriala
         .import putc_seriala
 
-        .importzp   param
+        .importzp params
+
+        .segment "ZEROPAGE"
+str:    .res 4
 
         .segment "BOOTROM"
 
@@ -64,8 +67,17 @@ console_cll:
 ; Print a null-terminated string up to 255 characters in length.
 ;
 console_writeln:
+        longm
         ldy     #0
-@loop:  lda     [param],y
+        lda     [params],y
+        sta     str
+        iny
+        iny
+        lda     [params],y
+        sta     str+2
+        shortm
+        ldy     #0
+@loop:  lda     [str],y
         beq     @exit
         jsl     putc_seriala
         iny

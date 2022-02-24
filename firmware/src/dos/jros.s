@@ -10,7 +10,6 @@
         .import sdcard_driver
         .import trampoline
 
-        .importzp   param
         .importzp   device_cmd
 
         .export jros_init
@@ -39,6 +38,7 @@ DEV_WRBLOCK = $05
         .segment "ZEROPAGE"
 
 device:     .res    4
+param:      .res    4
 
         .segment "SYSDATA"
 
