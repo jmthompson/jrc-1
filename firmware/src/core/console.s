@@ -14,7 +14,6 @@
         .export console_reset
         .export console_writeln
 
-        .import getc_seriala
         .import putc_seriala
 
         .importzp params

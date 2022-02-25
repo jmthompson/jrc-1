@@ -97,12 +97,12 @@ XModemSend:
 @wait4crc:
         jsr     set_retry
         call    SYS_CONSOLE_READ
-        bcc     @noesc
+        bcs     @noesc
         cmp     #ESC        ; Did someone hit ESC on the console?
         bne     @noesc
         jmp     @prtabort   ; Abort the transfer
 @noesc: jsr     get_byte     ; Otherwise check the serial port
-        bcc     @wait4crc   ; wait for something to come in...
+        bcs     @wait4crc   ; wait for something to come in...
         cmp     #'C'        ; is it the "C" to start a CRC xfer?
         beq     @ldbuffer
         cmp     #ESC        ; is it a cancel? <Esc> Key
@@ -165,7 +165,7 @@ XModemSend:
         bne     @sendblk    ; no, get next
         jsr     set_retry
         jsr     get_byte    ; Wait for Ack/Nack
-        bcc     @seterror   ; No chr received after 3 seconds, resend
+        bcs     @seterror   ; No chr received after 3 seconds, resend
         cmp     #ACK        ; Chr received... is it:
         beq     @ldbuffer   ; ACK, send next block
         cmp     #NAK
@@ -198,12 +198,12 @@ XModemRcv:
         putc_ser #'C'       ; "C" start with CRC mode
         jsr     set_retry
         jsr     get_byte    ; wait for input
-        bcs     @gotbyte    ; byte received, process it
+        bcc     @gotbyte    ; byte received, process it
         bra     @startcrc   ; resend "C"
 @startblk:
         jsr     set_retry
         jsr     get_byte    ; get first byte of block
-        bcc     @startblk   ; timed out, keep waiting...
+        bcs     @startblk   ; timed out, keep waiting...
 @gotbyte:
         cmp     #ESC        ; quitting?
         bne     @gotbyte1   ; no
@@ -220,7 +220,7 @@ XModemRcv:
         jsr     set_retry
 @getblk1:
         jsr     get_byte     ; get next character
-        bcc     @bad
+        bcs     @bad
 @getblk2:
         sta     Rbuff,X     ; good char, save it in the rcv buffer
         inx                 ; inc buffer pointer    
@@ -291,18 +291,18 @@ set_retry:
 ; wait for chr input and cycle timing loop
 get_byte:
 @loop:  getc_ser            ; get chr from serial port, don't wait 
-        bcs     @ok         ; got one, so exit
+        bcc     @ok         ; got one, so exit
         longm
         dec     retry       ; no character received, so dec counter
         shortm
         bne     @loop
-        clc                 ; if loop times out, CLC, else SEC and return
+        sec                 ; if loop times out, SEC, else CLC and return
 @ok:    rts                 ; with character in "A"
 
 ;
 flush:
         getc_ser
-        bcs     flush       ; if chr recvd, wait for another
+        bcc     flush       ; if chr recvd, wait for another
         rts                 ; else done
 
 start_msg:

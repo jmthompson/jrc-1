@@ -114,7 +114,7 @@ read_line:
         sta     ibuffp+2
         ldy     #0
 @loop:  call    SYS_CONSOLE_READ
-        bcc     @loop
+        bcs     @loop
         cmp     #BS
         beq     @bs
         cmp     #CR

@@ -268,8 +268,8 @@ s_nxptab = *-nxpsutab
         .segment "OSROM"
 
 ;
-; Get next character from serial channel A. On exit, C=0 if
-; no character was available; otherwise, C=1 and the character
+; Get next character from serial channel A. On exit, C=1 if
+; no character was available; otherwise, C=0 and the character
 ; code is in A.
 ;
 getc_seriala:
@@ -282,15 +282,15 @@ getc_seriala:
         inx
         stx     rxa_rdi
         plp
-        sec
+        clc
         rtl
 @empty: plp
-        clc
+        sec
         rtl
 
 ;
-; Get next character from serial channel B. On exit, C=0 if
-; no character was available; otherwise, C=1 and the character
+; Get next character from serial channel B. On exit, C=1 if
+; no character was available; otherwise, C=0 and the character
 ; code is in A.
 ;
 getc_serialb:
@@ -303,10 +303,10 @@ getc_serialb:
         inx
         stx     rxb_rdi
         plp
-        sec
+        clc
         rtl
 @empty: plp
-        clc
+        sec
         rtl
 
 ;
@@ -333,6 +333,7 @@ putc_seriala:
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_cra     ; Enable transmitter
 :       plp
+        clc
         rtl
 ;
 ; Transmit character in A on serial channel B. This is a blocking
@@ -358,4 +359,5 @@ putc_serialb:
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_crb     ; Enable transmitter
 :       plp
+        clc
         rtl
