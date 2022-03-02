@@ -86,6 +86,8 @@ syscop:
         sta     trampoline+3
         lda     syscall_table,x         ; Low word of handler address
         sta     trampoline+1
+        lda     params
+        pha
         phd                             ; save our DP for after dispatch
         lda     @a_reg                  ; Grab A; it might be a parameter
         pha
@@ -100,15 +102,19 @@ syscop:
         pla                             ; restore A from caller
         shortmx
         jsl     trampoline
+        longmx
         pld
         sta     @a_reg                  ; return value of A to caller
+        pla
+        sta     params
         bcc     @noerr
+        shortm
         lda     @p_reg
         ora     #PREG_C                 ; set carry on return to caller
         sta     @p_reg
-        
-@noerr: longmx
-        lda     @cf_size
+        longm
+
+@noerr: lda     @cf_size
         beq     @nocopy
 
         tsc
