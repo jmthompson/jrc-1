@@ -21,7 +21,9 @@
         .exportzp   txb_wri
         .exportzp   txa_on
         .exportzp   txb_on
-        .exportzp   device_cmd
+        .exportzp   devicenr
+        .exportzp   device
+        .exportzp   device_params
         .exportzp   blkbuff
         .exportzp   mwidth
         .exportzp   xwidth
@@ -53,7 +55,7 @@ params:         .res    4
 
 ; Generic temp locations, used lots of places. VERY temporary!
 ptr:            .res    4
-tmp:            .res    1
+tmp:            .res    2
 
 ; Serial buffer r/w indices
 rxa_rdi: .res   1
@@ -69,9 +71,15 @@ txb_wri: .res   1
 txa_on: .res    1
 txb_on: .res    1
 
+; Current device number
+devicenr:       .res    2
+; Pointer to current device
+device:         .res    4
+; Device params block
+device_params:  .res    4
+
 ; JR/OS
-device_cmd:     .res    4
-blkbuff:       .res    4
+blkbuff:        .res    4
 
 ; Disassembler variables
 mwidth:         .res    1

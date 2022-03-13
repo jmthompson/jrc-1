@@ -19,7 +19,6 @@
 ; Exit a syscall handler.
 ;
 .macro  SC_EXIT
-        sep     #$30        ; FIXME: remove when everything is 16-biy clean
         rtl
 .endmacro
 ;;
@@ -66,6 +65,38 @@
         iny
         lda     [params],y
         sta     loc+2
+.ifnblank cont
+        iny
+        iny
+.endif
+.endmacro
+
+;;
+; Return a 16-bit value on the stack. If <cont> is defined,
+; the Y register is incremented to point to the next return
+; parameter.
+;
+.macro  RET16   loc, cont
+        lda     loc
+        sta     [params],y
+.ifnblank cont
+        iny
+        iny
+.endif
+.endmacro
+
+;;
+; Return a 32-bit value on the stack. If <cont> is defined,
+; the Y register is incremented to point to the next return
+; parameter.
+;
+.macro  RET32   loc, cont
+        lda     loc
+        sta     [params],y
+        iny
+        iny
+        lda     loc+2
+        sta     [params],y
 .ifnblank cont
         iny
         iny

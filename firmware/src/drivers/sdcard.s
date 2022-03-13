@@ -5,21 +5,22 @@
 
         .include "common.s"
         .include "sys/console.s"
+        .include "device.inc"
 
+        .export sdcard_init
+
+        .import dm_register_internal
+        .import spi_select_sdc
         .import spi_deselect
         .import spi_transfer
-        .import spi_select
         .import spi_slow_speed
         .import spi_fast_speed
-
         .import wait_ms
 
-        .importzp device_cmd
+        .importzp device_params
         .importzp blkbuff
         .importzp ptr
         .importzp tmp
-
-        .export sdcard_driver
 
 .macro  send    bytes
         pea     .hiword(bytes)
@@ -27,7 +28,6 @@
         jsr     send_cmd
 .endmacro
 
-SD_DEVICE_ID    = 0     ; SPI device ID
 SD_CMD_SIZE     = 6     ; acmd flag + cmd byte + 4 byte arg + CRC
 SD_DATA_TOKEN   = $FE   ; start of data token
 SD_FILL         = $FF   ; fill byte
@@ -41,38 +41,66 @@ CARD_TYPE_V2      = 2
 cmd:
 csd:        .res    16
 nr_sectors: .res    4
-card_type:  .res    1
-retries:    .res    1
+card_type:  .res    2
+retries:    .res    2
 
         .segment "OSROM"
 
-; JR/OS driver structure
 sdcard_driver:
-        .byte   "SD CARD        ",0
-        longaddr sdc_init
-        longaddr sdc_status
-        longaddr sdc_eject
-        longaddr sdc_format
-        longaddr sdc_rdblock
-        longaddr sdc_wrblock
+        .word       0                   ; version
+        .word       DEVICE_TYPE_BLOCK   ; feature flags
+        longaddr    @n                  ; device name
+        longaddr    0                   ; private data
+        .word       9                   ; number of functions
+        longaddr    sdc_startup         ; #0
+        longaddr    sdc_shutdown        ; #1
+        longaddr    sdc_status          ; #2
+        longaddr    sdc_open            ; #3
+        longaddr    sdc_close           ; #4
+        longaddr    sdc_eject           ; #5
+        longaddr    sdc_format          ; #6
+        longaddr    sdc_rdblock         ; #7
+        longaddr    sdc_wrblock         ; #8
+@n:     .byte "SDCARD", 0
+
+sdcard_init:
+        stz     card_type
+        REGISTER_DEVICE sdcard_driver
+        rtl
 
 ;;
-; INIT
+; STARTUP
 ;
 ; Initialize the SD card. This consists of placing it into SPI mode and trying
 ; to read the CSD.
 ;
-sdc_init:
-        stz     retries
+sdc_startup:
+        DRVR_ENTER
+
+        shortm
+        lda     #255
+        sta     retries
 @try:   dec     retries
         beq     @error
         jsr     init_card
         bcs     @try
         jsr     read_csd
         bcs     @try
-        clc
-        rtl
-@error: syserr  ERR_NO_MEDIA
+        longm
+
+        DRVR_SUCCESS
+@error: longm
+        DRVR_ERROR ERR_NO_MEDIA
+
+;;
+; SHUTDOWN
+;
+; Shut dowwn the SD card. Not much to do here other than zero the card type.
+;
+sdc_shutdown:
+        DRVR_ENTER
+        stz     card_type
+        DRVR_SUCCESS
 
 ;;
 ; EJECT
@@ -81,9 +109,9 @@ sdc_init:
 ; card_type.
 ;
 sdc_eject:
+        DRVR_ENTER
         stz     card_type
-        clc
-        rtl
+        DRVR_SUCCESS
 
 ;;
 ; STATUS
@@ -91,33 +119,40 @@ sdc_eject:
 ; Returns online/offline status and the device size in sectors
 ;
 sdc_status:
+        DRVR_ENTER
+        DRVR_PARAMS device_params
+
         lda     card_type
         beq     @error
-        lda     #1
-        sta     [device_cmd];   ; online
-        longm
-        ldy     #1
+        ldaw    #DEVICE_ONLINE
+        ldyw    #0
+        sta     [device_params],Y
+        iny
+        iny
         lda     nr_sectors
-        sta     [device_cmd],Y
+        sta     [device_params],Y
         iny
         iny
         lda     nr_sectors+2
-        sta     [device_cmd],Y
-        shortm
-        clc
-        rtl
-@error: lda     #0
-        sta     [device_cmd]    ; Offline
-        longm
-        ldy     #1
-        ldaw    #0
-        sta     [device_cmd],Y
+        sta     [device_params],Y
+
+        DRVR_SUCCESS
+
+@error: ldaw    #0
+        sta     [device_params]    ; Offline
+        ldyw    #2
+        sta     [device_params],Y
         iny
         iny
-        sta     [device_cmd],Y
-        shortm
-        sec
-        rtl
+        sta     [device_params],Y
+
+        DRVR_SUCCESS
+
+sdc_open:
+        DRVR_SUCCESS
+
+sdc_close:
+        DRVR_SUCCESS
 
 ;;
 ; FORMAT
@@ -125,7 +160,7 @@ sdc_status:
 ; SD cards do not support formatting
 ;
 sdc_format:
-        syserr  ERR_NOT_SUPPORTED
+        DRVR_ERROR  ERR_NOT_SUPPORTED
 
 ;;
 ; READ_BLOCK
@@ -133,31 +168,34 @@ sdc_format:
 ; Read a single 512-byte block from the card
 ;
 sdc_rdblock:
+        DRVR_ENTER
+        DRVR_PARAMS device_params
+
         lda     card_type
         bne     :+
-        syserr  ERR_NO_MEDIA
-:       lda     #$51            ; CMD17
+        DRVR_ERROR ERR_NO_MEDIA
+:       shortm
+        lda     #$51            ; CMD17
         sta     cmd
-        ldx     #4
-        ldy     #0
-:       lda     [device_cmd],Y
+        ldxw    #4
+        ldyw    #0
+:       lda     [device_params],Y
         sta     cmd,X           ; flip byte order
         iny
         dex
         bne     :-
         longm
-        lda     [device_cmd],Y
+        lda     [device_params],Y
         sta     blkbuff
         iny
         iny
-        lda     [device_cmd],Y
+        lda     [device_params],Y
         sta     blkbuff+2
         shortm
         send    cmd
         bne     @error
         jsr     wait_data
         bcs     @error
-        longx
         ldyw    #0
 :       lda     #SD_FILL
         jsl     spi_transfer
@@ -165,14 +203,14 @@ sdc_rdblock:
         iny
         cpyw    #512
         bne     :-
-        shortx
         jsl     spi_transfer
         jsl     spi_transfer    ; Eat two-byte CRC
         jsr     deselect
-        clc
-        rtl
+        longm
+        DRVR_SUCCESS
 @error: jsr     deselect
-        syserr  ERR_IO_ERROR
+        longm
+        DRVR_ERROR ERR_IO_ERROR
 
 ;;
 ; WRITE_BLOCK
@@ -180,53 +218,56 @@ sdc_rdblock:
 ; Write a single 512-byte block to the card
 ;
 sdc_wrblock:
+        DRVR_ENTER
+        DRVR_PARAMS device_params
+
         lda     card_type
         bne     :+
-        syserr  ERR_NO_MEDIA
-:       lda     #$58            ; CMD24
+        DRVR_ERROR ERR_NO_MEDIA
+:       shortm
+        lda     #$58            ; CMD24
         sta     cmd
-        ldx     #4
-        ldy     #0
-:       lda     [device_cmd],Y
+        ldxw    #4
+        ldyw    #0
+:       lda     [device_params],Y
         sta     cmd,X           ; flip byte order
         iny
         dex
         bne     :-
         longm
-        lda     [device_cmd],Y
+        lda     [device_params],Y
         sta     blkbuff
         iny
         iny
-        lda     [device_cmd],Y
+        lda     [device_params],Y
         sta     blkbuff+2
         shortm
         send    cmd
         bne     @error
         lda     #SD_DATA_TOKEN
         jsl     spi_transfer
-        longx
         ldyw    #0
 :       lda     [blkbuff],Y
         jsl     spi_transfer
         iny
         cpyw    #512
         bne     :-
-        shortx
         jsr     wait_rdy
         bcs     @error
         and     #$1F
         cmp     #$05
         bne     @error
-        ldx     #255
+        ldxw    #255
 :       lda     #SD_FILL
         jsl     spi_transfer
         bne     @exit           ; exit when non-zero byte received
         dex
         bne     :-
 @error: jsr     deselect
-        syserr  ERR_IO_ERROR
-@exit:  clc
-        rtl
+        longm
+        DRVR_ERROR ERR_IO_ERROR
+@exit:  longm
+        DRVR_SUCCESS
 
 ;;
 ; Attempt to initialize the SD card
@@ -253,7 +294,7 @@ init_card:
         jsl     spi_transfer
         cmp     #$AA
         bne     @error
-        ldx     #255
+        ldxw    #255
 @v2:    jsr     deselect
         send    @cmd55
         bcs     @v1
@@ -297,8 +338,9 @@ init_card:
 ; C,X trashed
 ;
 set_spi_mode:
+        rts
         jsr     deselect
-        ldx     #10
+        ldxw    #10
 :       lda     #SD_FILL
         jsl     spi_transfer
         dex
@@ -314,7 +356,7 @@ set_spi_mode:
 ; c = 1 on failure
 ;
 set_idle:
-        ldx     #8
+        ldxw    #8
 :       send    @cmd00
         bcc     @r1
         lda     #1
@@ -345,12 +387,12 @@ read_csd:
         bne     @error
         jsr     wait_data
         bcs     @error
-        ldx     #0
+        ldxw    #0
 :       lda     #SD_FILL
         jsl     spi_transfer
         sta     csd,X
         inx
-        cpx     #16
+        cpxw    #16
         bne     :-
         jsl     spi_transfer
         jsl     spi_transfer    ; Eat CRC
@@ -387,7 +429,7 @@ read_csd:
 ; c=0 on success, 1 on failure
 ;
 wait_rdy:
-        ldx     #255
+        ldxw    #255
         lda     #SD_FILL
 @wait:  jsl     spi_transfer
         cmp     #SD_FILL
@@ -408,7 +450,7 @@ wait_rdy:
 ; c=0 on success, 1 on failure
 ;
 wait_data:
-        ldx     #255
+        ldxw    #255
 @wait:  lda     #SD_FILL
         jsl     spi_transfer
         cmp     #SD_DATA_TOKEN
@@ -441,15 +483,15 @@ send_cmd:
         phx
         phy
 
-        jsr     select
+        jsl     spi_select_sdc
 
-        ldy     #0
+        ldyw    #0
 :       lda     [ptr],Y
         jsl     spi_transfer
         iny
-        cpy     #SD_CMD_SIZE
+        cpyw    #SD_CMD_SIZE
         bne     :-
-        ldy     #17
+        ldyw    #17
 :       lda     #SD_FILL
         jsl     spi_transfer
         bpl     @r1
@@ -468,14 +510,6 @@ send_cmd:
 @exit:  ply
         plx
         ora     #0          ; set N/Z flags for caller
-        rts
-
-;;
-; Select the SD card interface board
-;
-select:
-        lda     #SD_DEVICE_ID
-        jsl     spi_select
         rts
 
 ;;
@@ -529,6 +563,7 @@ get_nr_sectors_v1:
         lda     csd+10
         asl
         rol     tmp
+        stz     tmp+1
         ldx     tmp
         inx
         inx                     ; C_SIZE_MULT+2
@@ -560,7 +595,7 @@ get_nr_sectors_v2:
         sta     nr_sectors+1    ; bits 15-8
         lda     csd+9
         sta     nr_sectors      ; bits 7-0
-        ldx     #10             ; Multiplier is fixed at 2^10 for v2
+        ldxw    #10             ; Multiplier is fixed at 2^10 for v2
         ; fall through
  
 ;;

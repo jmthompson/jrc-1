@@ -12,12 +12,12 @@
 
         .import uart_init
         .import monitor_start
-        .import spi_init
         .import via_init
         .import console_init
-        .import jros_init
         .import syscall_table_init
-        .import device_manager_init
+        .import dm_init
+        .import spi_init
+        .import sdcard_init 
         .import print_decimal8
 
         ;; from buildinfo.s
@@ -57,7 +57,6 @@ sysreset:
         pha
         plb
         jsr     via_init
-        jsr     spi_init
         jsr     uart_init
         jsr     syscall_table_init
 
@@ -73,7 +72,12 @@ sysreset:
         sta     trampoline          ; Init trampoline vector
         jsr     console_init
         jsr     startup_banner
-        jsl     jros_init
+
+        longmx
+        jsl     dm_init
+        jsl     spi_init
+        jsl     sdcard_init
+        shortmx
         jml     monitor_start
 
 ;;

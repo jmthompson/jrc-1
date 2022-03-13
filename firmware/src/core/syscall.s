@@ -15,18 +15,12 @@
         .import getc_serialb
         .import putc_serialb
 
-        .import spi_select
-        .import spi_deselect
-        .import spi_transfer
-        .import spi_slow_speed
-        .import spi_fast_speed
-
-        .import jros_register_device
-        .import jros_eject_device
-        .import jros_format_device
-        .import jros_device_status
-        .import jros_read_block
-        .import jros_write_block
+        .import dm_register
+        .import dm_unregister
+        .import dm_get_num_devices
+        .import dm_get_device
+        .import dm_find_device
+        .import dm_call
 
         .export syscall_table_init
         .export syscall_table
@@ -112,12 +106,11 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $2E
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $2F
 
-        ; SPI
-        DEFINE_SYSCALL  spi_select, 0               ; $30
-        DEFINE_SYSCALL  spi_deselect, 0             ; $31
-        DEFINE_SYSCALL  spi_transfer, 0             ; $32
-        DEFINE_SYSCALL  spi_slow_speed, 0           ; $33
-        DEFINE_SYSCALL  spi_fast_speed, 0           ; $34
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $30
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $31
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $32
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $33
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $34
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $35
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $36
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $37
@@ -130,13 +123,13 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $3E
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $3F
 
-        ; JR/OS
-        DEFINE_SYSCALL  jros_register_device, 4     ; $40
-        DEFINE_SYSCALL  jros_device_status, 4       ; $41
-        DEFINE_SYSCALL  jros_eject_device, 0        ; $42
-        DEFINE_SYSCALL  jros_format_device, 4       ; $43
-        DEFINE_SYSCALL  jros_read_block, 4          ; $44
-        DEFINE_SYSCALL  jros_write_block, 4         ; $45
+        ; Devices
+        DEFINE_SYSCALL  dm_register, 4              ; $40
+        DEFINE_SYSCALL  dm_unregister, 2            ; $41
+        DEFINE_SYSCALL  dm_get_num_devices, 0       ; $42
+        DEFINE_SYSCALL  dm_get_device, 2            ; $43
+        DEFINE_SYSCALL  dm_find_device, 4           ; $44
+        DEFINE_SYSCALL  dm_call, 8                  ; $45
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $46
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $47
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $48

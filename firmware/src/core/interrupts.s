@@ -154,7 +154,6 @@ sysirq:
         plb                 ; Set interrupt data bank
 
         jsr     via_irq
-        jsr     spi_irq
         jsr     uart_irq
 
         rep     #$30
