@@ -17,20 +17,23 @@
         .import noop
 
         .importzp   jiffies
-        .importzp   rxa_rdi
-        .importzp   rxa_wri
-        .importzp   txa_rdi
-        .importzp   txa_wri
-        .importzp   rxb_rdi
-        .importzp   rxb_wri
-        .importzp   txb_rdi
-        .importzp   txb_wri
-        .importzp   txa_on
-        .importzp   txb_on
 
 buffer_size = 256
 
 nxp_base := $F020
+
+        .segment    "ZEROPAGE"
+
+rxa_rdi:    .res    1
+rxa_wri:    .res    1
+txa_rdi:    .res    1
+txa_wri:    .res    1
+rxb_rdi:    .res    1
+rxb_wri:    .res    1
+txb_rdi:    .res    1
+txb_wri:    .res    1
+txa_on:     .res    1
+txb_on:     .res    1
 
         .segment "SYSDATA"
 

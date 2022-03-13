@@ -9,8 +9,6 @@
         .include    "device.inc"
         .include    "syscalls.inc"
 
-        .importzp   device
-        .importzp   devicenr
         .importzp   params
         .importzp   ptr
         .importzp   tmp
@@ -27,8 +25,14 @@
         .import     strmatch
         .import     trampoline
 
+        .segment    "ZEROPAGE"
+
+device:         .res    4
+
         .segment    "SYSDATA"
 
+; Currently selected devicenr
+devicenr:       .res    2
 ; The number of registered devices
 num_devices:    .res    2
 ; An array of block device structure pointers

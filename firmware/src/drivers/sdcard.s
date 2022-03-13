@@ -17,8 +17,6 @@
         .import spi_fast_speed
         .import wait_ms
 
-        .importzp device_params
-        .importzp blkbuff
         .importzp ptr
         .importzp tmp
 
@@ -35,6 +33,11 @@ SD_FILL         = $FF   ; fill byte
 CARD_TYPE_UNKNOWN = 0
 CARD_TYPE_V1      = 1
 CARD_TYPE_V2      = 2
+
+        .segment "ZEROPAGE"
+
+blockp:         .res    4
+device_params:  .res    4
 
         .segment "SYSDATA"
 
@@ -185,11 +188,11 @@ sdc_rdblock:
         bne     :-
         longm
         lda     [device_params],Y
-        sta     blkbuff
+        sta     blockp
         iny
         iny
         lda     [device_params],Y
-        sta     blkbuff+2
+        sta     blockp+2
         shortm
         send    cmd
         bne     @error
@@ -198,7 +201,7 @@ sdc_rdblock:
         ldyw    #0
 :       lda     #SD_FILL
         jsl     spi_transfer
-        sta     [blkbuff],Y
+        sta     [blockp],Y
         iny
         cpyw    #512
         bne     :-
@@ -235,18 +238,18 @@ sdc_wrblock:
         bne     :-
         longm
         lda     [device_params],Y
-        sta     blkbuff
+        sta     blockp
         iny
         iny
         lda     [device_params],Y
-        sta     blkbuff+2
+        sta     blockp+2
         shortm
         send    cmd
         bne     @error
         lda     #SD_DATA_TOKEN
         jsl     spi_transfer
         ldyw    #0
-:       lda     [blkbuff],Y
+:       lda     [blockp],Y
         jsl     spi_transfer
         iny
         cpyw    #512
