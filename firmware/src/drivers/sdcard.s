@@ -55,12 +55,11 @@ sdcard_driver:
         longaddr    sdc_startup         ; #0
         longaddr    sdc_shutdown        ; #1
         longaddr    sdc_status          ; #2
-        longaddr    sdc_open            ; #3
-        longaddr    sdc_close           ; #4
-        longaddr    sdc_eject           ; #5
-        longaddr    sdc_format          ; #6
-        longaddr    sdc_rdblock         ; #7
-        longaddr    sdc_wrblock         ; #8
+        longaddr    sdc_mount           ; #3
+        longaddr    sdc_eject           ; #4
+        longaddr    sdc_format          ; #5
+        longaddr    sdc_rdblock         ; #6
+        longaddr    sdc_wrblock         ; #7
 @n:     .byte "SDCARD", 0
 
 sdcard_init:
@@ -71,12 +70,28 @@ sdcard_init:
 ;;
 ; STARTUP
 ;
-; Initialize the SD card. This consists of placing it into SPI mode and trying
-; to read the CSD.
+; Init the driver; does nothing for now
 ;
 sdc_startup:
-        DRVR_ENTER
+        DRVR_SUCCESS
 
+;;
+; SHUTDOWN
+;
+; Shut dowwn the SD card. Not much to do here other than zero the card type.
+;
+sdc_shutdown:
+        DRVR_ENTER
+        stz     card_type
+        DRVR_SUCCESS
+
+;;
+; MOUNT
+;
+; Attempt to initialize the SD card and bring it online
+;
+sdc_mount:
+        DRVR_ENTER
         shortm
         lda     #255
         sta     retries
@@ -91,16 +106,6 @@ sdc_startup:
         DRVR_SUCCESS
 @error: longm
         DRVR_ERROR ERR_NO_MEDIA
-
-;;
-; SHUTDOWN
-;
-; Shut dowwn the SD card. Not much to do here other than zero the card type.
-;
-sdc_shutdown:
-        DRVR_ENTER
-        stz     card_type
-        DRVR_SUCCESS
 
 ;;
 ; EJECT
@@ -146,12 +151,6 @@ sdc_status:
         iny
         sta     [device_params],Y
 
-        DRVR_SUCCESS
-
-sdc_open:
-        DRVR_SUCCESS
-
-sdc_close:
         DRVR_SUCCESS
 
 ;;

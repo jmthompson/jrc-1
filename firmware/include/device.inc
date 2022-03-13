@@ -90,16 +90,17 @@ DEVICE_ONLINE   = $0001 ; device is online if set
 DEV_STARTUP     = 0
 DEV_SHUITDOWN   = 1
 DEV_STATUS      = 2
-DEV_OPEN        = 3
-DEV_CLOSE       = 4
 
 ; Block device funcctions
-DEV_EJECT   = 5
-DEV_FORMAT  = 6
-DEV_RDBLOCK = 7
-DEV_WRBLOCK = 8
+DEV_MOUNT   = 3
+DEV_EJECT   = 4
+DEV_FORMAT  = 5
+DEV_RDBLOCK = 6
+DEV_WRBLOCK = 7
 
 ; Character device functions
+DEV_OPEN        = 3
+DEV_CLOSE       = 4
 DEV_READ_BYTE   = 5
 DEV_READ_BYTES  = 6
 DEV_WRITE_BYTE  = 7
