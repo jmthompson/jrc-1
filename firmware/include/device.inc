@@ -107,3 +107,39 @@ DEV_WRITE_BYTE  = 7
 DEV_WRITE_BYTES = 8
 DEV_GET_MODE    = 9
 DEV_SET_MODE    = 10
+
+;;
+; Macros for making common device calls.
+;
+.macro  _DMCalLDevice   devicenr, funcnr, params
+        lda     devicenr
+        pha
+        pea     funcnr
+        pea     .hiword(params)
+        pea     .loword(params)
+        call    SYS_DEV_CALL
+.endmacro
+
+.macro  _DMGetStatus    nr, params
+        _DMCalLDevice   nr, DEV_STATUS, params
+.endmacro
+
+.macro  _DMMount        nr, params
+        _DMCalLDevice   nr, DEV_MOUNT, params
+.endmacro
+
+.macro  _DMEject        nr, params
+        _DMCalLDevice   nr, DEV_EJECT, params
+.endmacro
+
+.macro  _DMFormat       nr, params
+        _DMCalLDevice   nr, DEV_FORMAT, params
+.endmacro
+
+.macro  _DMReadBlock    nr, params
+        _DMCalLDevice   nr, DEV_RDBLOCK, params
+.endmacro
+
+.macro  _DMRWritelock    nr, params
+        _DMCalLDevice   nr, DEV_WRBLOCK, params
+.endmacro

@@ -14,6 +14,7 @@
         .import monitor_start
         .import via_init
         .import console_init
+        .import dos_init
         .import syscall_table_init
         .import dm_init
         .import spi_init
@@ -77,7 +78,9 @@ sysreset:
         jsl     dm_init
         jsl     spi_init
         jsl     sdcard_init
+        jsl     dos_init
         shortmx
+
         jml     monitor_start
 
 ;;

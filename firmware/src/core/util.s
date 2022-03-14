@@ -263,7 +263,6 @@ skip_whitespace:
 ; All registers trashed
 ;
 print_decimal32:
-        longm
         lda     4,s
         sta     arg
         lda     6,s
@@ -280,7 +279,7 @@ print_decimal32:
         stz     bcd+2
         stz     bcd+4   ; Start output number at zero
         sed
-        ldx     #32
+        ldxw    #32
 :       asl     arg
         rol     arg+2   ; Shift out a bit
         lda     bcd     ; Multiply BCD x 2, and add bit from arg
@@ -311,7 +310,8 @@ print_decimal32:
         bmi     :+
         lda     #'0'
         call    SYS_CONSOLE_WRITE
-:       rtl
+:       longm
+        rtl
 @byte:  tax
         lsr
         lsr
