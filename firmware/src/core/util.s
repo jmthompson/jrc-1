@@ -6,9 +6,10 @@
 ; This file contains utility functions used by the system monitor,
 ; mini-assembler and the disassembler.
 ;
-        .include "common.s"
-        .include "sys/ascii.s"
-        .include "sys/util.s"
+        .include "common.inc"
+        .include "syscalls.inc"
+        .include "ascii.inc"
+        .include "util.inc"
 
         .importzp maxhex
         .importzp arg
@@ -66,7 +67,7 @@ print_decimal8:
 @digit: pha
         txa
         ora     #'0'
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         pla
         rts
 
@@ -95,7 +96,7 @@ print_hex:
         cmp     #'9'+1
         blt     :+
         adc     #6
-:       call    SYS_CONSOLE_WRITE
+:       _Call   SYS_CONSOLE_WRITE
         rts
 
 ;;
@@ -114,7 +115,7 @@ read_line:
         lda     #^ibuff
         sta     ibuffp+2
         ldy     #0
-@loop:  call    SYS_CONSOLE_READ
+@loop:  _Call   SYS_CONSOLE_READ
         bcs     @loop
         cmp     #BS
         beq     @bs
@@ -125,7 +126,7 @@ read_line:
         cmp     #' '
         bcc     @loop
         sta     [ibuffp],y
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         iny
         bne     @loop
         dey
@@ -134,10 +135,10 @@ read_line:
         rts
 @bs:    cpy     #0
         beq     @loop
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         dey
         bra     @loop
-@cls:   call    SYS_CONSOLE_WRITE
+@cls:   _Call   SYS_CONSOLE_WRITE
         bra     @loop
 
 ;;
@@ -230,7 +231,7 @@ print_spaces:
         pha
         phx
 @loop:  lda     #' '
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         dex
         bne     @loop
         plx
@@ -309,7 +310,7 @@ print_decimal32:
         bit     tmp
         bmi     :+
         lda     #'0'
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
 :       longm
         rtl
 @byte:  tax
@@ -327,7 +328,7 @@ print_decimal32:
         rts
 :       clc
         adc     #'0'
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         lda     #$80
         sta     tmp
         rts

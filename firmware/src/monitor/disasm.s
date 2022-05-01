@@ -6,8 +6,11 @@
 ; Most of this is a rough translation of the C++ code in the
 ; XGS debugger
 
-        .include "common.s"
-        .include "sys/console.s"
+        .include "common.inc"
+        .include "syscalls.inc"
+        .include "console.inc"
+        .include "ascii.inc"
+
         .include "disasm_constants.s"
 
         .import length_table
@@ -15,6 +18,7 @@
         .import am_table
         .import mnemonic_table
         .import print_spaces
+        .import print_hex
 
         .importzp   start_loc
         .importzp   tmp
@@ -32,6 +36,11 @@ instr = start_loc
 
 PREG_M  = $20
 PREG_X  = $10
+
+.macro putc char
+        lda char
+        _PrintChar
+.endmacro
 
 ;;
 ; Entry point for the monitor's (L)ist command
@@ -71,10 +80,14 @@ print_instruction:
         bra     @len
 @xm:    lda     xwidth
 @len:   sta     len
-        puthex  instr+2
-        putc    #'/'
-        puthex  instr+1
-        puthex  instr
+        lda     instr+2
+        jsl     print_hex
+        lda     #'/'
+        _PrintChar
+        lda     instr+1
+        jsl     print_hex
+        lda     instr
+        jsl     print_hex
         ldx     #2
         jsr     print_spaces
         ldy     #0
@@ -104,7 +117,7 @@ print_instruction:
         pea     ^mnemonic_table     ; high word
         pha                         ; low word
         shortm
-        call    SYS_CONSOLE_WRITELN
+        _Call   SYS_CONSOLE_WRITELN
 
         ldx     #3
         jsr     print_spaces
@@ -112,7 +125,8 @@ print_instruction:
         lda     am
         jsr     am_dispatch
 
-        puteol
+        putc    #CR
+        putc    #LF
         longm
         ldx     len
         txa                         ; m is 16 bits but len is 8

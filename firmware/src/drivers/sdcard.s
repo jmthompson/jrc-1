@@ -3,8 +3,9 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
-        .include "sys/console.s"
+        .include "common.inc"
+        .include "syscalls.inc"
+        .include "errors.inc"
         .include "device.inc"
 
         .export sdcard_init

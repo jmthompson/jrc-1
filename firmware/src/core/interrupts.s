@@ -3,7 +3,8 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
+        .include "common.inc"
+        .include "linker.inc"
 
         .import monitor_start
         .import monitor_brk

@@ -117,7 +117,7 @@ DEV_SET_MODE    = 10
         pea     funcnr
         pea     .hiword(params)
         pea     .loword(params)
-        call    SYS_DEV_CALL
+        _Call   SYS_DEV_CALL
 .endmacro
 
 .macro  _DMGetStatus    nr, params

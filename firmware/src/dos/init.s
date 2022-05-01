@@ -3,9 +3,11 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include    "common.s"
+        .include    "common.inc"
+        .include    "syscalls.inc"
         .include    "device.inc"
         .include    "console.inc"
+        .include    "ascii.inc"
 
         .import     cmd_buffer
         .import     devicenr
@@ -37,7 +39,7 @@ dos_init:
         pea     0
         lda     devicenr
         pha
-        call    SYS_GET_DEVICE_BY_ID
+        _Call   SYS_GET_DEVICE_BY_ID
         pla
         sta     devicep
         pla
@@ -118,13 +120,13 @@ print_device_name:
         ldyw    #0          ; start at beginning of string
 @print: lda     [ptr],Y
         beq     @pad        ; end of string?
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         iny
         dex
         bne     @print      ; do another char, if we have space left
         ldxw    #2          ; always add at least two spaces
 @pad:   lda     #' '
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         dex
         bne     @pad
         longm

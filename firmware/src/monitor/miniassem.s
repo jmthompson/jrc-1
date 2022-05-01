@@ -6,9 +6,11 @@
 ; 65c816 mini-assembler, modled after the one included with the
 ; IIGS monitor.
 
-        .include "common.s"
-        .include "sys/console.s"
-        .include "sys/util.s"
+        .include "common.inc"
+        .include "syscalls.inc"
+        .include "console.inc"
+        .include "ascii.inc"
+        .include "util.inc"
 
         .export assemble
 
@@ -27,14 +29,21 @@
 ; Entry point for the monitor's (!) command
 ;;
 assemble:
-        puteol
-        putc    #'!'
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
+        lda     #'!'
+        _PrintChar
         jsr     read_line
         getc
         beq     @exit
-        puts    @erase
-        puts    @msg
-        puteol
+        _PrintString @erase
+        _PrintString @msg
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
         bra     assemble
 @exit:  rts
 
@@ -54,7 +63,8 @@ syntax_error:
         inx
         inx
         jsr     print_spaces
-        putc    #'^'
-        puts    @msg
+        lda     #'^'
+        _PrintChar
+        _PrintString @msg
         rts
 @msg:   .byte   " Syntax error", CR, 0

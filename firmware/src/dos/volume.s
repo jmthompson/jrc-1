@@ -3,7 +3,8 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include    "common.s"
+        .include    "common.inc"
+        .include    "syscalls.inc"
         .include    "device.inc"
         .include    "volume.inc"
 

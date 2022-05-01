@@ -3,9 +3,8 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
-        .include "sys/devices.s"
-        .include "hw/nxp_uart.s"
+        .include "common.inc"
+        .include "nxp_uart.s"
 
         .export uart_init
         .export uart_irq

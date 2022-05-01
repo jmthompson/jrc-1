@@ -3,9 +3,11 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
-        .include "sys/ascii.s"
-        .include "sys/io.s"
+        .include "common.inc"
+        .include "linker.inc"
+        .include "syscalls.inc"
+        .include "console.inc"
+        .include "ascii.inc"
 
         .export sysreset
         .export trampoline
@@ -89,49 +91,69 @@ sysreset:
 ;
 startup_banner:
         ; top line of box
-        putc    #SHIFT_OUT
-        putc    #'l'
-        puts    @line
-        putc    #'k'
-        putc    #SHIFT_IN
-        puteol
+        lda     #SHIFT_OUT
+        _PrintChar
+        lda     #'l'
+        _PrintChar
+        _PrintString @line
+        lda     #'k'
+        _PrintChar
+        lda     #SHIFT_IN
+        _PrintChar
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
 
         ; System ID
-        puts    @sysid
+        _PrintString @sysid
 
         ; HW Revision
-        puts    @hwrev
+        _PrintString @hwrev
         lda     f:hw_revision
         jsl     print_decimal8
-        puts    @hwrev2
+        _PrintString @hwrev2
 
         ; ROM Version
-        puts    @romver
+        _PrintString @romver
         lda     f:rom_version
         lsr
         lsr
         lsr
         lsr
         jsl     print_decimal8
-        putc    #'.'
+        lda     #'.'
+        _PrintChar
         lda     f:rom_version
         and     #$0f
         jsl     print_decimal8
-        putc    #' '
-        putc    #'('
-        puts    rom_date
-        putc    #')'
-        puts    @romver2
+        lda     #' '
+        _PrintChar
+        lda     #'('
+        _PrintChar
+        _PrintString rom_date
+        lda     #')'
+        _PrintChar
+        _PrintString @romver2
 
         ; bottom line of box
-        putc    #SHIFT_OUT
-        putc    #'m'
-        puts    @line
-        putc    #'j'
-        putc    #SHIFT_IN
-
-        puteol
-        puteol
+        lda     #SHIFT_OUT
+        _PrintChar
+        lda     #'m'
+        _PrintChar
+        _PrintString @line
+        lda     #'j'
+        _PrintChar
+        lda     #SHIFT_IN
+        _PrintChar
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
 
         rts
 

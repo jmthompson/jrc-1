@@ -7,7 +7,8 @@
 ; - no way to set spi mode through driver
 ; - spi_select_sdc doesn't respect spi_busy
 
-        .include "common.s"
+        .include "common.inc"
+        .include "errors.inc"
         .include "device.inc"
 
         .export spi_init

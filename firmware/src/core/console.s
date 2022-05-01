@@ -3,10 +3,8 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
-        .include "sys/ascii.s"
-        .include "sys/devices.s"
-        .include "sys/io.s"
+        .include "common.inc"
+        .include "ascii.inc"
 
         .export console_cll
         .export console_cls

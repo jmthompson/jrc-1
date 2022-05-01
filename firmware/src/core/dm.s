@@ -5,8 +5,9 @@
 ;
 ; This is the gbeneric device handling for the BIOS.
 
-        .include    "common.s"
+        .include    "common.inc"
         .include    "device.inc"
+        .include    "errors.inc"
         .include    "syscall_macros.inc"
 
         .importzp   params

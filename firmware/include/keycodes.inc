@@ -1,9 +1,9 @@
-;;
-; Keyboard key codes
-;
-; Codes < $80 are ASCII-equivalent and can generally be used as-is.
-; Codes >= $80 are special keys (Fn keys, shift/ctrl/alt, etc)
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Keyboard key codes                                                ;
+;                                                                   ;
+; Codes < $80 are ASCII-equivalent and can generally be used as-is. ;
+; Codes >= $80 are special keys (Fn keys, shift/ctrl/alt, etc)      ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 KEY_BREAK      = $00
 KEY_BACKSPACE  = $08
@@ -66,7 +66,7 @@ KEY_Z          = $7A
 
 ;;
 ; Non-ASCII keys
-;;
+;
 
 ; Cursor keys
 KEY_HOME        = $81

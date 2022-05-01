@@ -2,25 +2,6 @@
         .a8
         .i8
 
-        .include "sys/syscall.s"
-        .include "sys/error.s"
-
-        .import __BIOS_DP_START__
-        .import __SYSRAM_START__
-        .import __SYSSTACK_START__
-        .import __SYSSTACK_SIZE__
-
-IRQ_DB       = $00
-OS_DB        = .bankbyte(__SYSRAM_START__)
-OS_DP        = __BIOS_DP_START__
-OS_STACKTOP  = __SYSSTACK_START__ + __SYSSTACK_SIZE__ - 1
-
-.macro  syserr  code
-        lda     #code
-        sec
-        rtl
-.endmacro
-
 ; Increment a 32-bit value in memory
 .macro  inc32   addr
         inc     addr
@@ -35,9 +16,30 @@ OS_STACKTOP  = __SYSSTACK_START__ + __SYSSTACK_SIZE__ - 1
 .endmacro
 
 ;;
+; Call a BIOS or OS function
+;
+.macro  _Call   funcid
+        cop     funcid
+.endmacro
+
+;;
+; Push a 16-bit value onto the stack
+;
+.macro  _PushWord value
+        pea #.loword(value)
+.endmacro
+
+;;
+; Push a 32-bit value onto the stack
+;
+.macro  _PushLong value
+        pea #.hiword(value)
+        pea #.loword(value)
+.endmacro
+
+;;
 ; blt/bge so i don't have to remember which is bcc
 ; and which is bcs
-;
 ;
 .macro  blt     label
         bcc     label
@@ -48,12 +50,10 @@ OS_STACKTOP  = __SYSSTACK_START__ + __SYSSTACK_SIZE__ - 1
 .endmacro
 
 ;;
-;
 ; Convenience macros for register-width handling.
 ; They provide an unambiguous way to specify that
 ; you want a 16-bit operand for an opcode without
 ; having to manually manipulate the assembler mode.
-;
 ;
 .macro  adcw    operand
         .a16

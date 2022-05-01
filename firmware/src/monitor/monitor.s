@@ -3,15 +3,18 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
-        .include "sys/console.s"
-        .include "sys/util.s"
+        .include "common.inc"
+        .include "syscalls.inc"
+        .include "console.inc"
+        .include "ascii.inc"
+        .include "util.inc"
 
         .import disassemble
         .import assemble
         .import read_line
         .import parse_address
         .import parse_hex
+        .import print_hex
         .import print_spaces
         .import skip_whitespace
         .import XModemSend
@@ -57,6 +60,23 @@ commands:
 
 num_commands = *-commands
 
+.macro putc char
+        lda char
+        _PrintChar
+.endmacro
+
+.macro puteol
+        lda #CR
+        _PrintChar
+        lda #LF
+        _PrintChar
+.endmacro
+
+.macro puthex value
+        lda     value
+        jsl     print_hex
+.endmacro
+
 handlers:
         .addr   disassemble-1
         .addr   dump_memory-1
@@ -76,7 +96,7 @@ start_banner:
         .byte   "Monitor Ready.", CR, 0
 
 monitor_start:
-        puts    start_banner
+        _PrintString start_banner
         bra     monitor_loop
 
 capture_registers:
@@ -108,13 +128,13 @@ capture_registers:
 
 monitor_brk:
         jsr     capture_registers
-        puts    brk_banner
+        _PrintString brk_banner
         jsr     print_registers
         jmp     monitor_loop
 
 monitor_nmi:
         jsr     capture_registers
-        puts    nmi_banner
+        _PrintString nmi_banner
         jsr     print_registers
 
 monitor_loop:        
@@ -196,8 +216,9 @@ syntax_error:
         inx
         inx
         jsr     print_spaces
-        putc    #'^'
-        puts    @msg
+        lda     #'^'
+        _PrintChar
+        _PrintString @msg
         rts
 
 @msg:   .byte   " Error", CR, 0
@@ -293,7 +314,7 @@ dump_memory:
         bcs     @printable
         lda     #'?'
 @printable:
-        call    SYS_CONSOLE_WRITE
+        _Call   SYS_CONSOLE_WRITE
         lda     start_loc
         cmp     row_end
         beq     @endofrow

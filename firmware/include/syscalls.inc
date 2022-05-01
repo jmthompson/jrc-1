@@ -1,7 +1,6 @@
-
-.macro  call    funcid
-        cop     funcid
-.endmacro
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Definitions of available BIOS/OS syscall numbers ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 SYS_GET_UPTIME      = $00
 SYS_GET_VERSION     = $01

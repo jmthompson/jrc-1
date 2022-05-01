@@ -3,7 +3,9 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include "common.s"
+        .include "common.inc"
+        .include "errors.inc"
+        .include "syscall_macros.inc"
 
         .import console_reset
         .import console_writeln
@@ -50,7 +52,7 @@ syscall_table_init:
         .segment "OSROM"
 
 unsupported_syscall:
-        syserr  ERR_NOT_SUPPORTED
+        SC_ERROR ERR_NOT_SUPPORTED
 
 default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $00
