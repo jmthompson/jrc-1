@@ -7,7 +7,7 @@
 
         .include    "common.s"
         .include    "device.inc"
-        .include    "syscalls.inc"
+        .include    "syscall_macros.inc"
 
         .importzp   params
         .importzp   ptr
