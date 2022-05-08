@@ -89,11 +89,11 @@ handlers:
         .addr   assemble-1
 
 brk_banner:
-        .byte   "*** Break ***", CR, 0
+        .byte   "*** Break ***", CR, LF, 0
 nmi_banner:
-        .byte   "*** NMI ***", CR, 0
+        .byte   "*** NMI ***", CR, LF, 0
 start_banner:
-        .byte   "Monitor Ready.", CR, 0
+        .byte   "Monitor Ready.", CR, LF, 0
 
 monitor_start:
         _PrintString start_banner
