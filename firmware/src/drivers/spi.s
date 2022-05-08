@@ -156,7 +156,7 @@ spi_open:
 
         bit     spi_busy
         bmi     @busy
-:       ldaw    #$8000
+        ldaw    #$8000
         sta     spi_busy
         shortm
         lda     [ptr]       ; get slave select bit from private data
