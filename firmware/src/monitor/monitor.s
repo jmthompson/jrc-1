@@ -57,6 +57,7 @@ commands:
         .byte   '>'
         .byte   ':'
         .byte   '!'
+        .byte   '#'
 
 num_commands = *-commands
 
@@ -87,6 +88,7 @@ handlers:
         .addr   xmodem_send-1
         .addr   set_memory-1
         .addr   assemble-1
+        .addr   print_registers-1
 
 brk_banner:
         .byte   "*** Break ***", CR, LF, 0
