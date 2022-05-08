@@ -21,7 +21,6 @@
         .import dm_init
         .import spi_init
         .import sdcard_init 
-        .import print_decimal8
 
         ;; from buildinfo.s
         .import hw_revision
@@ -111,7 +110,7 @@ startup_banner:
         ; HW Revision
         _PrintString @hwrev
         lda     f:hw_revision
-        jsl     print_decimal8
+        jsr     print_decimal
         _PrintString @hwrev2
 
         ; ROM Version
@@ -121,12 +120,12 @@ startup_banner:
         lsr
         lsr
         lsr
-        jsl     print_decimal8
+        jsr     print_decimal
         lda     #'.'
         _PrintChar
         lda     f:rom_version
         and     #$0f
-        jsl     print_decimal8
+        jsr     print_decimal
         lda     #' '
         _PrintChar
         lda     #'('
@@ -171,3 +170,36 @@ startup_banner:
 
 @romver:  .byte SHIFT_OUT, "x", SHIFT_IN, " JR/OS Version ", 0
 @romver2: .byte " ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
+
+;;
+; Print the 8-bit number in the accumulator in decimal
+;
+; Accumulator is corrupted on exit
+;
+print_decimal:
+        ldx     #$ff
+        sec
+@pr100: inx
+        sbc     #100
+        bcs     @pr100
+        adc     #100
+        cpx     #0
+        beq     @skip100
+        jsr     @digit
+@skip100: ldx     #$ff
+        sec
+@pr10:  inx
+        sbc     #10
+        bcs     @pr10
+        adc     #10
+        cpx     #0
+        beq     @skip10
+        jsr     @digit
+@skip10:
+        tax
+@digit: pha
+        txa
+        ora     #'0'
+        _Call   SYS_CONSOLE_WRITE
+        pla
+        rts

@@ -17,7 +17,6 @@
         .importzp start_loc
 
         .export print_hex
-        .export print_decimal8
         .export print_decimal32
         .export parse_address
         .export parse_hex
@@ -35,41 +34,6 @@ ibuff:  .res    256
 bcd:    .res    6
 
         .segment "OSROM"
-
-;;
-; Print the 8-bit number in the accumulator in decimal
-;
-; Accumulator is corrupted on exit
-;
-print_decimal8:
-        ldx     #$ff
-        sec
-@pr100: inx
-        sbc     #100
-        bcs     @pr100
-        adc     #100
-        cpx     #0
-        beq     @skip100
-        jsr     @digit
-@skip100: ldx     #$ff
-        sec
-@pr10:  inx
-        sbc     #10
-        bcs     @pr10
-        adc     #10
-        cpx     #0
-        beq     @skip10
-        jsr     @digit
-@skip10:
-        tax
-        jsr     @digit
-        rtl
-@digit: pha
-        txa
-        ora     #'0'
-        _Call   SYS_CONSOLE_WRITE
-        pla
-        rts
 
 ;;
 ; Print the contents of the accumulator as a two-digit hexadecimal number.
