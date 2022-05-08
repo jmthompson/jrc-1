@@ -25,8 +25,6 @@
         .export skip_whitespace
         .export strmatch
 
-        .import console_write
-
         .segment "SYSDATA"
 
         .align   256
