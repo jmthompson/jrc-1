@@ -25,16 +25,16 @@
 ;;
 ; Push a 16-bit value onto the stack
 ;
-.macro  _PushWord value
-        pea #.loword(value)
+.macro  PushWord value
+        pea .loword(value)
 .endmacro
 
 ;;
 ; Push a 32-bit value onto the stack
 ;
-.macro  _PushLong value
-        pea #.hiword(value)
-        pea #.loword(value)
+.macro  PushLong value
+        pea .hiword(value)
+        pea .loword(value)
 .endmacro
 
 ;;
@@ -150,3 +150,15 @@
 .macro  shortmx
         sep     #$30
 .endmacro
+
+;;
+; Processor status register bits
+;
+P_C = $01
+P_Z = $02
+P_I = $04
+P_D = $08
+P_M = $10
+P_X = $20
+P_V = $40
+P_N = $80
