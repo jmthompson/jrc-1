@@ -7,7 +7,6 @@
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
-        .include "util.inc"
 
         .import disassemble
         .import assemble
@@ -25,6 +24,7 @@
         .importzp   arg
         .importzp   start_loc
         .importzp   end_loc
+        .importzp   ibuffp
         .importzp   row_end
         .importzp   xmptr
         .importzp   xmeofp
@@ -170,10 +170,10 @@ parse_line:
         lda     start_loc+2
         sta     end_loc+2
 
-        getc
+        lda     [ibuffp]
         cmp     #'.'            ; did they specify a memory range?
         bne     @find
-        nextc
+        inc     ibuffp
         ldy     #4
         jsr     parse_hex       ; get end range
         beq     @bad
@@ -184,7 +184,7 @@ parse_line:
         lda     arg+2
         sta     end_loc+2
 
-@find:  getc
+@find:  lda     [ibuffp]
         bne     @found
         lda     #'m'        ; if no command given default to 'm'
 @found: cmp     #'A'
@@ -201,7 +201,7 @@ parse_line:
         cpx     #num_commands
         bne     @loop
         bra     @bad
-@match: nextc
+@match: inc     ibuffp
         txa
         clc
         rts
@@ -349,11 +349,11 @@ dump_memory:
 
 set_memory:
         jsr     skip_whitespace
-        getc
+        lda     [ibuffp]
         cmp     #$27                ; '
         bne     @hex
-@ascii: nextc
-        getc
+@ascii: inc     ibuffp
+        lda     [ibuffp]
         beq     @done
         sta     [start_loc]
         longm

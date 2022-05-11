@@ -10,7 +10,6 @@
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
-        .include "util.inc"
 
         .export assemble
 
@@ -36,7 +35,7 @@ assemble:
         lda     #'!'
         _PrintChar
         jsr     read_line
-        getc
+        lda     [ibuffp]
         beq     @exit
         _PrintString @erase
         _PrintString @msg
