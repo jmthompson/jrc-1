@@ -3,6 +3,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;
+; Read a character
+;
+.macro  _GetChar
+        _Call    SYS_CONSOLE_READ
+.endmacro
+
+;;
 ; Output a character
 ;
 .macro  _PrintChar
