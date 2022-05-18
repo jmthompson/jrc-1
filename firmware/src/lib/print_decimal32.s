@@ -9,18 +9,18 @@
 
         .export print_decimal32
 
-        .segment "SYSDATA"
-
-        .align   256
-arg:    .res    4
-bcd:    .res    6
-tmp:    .res    1
-
         .segment "OSROM"
 
 ;;
 ; Print the 32-bit number passed on the stack to the console
 ; as a decimal number.
+;
+; Stack frame:
+; +1..7   : local varaibles
+; +8      : saved D
+; +10     : Saved P
+; +11..13 : return address
+; +14..17 : Input number
 ;
 ; Inputs:
 ; 32-bit input number on stack
@@ -29,54 +29,77 @@ tmp:    .res    1
 ; All registers trashed
 ;
 print_decimal32:
-        lda     4,s
-        sta     arg
-        lda     6,s
-        sta     arg+2
-        lda     1,s
-        sta     5,s
-        lda     2,s
-        sta     6,s
+
+; local variables
+@bcd    = $01
+@tmp    = $07
+@arg    = $0E
+
+; Stack offsets
+@dreg   = $08
+
+; constants
+@psize  = 4         ; Size of input parameters
+@lsize  = 7         ; Size of local variables
+
+        php
+        phd
+        longmx
         tsc
-        clc
-        adcw    #4
+        sec
+        sbcw    #@lsize
         tcs
-        stz     bcd
-        stz     bcd+2
-        stz     bcd+4   ; Start output number at zero
+        tcd
+
+        stz     @bcd
+        stz     @bcd+2
+        stz     @bcd+4  ; Start output number at zero
         sed
         ldxw    #32
-:       asl     arg
-        rol     arg+2   ; Shift out a bit
-        lda     bcd     ; Multiply BCD x 2, and add bit from arg
-        adc     bcd
-        sta     bcd
-        lda     bcd+2
-        adc     bcd+2
-        sta     bcd+2
-        lda     bcd+4
-        adc     bcd+4
-        sta     bcd+4
+:       asl     @arg
+        rol     @arg+2  ; Shift out a bit
+        lda     @bcd    ; Multiply BCD x 2, and add bit from arg
+        adc     @bcd
+        sta     @bcd
+        lda     @bcd+2
+        adc     @bcd+2
+        sta     @bcd+2
+        lda     @bcd+4
+        adc     @bcd+4
+        sta     @bcd+4
         dex
         bne     :-
         cld
         shortm
-        stz     tmp         ; do not print until non-zero digit found
-        lda     bcd + 4
+        stz     @tmp        ; do not print until non-zero digit found
+        lda     @bcd + 4
         jsr     @byte
-        lda     bcd + 3
+        lda     @bcd + 3
         jsr     @byte
-        lda     bcd + 2
+        lda     @bcd + 2
         jsr     @byte
-        lda     bcd + 1
+        lda     @bcd + 1
         jsr     @byte
-        lda     bcd
+        lda     @bcd
         jsr     @byte
-        bit     tmp
+        bit     @tmp
         bmi     :+
         lda     #'0'
         _PrintChar
 :       longm
+        lda     @dreg+4,s
+        sta     @dreg+4+@psize,s
+        lda     @dreg+2,s
+        sta     @dreg+2+@psize,s
+        lda     @dreg,s
+        sta     @dreg+@psize,s
+        tsc
+        clc
+        adcw    #@lsize+@psize
+        tcs
+        pld
+        plp
+        clc
         rtl
 @byte:  tax
         lsr
@@ -88,12 +111,12 @@ print_decimal32:
         and     #$0F
 @digit: cmp     #0
         bne     :+
-        bit     tmp
+        bit     @tmp
         bmi     :+
         rts
 :       clc
         adc     #'0'
         _PrintChar
         lda     #$80
-        sta     tmp
+        sta     @tmp
         rts
