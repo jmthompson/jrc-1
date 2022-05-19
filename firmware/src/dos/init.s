@@ -12,7 +12,7 @@
         .import     cmd_buffer
         .import     devicenr
         .import     num_volumes
-        .import     print_decimal32
+        .import     format_decimal
         .import     sdcard_driver
         .import     volume_scan
 
@@ -24,6 +24,7 @@
         .segment "SYSDATA"
 
 num_devices:    .res    2
+strbuff:        .res    16
 
         .segment "OSROM"
 
@@ -70,7 +71,10 @@ dos_init:
         pha
         lda     cmd_buffer+2
         pha
-        jsl     print_decimal32
+        pea     $0001           ; use commas
+        PushLong strbuff
+        jsl     format_decimal
+        _PrintString strbuff
         _PrintString @mb
         jsr     volume_scan
 @next:  inc     devicenr
@@ -79,7 +83,10 @@ dos_init:
         pea     0
         lda     num_volumes
         pha
-        jsl     print_decimal32
+        pea     0
+        PushLong strbuff
+        jsl     format_decimal
+        _PrintString strbuff
         _PrintString @f2
         lda     num_volumes
         cmpw    #1

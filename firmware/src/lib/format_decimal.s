@@ -4,47 +4,52 @@
 ; *******************************
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "console.inc"
 
-        .export print_decimal32
+        .export format_decimal
 
         .segment "OSROM"
 
 ;;
-; Print the 32-bit number passed on the stack to the console
-; as a decimal number.
+; Cnvert a 32-bit number to decimal with optional commas.
 ;
 ; Stack frame:
 ; +1..7   : local varaibles
 ; +8      : saved D
 ; +10     : Saved P
 ; +11..13 : return address
-; +14..17 : Input number
+; +14..17 : Pointer to buffer
+; +18..19 : Format flags
+; +20..23 : Input number
 ;
 ; Inputs:
-; 32-bit input number on stack
+; [4] Number to conver
+; [2] Fomatting flags (bit 0 = commas on/off)
+; [4] Pointer to output buffer
 ;
 ; Outputs:
+; Formatted number in output buffer
 ; All registers trashed
 ;
-print_decimal32:
+format_decimal:
 
 ; local variables
 @bcd    = $01
 @tmp    = $07
-@arg    = $0E
+@buffer = $0E
+@format = $12
+@arg    = $14
 
 ; Stack offsets
 @dreg   = $08
 
 ; constants
-@psize  = 4         ; Size of input parameters
+@psize  = 10        ; Size of input parameters
 @lsize  = 7         ; Size of local variables
 
         php
         phd
-        longmx
+        longm
+        shortx
         tsc
         sec
         sbcw    #@lsize
@@ -55,7 +60,7 @@ print_decimal32:
         stz     @bcd+2
         stz     @bcd+4  ; Start output number at zero
         sed
-        ldxw    #32
+        ldx     #32
 :       asl     @arg
         rol     @arg+2  ; Shift out a bit
         lda     @bcd    ; Multiply BCD x 2, and add bit from arg
@@ -70,8 +75,11 @@ print_decimal32:
         dex
         bne     :-
         cld
+        ldaw    #%1001001000000000
+        sta     @arg         ; digit positions after which a comma should be printed
         shortm
         stz     @tmp        ; do not print until non-zero digit found
+        ldy     #0          ; output buffer index
         lda     @bcd + 4
         jsr     @byte
         lda     @bcd + 3
@@ -84,9 +92,11 @@ print_decimal32:
         jsr     @byte
         bit     @tmp
         bmi     :+
-        lda     #'0'
-        _PrintChar
-:       longm
+        lda     #0
+        jsr     @store
+:       lda     #0
+        sta     [@buffer],y
+        longm
         lda     @dreg+4,s
         sta     @dreg+4+@psize,s
         lda     @dreg+2,s
@@ -110,13 +120,27 @@ print_decimal32:
         txa
         and     #$0F
 @digit: cmp     #0
-        bne     :+
+        bne     @store
         bit     @tmp
-        bmi     :+
+        bmi     @store
+        longm
+        asl     @arg
+        shortm
         rts
-:       clc
+@store: clc
         adc     #'0'
-        _PrintChar
+        sta     [@buffer],Y
+        iny
         lda     #$80
         sta     @tmp
-        rts
+        lda     @format
+        and     #1
+        beq     :+
+        longm
+        asl     @arg
+        shortm
+        bcc     :+
+        lda     #','
+        sta     [@buffer],Y
+        iny
+:       rts
