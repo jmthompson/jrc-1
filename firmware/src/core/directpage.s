@@ -12,8 +12,6 @@
         .exportzp   ptr
         .exportzp   tmp
 
-        .exportzp   ibuffp
-        .exportzp   ibuffsz
         .exportzp   jiffies
         .exportzp   lastblk
         .exportzp   blkno
@@ -31,10 +29,6 @@ params:         .res    4
 ; Generic temp locations, used lots of places. VERY temporary!
 ptr:            .res    4
 tmp:            .res    2
-
-; Line input library. TODO: remove these
-ibuffp:         .res    3
-ibuffsz:        .res    1
 
 ; VIA driver variables
 jiffies:        .res    4

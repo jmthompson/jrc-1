@@ -34,7 +34,7 @@ assemble:
         _PrintChar
         lda     #'!'
         _PrintChar
-        jsr     read_line
+        jsl     read_line
         lda     [ibuffp]
         beq     @exit
         _PrintString @erase

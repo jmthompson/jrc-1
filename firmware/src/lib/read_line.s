@@ -5,16 +5,10 @@
 
         .include "common.inc"
         .include "syscalls.inc"
+        .include "console.inc"
         .include "ascii.inc"
 
-        .importzp ibuffp
-
-        .export read_line
-
-        .segment "SYSDATA"
-
-        .align   256
-ibuff:  .res    256
+        .export     read_line
 
         .segment "OSROM"
 
@@ -27,14 +21,20 @@ ibuff:  .res    256
 ; A,Y : contents trashed
 ;
 read_line:
-        lda     #<ibuff
-        sta     ibuffp
-        lda     #>ibuff
-        sta     ibuffp+1
-        lda     #^ibuff
-        sta     ibuffp+2
-        ldy     #0
-@loop:  _Call   SYS_CONSOLE_READ
+
+; local direct page variables
+@ibuffsz = $07          ; size of input buffer
+@ibuffp  = @ibuffsz+2   ; pointer to input buffer
+@psize   = 6             ; # of bytes to remove from stack
+
+        php
+        phd
+        tsc
+        tcd
+        shortm
+        longx
+        ldyw    #0
+@loop:  _GetChar
         bcs     @loop
         cmp     #BS
         beq     @bs
@@ -44,18 +44,30 @@ read_line:
         beq     @cls
         cmp     #' '
         bcc     @loop
-        sta     [ibuffp],y
-        _Call   SYS_CONSOLE_WRITE
+        sta     [@ibuffp],Y
+        _PrintChar
         iny
+        cpyw    @ibuffsz
         bne     @loop
         dey
 @eol:   lda     #0
-        sta     [ibuffp],y
-        rts
-@bs:    cpy     #0
+        sta     [@ibuffp],Y
+        lda     4,s
+        sta     4+@psize,s
+        longm
+        lda     5,s
+        sta     5+@psize,s
+        tsc
+        clc
+        adcw    #@psize+3
+        pld
+        plp
+        tcs
+        rtl
+@bs:    cpyw    #0
         beq     @loop
-        _Call   SYS_CONSOLE_WRITE
+        _PrintChar
         dey
         bra     @loop
-@cls:   _Call   SYS_CONSOLE_WRITE
+@cls:   _PrintChar
         bra     @loop

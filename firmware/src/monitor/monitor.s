@@ -15,7 +15,6 @@
         .import parse_hex
         .import print_hex
         .import print_spaces
-        .import skip_whitespace
         .import XModemSend
         .import XModemRcv
         ;.import flash_update
@@ -24,10 +23,13 @@
         .importzp   arg
         .importzp   start_loc
         .importzp   end_loc
-        .importzp   ibuffp
         .importzp   row_end
         .importzp   xmptr
         .importzp   xmeofp
+
+        .importzp   ibuffp
+        .import     ibuff
+        .import     IBUFFSZ
 
         .export monitor_start
         .export monitor_brk
@@ -142,7 +144,16 @@ monitor_nmi:
 monitor_loop:        
         puteol
         putc    #'*'
-        jsr     read_line
+        longm
+        ldaw    #.hiword(ibuff)
+        sta     ibuffp+2
+        pha
+        ldaw    #.loword(ibuff)
+        sta     ibuffp
+        pha
+        shortm
+        pea     IBUFFSZ
+        jsl     read_line
         puteol
         jsr     parse_line
         bcs     monitor_loop
@@ -173,7 +184,9 @@ parse_line:
         lda     [ibuffp]
         cmp     #'.'            ; did they specify a memory range?
         bne     @find
-        inc     ibuffp
+        shortm
+        inc32   ibuffp
+        longm
         ldy     #4
         jsr     parse_hex       ; get end range
         beq     @bad
@@ -201,7 +214,9 @@ parse_line:
         cpx     #num_commands
         bne     @loop
         bra     @bad
-@match: inc     ibuffp
+@match: longm
+        inc32   ibuffp
+        shortm
         txa
         clc
         rts
@@ -352,7 +367,9 @@ set_memory:
         lda     [ibuffp]
         cmp     #$27                ; '
         bne     @hex
-@ascii: inc     ibuffp
+@ascii: longm
+        inc32   ibuffp
+        shortm
         lda     [ibuffp]
         beq     @done
         sta     [start_loc]
@@ -416,3 +433,20 @@ xmodem_receive:
         lda     start_loc+2
         sta     xmptr+2
         jmp     XModemRcv
+
+;;
+; Skip input_index ahead to either the first non-whitespace character,
+; or the end of line NULL, whichever occurs first.
+;
+skip_whitespace:
+        php
+@loop:  shortm
+        lda     [ibuffp]
+        beq     @exit
+        cmp     #' '+1
+        bge     @exit
+        longm
+        inc32   ibuffp
+        bra     @loop
+@exit:  plp
+        rts
