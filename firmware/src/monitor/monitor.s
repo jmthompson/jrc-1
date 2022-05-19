@@ -389,9 +389,13 @@ set_memory:
         bra     @hex
 @done:  rts
 
+;;
+; Perform a simulated JSL to the code at start_loc. The code will
+; be called in full 16-bit mode.
+;
 run_code:
         phk
-        longm
+        longmx
         ldaw    #(@ret & $ffff)-1
         pha
         shortm
@@ -401,9 +405,16 @@ run_code:
         lda     start_loc
         dec
         pha
-        shortm
+        lda     a_reg
+        ldx     x_reg
+        ldy     y_reg
         rtl
-@ret:   rts
+@ret:   longmx
+        sta     a_reg
+        stx     x_reg
+        sty     y_reg
+        shortmx
+        rts
 
 monitor_exit:
         pla                         ; pop return address of the dispatcher
