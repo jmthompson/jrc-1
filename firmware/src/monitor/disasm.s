@@ -46,6 +46,7 @@ PREG_X  = $10
 ; Entry point for the monitor's (L)ist command
 ;;
 disassemble:
+        shortmx
         lda     #2
         sta     mwidth
         sta     xwidth              ; Default to m=1, x=1
@@ -55,6 +56,7 @@ disassemble:
         plx
         dex
         bne     @loop
+        longmx
         rts
 
 ;;

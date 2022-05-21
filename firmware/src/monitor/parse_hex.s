@@ -14,26 +14,19 @@
         .segment "OSROM"
 
 ;;
-; Attempt to parse up to Y hex digits at the current ibuffp
-; and store the result in arg.
-;
-; On entry:
-;
-;   Y : maximum number of digits to parse, 1-8
+; Attempt to parse up to 4 hex digits at the current ibuffp
+; and return the results in arg.
 ;
 ; On exit:
 ;
-;   c : Clear if at least one digit was parsed
-;   Y : number of digits parsed. 0 -> 8
+; Y = number of digits parsed
+; n = reflects value in Y
 ;
 parse_hex:
-        sty     maxhex
-        longm
         stz     arg
-        stz     arg+2
-        shortm
-        ldy     #0
-@next:  lda     [ibuffp]
+        ldyw    #0
+@next:  shortm
+        lda     [ibuffp]
         cmp     #' '+1
         blt     @done
         sec
@@ -54,10 +47,10 @@ parse_hex:
         shortm
         ora     arg
         sta     arg
-        inc     ibuffp
+        longm
+        inc32   ibuffp
         iny
-        cpy     maxhex
         bne     @next
-@done:  cpy     #0
+@done:  longm
+        cpyw    #0
         rts
-

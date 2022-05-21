@@ -100,11 +100,14 @@ start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
 monitor_start:
+        longmx
         _PrintString start_banner
         bra     monitor_loop
 
+;;
+; Capture the processor registers from an IRQ/NMI/BRK stack frame
+;
 capture_registers:
-        longm
         lda     3,s
         sta     y_reg
         lda     5,s
@@ -121,60 +124,69 @@ capture_registers:
         clc
         adcw    #15
         sta     sp_reg
-        shortmx
+        shortm
         lda     11,s
         sta     db_reg
         lda     12,s
         sta     sr_reg
         lda     15,s
         sta     pb_reg
+        longm
         rts
 
+;;
+; System BRK handler
+;
 monitor_brk:
+        longmx
         jsr     capture_registers
         _PrintString brk_banner
         jsr     print_registers
-        jmp     monitor_loop
+        bra     monitor_loop
 
+;;
+; System NMI handler
+;
 monitor_nmi:
+        longmx
         jsr     capture_registers
         _PrintString nmi_banner
         jsr     print_registers
+        ; fall through
 
 monitor_loop:        
-        puteol
-        putc    #'*'
-        longm
+        _PrintString @prompt
         ldaw    #.hiword(ibuff)
         sta     ibuffp+2
         pha
         ldaw    #.loword(ibuff)
         sta     ibuffp
         pha
-        shortm
         pea     IBUFFSZ
         jsl     read_line
-        puteol
+        ldaw    #CR
+        _PrintChar
+        ldaw    #LF
+        _PrintChar
         jsr     parse_line
         bcs     monitor_loop
         jsr     dispatch
         bra     monitor_loop
+@prompt: .byte  CR, LF, '*', 0
 
 dispatch:
+        andw    #255
         asl
         tax
-        longm
-        lda     f:handlers,x
+        lda     f:handlers,X
         pha
-        shortm
         rts
 
-;
+;;
 ; Parse the current input line
 ;
 parse_line:
         jsr     parse_address
-        longm
         lda     start_loc
         sta     end_loc
         shortm
@@ -184,66 +196,47 @@ parse_line:
         lda     [ibuffp]
         cmp     #'.'            ; did they specify a memory range?
         bne     @find
-        shortm
-        inc32   ibuffp
         longm
-        ldy     #4
+        inc32   ibuffp
         jsr     parse_hex       ; get end range
         beq     @bad
-        longm
         lda     arg
+        cmp     start_loc
+        blt     @bad
         sta     end_loc
         shortm
-        lda     arg+2
-        sta     end_loc+2
-
 @find:  lda     [ibuffp]
-        bne     @found
+        bne     :+
         lda     #'m'        ; if no command given default to 'm'
-@found: cmp     #'A'
+:       cmp     #'A'
         blt     :+
         cmp     #'Z'+1
         bge     :+
         ora     #$20        ; force lowercase
 :       sta     cmd
-        ldx     #0
-@loop:  lda     f:commands,x
+        ldxw    #0
+@loop:  lda     f:commands,X
         cmp     cmd
         beq     @match
         inx
-        cpx     #num_commands
+        cpxw    #num_commands
         bne     @loop
         bra     @bad
 @match: longm
         inc32   ibuffp
-        shortm
         txa
         clc
         rts
-@bad:   jsr     syntax_error
+@bad:   _PrintString @msg
         sec
         rts
-
-;;
-; Display the position of a syntax error in the input buffer
-; The error is assumed to be at the current input index.
-;
-syntax_error:
-        ldx     ibuffp
-        inx
-        inx
-        jsr     print_spaces
-        lda     #'^'
-        _PrintChar
-        _PrintString @msg
-        rts
-
-@msg:   .byte   " Error", CR, 0
+@msg:   .byte   "Syntax Error", CR, LF, 0
 
 ;
 ; Display the values of the saved CPU registers.
 ;
 print_registers:
+        shortm
         putc    #'A'
         putc    #'='
         puthex  a_reg+1
@@ -291,9 +284,11 @@ print_registers:
         putc    #'='
         puthex  db_reg
         puteol
+        longm
         rts
 
 dump_memory:
+        shortm
         lda     start_loc
         ora     #7
         sta     row_end
@@ -331,7 +326,7 @@ dump_memory:
         bcs     @printable
         lda     #'?'
 @printable:
-        _Call   SYS_CONSOLE_WRITE
+        _PrintChar
         lda     start_loc
         cmp     row_end
         beq     @endofrow
@@ -350,7 +345,6 @@ dump_memory:
         lda     end_loc
         inc
         sta     start_loc
-        shortm
         rts
 @nextrow:
         lda     row_end
@@ -364,6 +358,7 @@ dump_memory:
 
 set_memory:
         jsr     skip_whitespace
+        shortm
         lda     [ibuffp]
         cmp     #$27                ; '
         bne     @hex
@@ -378,7 +373,6 @@ set_memory:
         shortm
         bra     @ascii
 @hex:   jsr     skip_whitespace
-        ldy     #4
         jsr     parse_hex
         beq     @done
         lda     arg
@@ -387,7 +381,8 @@ set_memory:
         inc     start_loc
         shortm
         bra     @hex
-@done:  rts
+@done:  longm
+        rts
 
 ;;
 ; Perform a simulated JSL to the code at start_loc. The code will
@@ -413,7 +408,6 @@ run_code:
         sta     a_reg
         stx     x_reg
         sty     y_reg
-        shortmx
         rts
 
 monitor_exit:
@@ -422,6 +416,7 @@ monitor_exit:
         rts
 
 xmodem_send:
+        shortm
         lda     start_loc
         sta     xmptr
         lda     start_loc+1
@@ -434,23 +429,25 @@ xmodem_send:
         sta     xmeofp+1
         lda     end_loc+2
         sta     xmeofp+2
-        jmp     XModemSend
+        jsr     XModemSend
+        longm
+        rts
 
 xmodem_receive:
         lda     start_loc
         sta     xmptr
-        lda     start_loc+1
-        sta     xmptr+1
+        shortm
         lda     start_loc+2
         sta     xmptr+2
-        jmp     XModemRcv
+        jsr     XModemRcv
+        longm
+        rts
 
 ;;
 ; Skip input_index ahead to either the first non-whitespace character,
 ; or the end of line NULL, whichever occurs first.
 ;
 skip_whitespace:
-        php
 @loop:  shortm
         lda     [ibuffp]
         beq     @exit
@@ -459,5 +456,5 @@ skip_whitespace:
         longm
         inc32   ibuffp
         bra     @loop
-@exit:  plp
+@exit:  longm
         rts

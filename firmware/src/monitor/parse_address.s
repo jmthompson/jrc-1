@@ -25,25 +25,23 @@
 ;
 ; On exit:
 ;
-; ibuffp : Points to input buffer after any parsed address
-; start_loc : contains parsed address, if successful
-; A,Y : trashed
+; ibuffp    = Points to input buffer after any parsed address
+; start_loc = parsed address
 ;
 parse_address:
-        ldy     #4
         jsr     parse_hex
         beq     @done       ; No address present
+        shortm
         lda     [ibuffp]
         cmp     #'/'        ; Was the parsed value a bank value?
         bne     @addr
         lda     arg
         sta     start_loc+2 ; set bank byte
-        inc     ibuffp      ; Skip the "/"
-        ldy     #4
+        longm
+        inc32   ibuffp      ; Skip the "/"
         jsr     parse_hex   ; Continue trying to parse an address
         beq     @done
 @addr:  longm
         lda     arg
         sta     start_loc
-        shortm
 @done:  rts
