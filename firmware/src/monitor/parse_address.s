@@ -38,7 +38,7 @@ parse_address:
         lda     arg
         sta     start_loc+2 ; set bank byte
         longm
-        inc32   ibuffp      ; Skip the "/"
+        inc     ibuffp      ; Skip the "/"
         jsr     parse_hex   ; Continue trying to parse an address
         beq     @done
 @addr:  longm

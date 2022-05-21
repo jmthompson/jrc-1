@@ -48,7 +48,7 @@ parse_hex:
         ora     arg
         sta     arg
         longm
-        inc32   ibuffp
+        inc     ibuffp
         iny
         bne     @next
 @done:  longm

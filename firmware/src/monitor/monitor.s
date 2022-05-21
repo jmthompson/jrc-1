@@ -197,7 +197,7 @@ parse_line:
         cmp     #'.'            ; did they specify a memory range?
         bne     @find
         longm
-        inc32   ibuffp
+        inc     ibuffp
         jsr     parse_hex       ; get end range
         beq     @bad
         lda     arg
@@ -223,7 +223,7 @@ parse_line:
         bne     @loop
         bra     @bad
 @match: longm
-        inc32   ibuffp
+        inc     ibuffp
         txa
         clc
         rts
@@ -363,7 +363,7 @@ set_memory:
         cmp     #$27                ; '
         bne     @hex
 @ascii: longm
-        inc32   ibuffp
+        inc     ibuffp
         shortm
         lda     [ibuffp]
         beq     @done
@@ -454,7 +454,7 @@ skip_whitespace:
         cmp     #' '+1
         bge     @exit
         longm
-        inc32   ibuffp
+        inc     ibuffp
         bra     @loop
 @exit:  longm
         rts
