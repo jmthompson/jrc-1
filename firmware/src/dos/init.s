@@ -40,7 +40,7 @@ dos_init:
         pea     0
         lda     devicenr
         pha
-        _Call   SYS_GET_DEVICE_BY_ID
+        _Call   SYS_GET_DEVICE
         pla
         sta     devicep
         pla
