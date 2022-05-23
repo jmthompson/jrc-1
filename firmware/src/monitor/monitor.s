@@ -38,14 +38,14 @@
         .segment "SYSDATA"
 
 a_reg:      .res    2
+b_reg:      .res    1
+d_reg:      .res    2
+p_reg:      .res    1
+s_reg:      .res    2
 x_reg:      .res    2
 y_reg:      .res    2
-sp_reg:     .res    2
-d_reg:      .res    2
 pc_reg:     .res    2
-pb_reg:     .res    1
-db_reg:     .res    1
-sr_reg:     .res    1
+k_reg:      .res    1
 
         .segment "OSROM"
 
@@ -60,6 +60,7 @@ commands:
         .byte   ':'
         .byte   '!'
         .byte   '#'
+        .byte   '='
 
 num_commands = *-commands
 
@@ -91,6 +92,7 @@ handlers:
         .addr   set_memory-1
         .addr   assemble-1
         .addr   print_registers-1
+        .addr   set_register-1
 
 brk_banner:
         .byte   "*** Break ***", CR, LF, 0
@@ -123,14 +125,14 @@ capture_registers:
         tsc
         clc
         adcw    #15
-        sta     sp_reg
+        sta     s_reg
         shortm
         lda     11,s
-        sta     db_reg
+        sta     b_reg
         lda     12,s
-        sta     sr_reg
+        sta     p_reg
         lda     15,s
-        sta     pb_reg
+        sta     k_reg
         longm
         rts
 
@@ -227,8 +229,12 @@ parse_line:
         txa
         clc
         rts
-@bad:   _PrintString @msg
+@bad:   jsr     syntax_error
         sec
+        rts
+
+syntax_error:
+        _PrintString @msg
         rts
 @msg:   .byte   "Syntax Error", CR, LF, 0
 
@@ -252,16 +258,18 @@ print_registers:
         puthex  y_reg+1
         puthex  y_reg
         putc    #' '
-        putc    #'S'
-        putc    #'R'
-        putc    #'='
-        puthex  sr_reg
-        putc    #' '
-        putc    #'S'
         putc    #'P'
         putc    #'='
-        puthex  sp_reg+1
-        puthex  sp_reg
+        puthex  p_reg
+        putc    #' '
+        putc    #'S'
+        putc    #'='
+        puthex  s_reg+1
+        puthex  s_reg
+        putc    #' '
+        putc    #'B'
+        putc    #'='
+        puthex  b_reg
         putc    #' '
         putc    #'D'
         putc    #'='
@@ -274,15 +282,9 @@ print_registers:
         puthex  pc_reg+1
         puthex  pc_reg
         putc    #' '
-        putc    #'P'
-        putc    #'B'
+        putc    #'K'
         putc    #'='
-        puthex  pb_reg
-        putc    #' '
-        putc    #'D'
-        putc    #'B'
-        putc    #'='
-        puthex  db_reg
+        puthex  k_reg
         puteol
         longm
         rts
@@ -390,9 +392,7 @@ set_memory:
 ;
 run_code:
         phk
-        longmx
-        ldaw    #(@ret & $ffff)-1
-        pha
+        pea     .loword(@ret)-1
         shortm
         lda     start_loc+2
         pha
@@ -441,6 +441,49 @@ xmodem_receive:
         sta     xmptr+2
         jsr     XModemRcv
         longm
+        rts
+
+set_register:
+        shortm
+        lda     [ibuffp]        ; grab two chars so we can test for 'DB'
+        cmp     #'A'
+        beq     @a
+        cmp     #'B'
+        beq     @b
+        cmp     #'D'
+        beq     @d
+        cmp     #'P'
+        beq     @p
+        cmp     #'X'
+        beq     @x
+        cmp     #'Y'
+        beq     @y
+@err:   jsr     syntax_error
+        longm
+        rts
+@a:     longm
+        lda     arg
+        sta     a_reg
+        rts
+@b:     lda     arg
+        sta     b_reg
+        longm
+        rts
+@d:     longm
+        lda     arg
+        sta     d_reg
+        rts
+@p:     lda     arg
+        sta     p_reg
+        longm
+        rts
+@x:     longm
+        lda     arg
+        sta     x_reg
+        rts
+@y:     longm
+        lda     arg
+        sta     y_reg
         rts
 
 ;;
