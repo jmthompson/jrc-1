@@ -56,7 +56,7 @@ via_init:
         ; SPI clock 400 kHZ
         lda     #$C0
         sta     via_base+via_acr
-        lda     #3
+        lda     #8                ; assuming 8 MHz phi2
         sta     via_base+via_t1cl
         stz     via_base+via_t1ch
 
