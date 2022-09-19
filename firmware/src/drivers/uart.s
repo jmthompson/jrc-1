@@ -34,7 +34,7 @@ txb_wri:    .res    1
 txa_on:     .res    1
 txb_on:     .res    1
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 ;
 ; Serial buffers

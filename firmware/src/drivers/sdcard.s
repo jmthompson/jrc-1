@@ -40,7 +40,7 @@ CARD_TYPE_V2      = 2
 blockp:         .res    4
 device_params:  .res    4
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 cmd:
 csd:        .res    16

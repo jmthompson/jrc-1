@@ -51,7 +51,7 @@ SPI_SS5     = $20   ; /SS5
 SPI_SS6     = $40   ; /SS6
 SPI_SS7     = $80   ; /SS7
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 ; Nonzero if the SPI hardware is busy (has a slave selecteD)
 spi_busy:   .res    2

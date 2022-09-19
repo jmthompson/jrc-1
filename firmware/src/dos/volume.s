@@ -20,7 +20,7 @@
 ; Partition entry pointer
 partp:      .res    4
 
-        .segment    "SYSDATA"
+        .segment    "BSS"
 
 vol_buffer: .res    VOLUME_STRUCT_SIZE
 

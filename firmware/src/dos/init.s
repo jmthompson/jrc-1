@@ -21,7 +21,7 @@
 
         .export     dos_init
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 num_devices:    .res    2
 strbuff:        .res    16

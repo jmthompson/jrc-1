@@ -20,7 +20,7 @@ blockp:         .res    4
 ; Poiner to current device
 devicep:        .res    4
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 ; General-purpose block r/w buffer
 block_buffer:   .res    512

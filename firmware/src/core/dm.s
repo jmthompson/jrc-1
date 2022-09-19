@@ -30,7 +30,7 @@
 
 device:         .res    4
 
-        .segment    "SYSDATA"
+        .segment    "BSS"
 
 ; Currently selected devicenr
 devicenr:       .res    2

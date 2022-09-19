@@ -1,0 +1,111 @@
+        .include "common.inc"
+
+        .segment "OSROM"
+
+syscall_names:
+        .faraddr    @cop00  ; $00
+        .faraddr    @cop01  ; $01
+        .faraddr    0       ; $02
+        .faraddr    0       ; $03
+        .faraddr    0       ; $04
+        .faraddr    0       ; $02
+        .faraddr    0       ; $06
+        .faraddr    0       ; $07
+        .faraddr    0       ; $08
+        .faraddr    0       ; $09
+        .faraddr    0       ; $0A
+        .faraddr    0       ; $0B
+        .faraddr    0       ; $0C
+        .faraddr    0       ; $0D
+        .faraddr    0       ; $0E
+        .faraddr    0       ; $0F
+        .faraddr    @cop10  ; $10
+        .faraddr    @cop11  ; $11
+        .faraddr    @cop12  ; $12
+        .faraddr    @cop13  ; $13
+        .faraddr    @cop14  ; $14
+        .faraddr    @cop15  ; $15
+        .faraddr    0       ; $16
+        .faraddr    0       ; $17
+        .faraddr    0       ; $18
+        .faraddr    0       ; $19
+        .faraddr    0       ; $1A
+        .faraddr    0       ; $1B
+        .faraddr    0       ; $1C
+        .faraddr    0       ; $1D
+        .faraddr    0       ; $1E
+        .faraddr    0       ; $1F
+        .faraddr    @cop20  ; $20
+        .faraddr    @cop21  ; $21
+        .faraddr    @cop22  ; $22
+        .faraddr    @cop23  ; $23
+        .faraddr    0       ; $24
+        .faraddr    0       ; $25
+        .faraddr    0       ; $26
+        .faraddr    0       ; $27
+        .faraddr    0       ; $28
+        .faraddr    0       ; $29
+        .faraddr    0       ; $2A
+        .faraddr    0       ; $2B
+        .faraddr    0       ; $2C
+        .faraddr    0       ; $2D
+        .faraddr    0       ; $2E
+        .faraddr    0       ; $2F
+        .faraddr    @cop30  ; $30
+        .faraddr    @cop31  ; $31
+        .faraddr    @cop32  ; $32
+        .faraddr    @cop33  ; $33
+        .faraddr    @cop34  ; $34
+        .faraddr    0       ; $35
+        .faraddr    0       ; $36
+        .faraddr    0       ; $37
+        .faraddr    0       ; $38
+        .faraddr    0       ; $39
+        .faraddr    0       ; $3A
+        .faraddr    0       ; $3B
+        .faraddr    0       ; $3C
+        .faraddr    0       ; $3D
+        .faraddr    0       ; $3E
+        .faraddr    0       ; $3F
+        .faraddr    @cop40  ; $40
+        .faraddr    @cop41  ; $41
+        .faraddr    @cop42  ; $42
+        .faraddr    @cop43  ; $43
+        .faraddr    @cop44  ; $44
+        .faraddr    @cop45  ; $45
+        .faraddr    @cop46  ; $46
+        .faraddr    @cop47  ; $47
+        .faraddr    0       ; $48
+        .faraddr    0       ; $49
+        .faraddr    0       ; $4A
+        .faraddr    0       ; $4B
+        .faraddr    0       ; $4C
+        .faraddr    0       ; $4D
+        .faraddr    0       ; $4E
+        .faraddr    0       ; $4F
+
+@cop00: .byte   "_GetUptime", 0
+@cop01: .byte   "_GetVersion", 0
+@cop10: .byte   "_ConsoleReset", 0
+@cop11: .byte   "_GetChar", 0
+@cop12: .byte   "_PutChar", 0
+@cop13: .byte   "_PrintString", 0
+@cop14: .byte   "_ClearScreen", 0
+@cop15: .byte   "_ClearLine", 0
+@cop20: .byte   "_GetCharSerialA", 0
+@cop21: .byte   "_PutCharSerialA", 0
+@cop22: .byte   "_GetCharSerialB", 0
+@cop23: .byte   "_PutCharSerialB", 0
+@cop30: .byte   "_SPISelect", 0
+@cop31: .byte   "_SPIDeselect", 0
+@cop32: .byte   "_SPITransfer", 0
+@cop33: .byte   "_SPISetSlowSpeed", 0
+@cop34: .byte   "_SPISetFastSpeed", 0
+@cop40: .byte   "_RegistrDevice", 0
+@cop41: .byte   "_UnregistrDevice", 0
+@cop42: .byte   "_GetNumDevices", 0
+@cop43: .byte   "_GetDevice", 0
+@cop44: .byte   "_FindDevice", 0
+@cop45: .byte   "_CallDevice", 0
+@cop46: .byte   "_OpenDevice", 0
+@cop47: .byte   "_CloseDevice", 0

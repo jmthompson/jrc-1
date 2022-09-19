@@ -72,7 +72,7 @@
 ; non-zero page variables and buffers
 ;
 ;
-        .segment "SYSDATA"
+        .segment "BSS"
         .align 256
 
 Rbuff:  .res    132

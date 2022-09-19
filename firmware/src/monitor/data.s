@@ -34,7 +34,7 @@ start_loc:      .res    3
 end_loc:        .res    3
 row_end:        .res    1
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 IBUFFSZ = 256
 

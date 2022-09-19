@@ -35,7 +35,7 @@
         .export monitor_brk
         .export monitor_nmi
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 a_reg:      .res    2
 b_reg:      .res    1

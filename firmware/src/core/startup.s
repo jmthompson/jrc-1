@@ -27,7 +27,7 @@
         .import rom_version
         .import rom_date
 
-        .segment "SYSDATA"
+        .segment "BSS"
 
 ; General purpose JML trampoline for calling functions. First byte
 ; is always a JML instruction, the last four bytes are for the
@@ -65,7 +65,7 @@ sysreset:
         cli
 
         ; Now do the remaining initialization. At this point all code
-        ; is running with DB set to the OS bank (SYSDATA segment)
+        ; is running with DB set to the OS bank (BSS segment)
 
         lda     #OS_DB
         pha
