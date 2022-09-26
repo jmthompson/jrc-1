@@ -47,9 +47,9 @@ PREG_X  = $10
 ;;
 disassemble:
         shortmx
-        lda     #2
+        lda     #3
         sta     mwidth
-        sta     xwidth              ; Default to m=1, x=1
+        sta     xwidth              ; Default to m=0, x=0
         ldx     #20
 @loop:  phx
         jsr     print_instruction
