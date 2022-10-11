@@ -230,6 +230,7 @@ parse_line:
         clc
         rts
 @bad:   jsr     syntax_error
+        longm
         sec
         rts
 
