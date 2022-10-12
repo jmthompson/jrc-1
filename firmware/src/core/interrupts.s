@@ -17,8 +17,6 @@
         .import syscall_table
         .import trampoline
 
-        .importzp params
-
         .export syscop
         .export sysirq
         .export sysnmi
@@ -46,7 +44,6 @@ syscop:
 @pc_reg  := @p_reg  + 1         ; PC
 @pb_reg  := @pc_reg + 2         ; PB
 @cop_size := @pb_reg + 1 - @p_reg
-@params  := @pb_reg + 1
 
         longmx
         phb
@@ -87,27 +84,18 @@ syscop:
         sta     trampoline+3
         lda     syscall_table,x         ; Low word of handler address
         sta     trampoline+1
-        lda     params
-        pha
         phd                             ; save our DP for after dispatch
         lda     @a_reg                  ; Grab A; it might be a parameter
-        pha
-        phd                             ; save for params calc
-        ldaw    #OS_DP
-        tcd
-        pla                             ; get original DP
+        pha                             ; save it while we switch direct pages
+        tdc
         clc
-        adcw    #@params
-        sta     params                  ; [params] now points to caller's params
-        stz     params+2
+        adcw    #@sc_size+@cop_size
+        tcd
         pla                             ; restore A from caller
-        shortmx
         jsl     trampoline
         longmx
         pld
         sta     @a_reg                  ; return value of A to caller
-        pla
-        sta     params
         bcc     @noerr
         shortm
         lda     @p_reg

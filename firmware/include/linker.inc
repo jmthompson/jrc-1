@@ -11,3 +11,14 @@ IRQ_DB       = $00
 OS_DB        = .bankbyte(__BSS_START__)
 OS_DP        = __BIOS_DP_START__
 OS_STACKTOP  = __SYSSTACK_START__ + __SYSSTACK_SIZE__ - 1
+
+.macro  SET_OS_DP
+        php
+        longm
+        pha
+        ldaw    #OS_DP
+        tcd
+        pla
+        shortm
+.endmacro
+

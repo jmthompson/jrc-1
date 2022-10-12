@@ -8,9 +8,9 @@
         .include    "common.inc"
         .include    "device.inc"
         .include    "errors.inc"
+        .include    "linker.inc"
         .include    "syscall_macros.inc"
 
-        .importzp   params
         .importzp   ptr
         .importzp   tmp
 
@@ -26,18 +26,19 @@
         .import     strmatch
         .import     trampoline
 
-        .segment    "ZEROPAGE"
-
-device:         .res    4
-
         .segment    "BSS"
 
+; Currently selected device
+device:         .res    4
 ; Currently selected devicenr
 devicenr:       .res    2
 ; The number of registered devices
 num_devices:    .res    2
 ; An array of block device structure pointers
 device_list:    .res    MAX_DEVICES * 4
+
+; Temporary storage for device name pointers
+device_name:    .res    4
 
         .segment "OSROM"
 
@@ -58,10 +59,17 @@ dm_init:
 ; c = 1 on failure
 ;
 dm_register:
+@i_device   = $01
+@o_devicenr = @i_device + 4
+
         SC_ENTER
-        PARAM32 device, 1
+        lda     @i_device
+        sta     device
+        lda     @i_device + 2
+        sta     device + 2
         jsr     register_device
-        RET16   devicenr
+        lda     devicenr
+        sta     @o_devicenr
         SC_EXIT
 
 ;;
@@ -102,8 +110,12 @@ dm_unregister:
 ; [2,O]: Device count
 ;
 dm_get_num_devices:
+
+@o_num_devices = $01
+
         SC_ENTER
-        RET16   num_devices
+        lda     num_devices
+        sta     @o_num_devices
         SC_SUCCESS
 
 ;;
@@ -114,12 +126,20 @@ dm_get_num_devices:
 ; [4,O]: Pointer to device structure
 ;
 dm_get_device:
+
+@i_devicenr = $01
+@o_device   = @i_devicenr + 2
+
         SC_ENTER
-        PARAM16 devicenr, 1
+        lda     @i_devicenr
+        sta     devicenr
         jsr     select_device
         bcc     :+
         SC_EXIT
-:       RET32   device
+:       lda     device
+        sta     @o_device
+        lda     device + 2
+        sta     @o_device + 2
         SC_SUCCESS
 
 ;;
@@ -127,24 +147,37 @@ dm_get_device:
 ;
 ; Params:
 ; [4,I]: Pointer to device name
-; [2,O]: Pointer to device structure
+; [2,O]: Device number
 ;
 dm_find_device:
+
+@i_device_name  = $01
+@o_devicenr     = @i_device_name + 4
+@ptr            = @i_device_name    ; reusing input param
+
         SC_ENTER
-        PARAM32 ptr, 1
-        phy
+
+        lda     @i_device_name
+        sta     device_name
+        lda     @i_device_name + 2
+        sta     device_name + 2
+
         stz     devicenr
 @check: jsr     select_device
-        lda     ptr + 2
+        lda     device
+        sta     @ptr
+        lda     device + 2
+        sta     @ptr + 2
+        lda     device_name + 2
         pha
-        lda     ptr
+        lda     device_name
         pha
         ldyw    #6
-        lda     [device],y
+        lda     [@ptr],y
         pha
         dey
         dey
-        lda     [device],y
+        lda     [@ptr],y
         pha
         jsl     strmatch
         bcc     @found
@@ -152,10 +185,9 @@ dm_find_device:
         lda     devicenr
         cmp     num_devices
         bne     @check
-        ply
         SC_ERROR ERR_NO_SUCH_DEVICE
-@found: ply
-        RET16   devicenr
+@found: lda     devicenr
+        sta     @o_devicenr
         SC_SUCCESS
 
 ;;
@@ -168,13 +200,19 @@ dm_find_device:
 ; +4 .. function-specific
 ;
 dm_call:
+
+@i_param_block  = $01
+@i_function     = @i_param_block + 4
+@i_devicenr     = @i_function + 2
+
         SC_ENTER
-        PARAM32 ptr, 1
-        PARAM16 tmp, 1
-        PARAM16 devicenr, 1
+        lda     @i_devicenr
+        sta     devicenr
         jsr     select_device
         bcs     :+
-        ldx     tmp
+        lda     @i_param_block
+        ldy     @i_param_block + 2
+        ldx     @i_function
         jsr     call_device
 :       SC_EXIT
 
@@ -243,51 +281,57 @@ select_device:
 ; Call function X in the currently selected device.
 ;
 ; On entry:
+; A/Y = param block ptr (low/hi)
 ; X = function number
-; Param block in [ptr]
 ;
 ; On exit:
 ; Error status in C/c
-; X undefined
-; Y preserved
+; X,Y undefined
 ;
 call_device:
+        phd
         phy
+        pha                       ; save param block ptr on stack for driver call
+        ldaw    #OS_DP
+        tcd
+        lda     device
+        sta     ptr
+        lda     device + 2
+        sta     ptr + 2
         ldyw    #12
-        lda     [device],y  ; get number of functions
+        lda     [ptr],y  ; get number of functions
         sta     tmp
         cpx     tmp
-        bge     @err
-        txa
+        blt     :+
+        pla
+        pla
+        ldaw    #ERR_NOT_SUPPORTED
+        pld
+        sec
+        rts
+:       txa
         asl
         asl
         clc
         adcw    #14         ; Function pointers start at +12
         tay
-        lda     [device],y
+        lda     [ptr],y
         sta     trampoline+1
         iny
         iny
-        lda     [device],y
+        lda     [ptr],y
         sta     trampoline+3
-        lda     ptr + 2
-        pha
-        lda     ptr
-        pha
         ldyw    #10
-        lda     [device],y
+        lda     [ptr],y
         pha
         dey
         dey
-        lda     [device],y
+        lda     [ptr],y
         pha
         jsl     trampoline
         plx                 ; Clean up the stack
         plx
         plx
         plx
-        ply                 ; restore Y
-        rts
-@err:   ldaw    #ERR_NOT_SUPPORTED
-        sec
+        pld
         rts

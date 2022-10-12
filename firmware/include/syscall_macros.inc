@@ -11,8 +11,6 @@
 ; initialize the Y register to zero for parameter access.
 ;
 .macro  SC_ENTER
-        rep     #$30
-        ldyw    #0
 .endmacro
 
 ;;
@@ -39,66 +37,4 @@
 .endif
         sec
         SC_EXIT
-.endmacro
-
-;;
-; Extract a 16-bit caller parameter into <loc>. If <cont> is defined,
-; the Y register is incremented to point to the next parameter.
-;
-.macro  PARAM16 loc, cont
-        lda     [params],y
-        sta     loc
-.ifnblank cont
-        iny
-        iny
-.endif
-.endmacro
-
-;;
-; Extract a 16-bit caller parameter into <loc>. If <cont> is defined,
-; the Y register is incremented to point to the next parameter.
-;
-.macro  PARAM32 loc, cont
-        lda     [params],y
-        sta     loc
-        iny
-        iny
-        lda     [params],y
-        sta     loc+2
-.ifnblank cont
-        iny
-        iny
-.endif
-.endmacro
-
-;;
-; Return a 16-bit value on the stack. If <cont> is defined,
-; the Y register is incremented to point to the next return
-; parameter.
-;
-.macro  RET16   loc, cont
-        lda     loc
-        sta     [params],y
-.ifnblank cont
-        iny
-        iny
-.endif
-.endmacro
-
-;;
-; Return a 32-bit value on the stack. If <cont> is defined,
-; the Y register is incremented to point to the next return
-; parameter.
-;
-.macro  RET32   loc, cont
-        lda     loc
-        sta     [params],y
-        iny
-        iny
-        lda     loc+2
-        sta     [params],y
-.ifnblank cont
-        iny
-        iny
-.endif
 .endmacro

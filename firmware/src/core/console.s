@@ -14,19 +14,17 @@
 
         .import putc_seriala
 
-        .importzp params
-
-        .segment "ZEROPAGE"
-str:    .res 4
-
         .segment "BOOTROM"
 
 console_init:
+        php
         jsl     console_reset
         jsl     console_cls
+        plp
         rts
 
 console_reset:
+        shortmx
         ldx     #0
 :       lda     f:@reset,x
         beq     :+
@@ -43,6 +41,7 @@ console_reset:
         .byte   0
 
 console_cls:
+        shortmx
         lda     #ESC
         jsl     putc_seriala
         lda     #LBRACKET
@@ -53,6 +52,7 @@ console_cls:
         jml     putc_seriala
 
 console_cll:
+        shortmx
         lda     #ESC
         jsl     putc_seriala
         lda     #LBRACKET
@@ -66,17 +66,13 @@ console_cll:
 ; Print a null-terminated string up to 255 characters in length.
 ;
 console_writeln:
-        longm
+
+; Input parameters
+@str = $01
+
+        shortmx
         ldy     #0
-        lda     [params],y
-        sta     str
-        iny
-        iny
-        lda     [params],y
-        sta     str+2
-        shortm
-        ldy     #0
-@loop:  lda     [str],y
+@loop:  lda     [@str],y
         beq     @exit
         jsl     putc_seriala
         iny

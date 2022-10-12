@@ -4,6 +4,7 @@
 ; *******************************
 
         .include "common.inc"
+        .include "linker.inc"
         .include "nxp_uart.s"
 
         .export uart_init
@@ -275,7 +276,11 @@ s_nxptab = *-nxpsutab
 ; code is in A.
 ;
 getc_seriala:
+        phd
         php
+        longm
+        ldaw    #OS_DP
+        tcd
         shortmx
         ldx     rxa_rdi
         cpx     rxa_wri
@@ -284,9 +289,11 @@ getc_seriala:
         inx
         stx     rxa_rdi
         plp
+        pld
         clc
         rtl
 @empty: plp
+        pld
         sec
         rtl
 
@@ -296,7 +303,11 @@ getc_seriala:
 ; code is in A.
 ;
 getc_serialb:
+        phd
         php
+        longm
+        ldaw    #OS_DP
+        tcd
         shortmx
         ldx     rxb_rdi
         cpx     rxb_wri
@@ -305,9 +316,11 @@ getc_serialb:
         inx
         stx     rxb_rdi
         plp
+        pld
         clc
         rtl
 @empty: plp
+        pld
         sec
         rtl
 
@@ -317,7 +330,13 @@ getc_serialb:
 ; have an empty slot before returning.
 ;
 putc_seriala:
+        phd
         php
+        longm
+        pha
+        ldaw    #OS_DP
+        tcd
+        pla
         shortmx
         ldx     txa_wri
         inx
@@ -335,6 +354,7 @@ putc_seriala:
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_cra     ; Enable transmitter
 :       plp
+        pld
         clc
         rtl
 ;
@@ -343,7 +363,13 @@ putc_seriala:
 ; have an empty slot before returning.
 ;
 putc_serialb:
+        phd
         php
+        longm
+        pha
+        ldaw    #OS_DP
+        tcd
+        pla
         shortmx
         ldx     txb_wri
         inx
@@ -361,5 +387,6 @@ putc_serialb:
         lda     #nxpcrtxe
         sta     f:nxp_base+nx_crb     ; Enable transmitter
 :       plp
+        pld
         clc
         rtl

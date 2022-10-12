@@ -72,10 +72,11 @@ sysreset:
         plb                         ; Set the OS data bank
         lda     #$5C                ; JML $xxyyzz
         sta     trampoline          ; Init trampoline vector
-        jsr     console_init
-        jsr     startup_banner
 
         longmx
+
+        jsr     console_init
+        jsr     startup_banner
 
         jsl     dm_init
         jsl     spi_init
@@ -89,6 +90,8 @@ sysreset:
 ; Print the boot banner to the console
 ;
 startup_banner:
+        php
+        shortmx
         ; top line of box
         lda     #SHIFT_OUT
         _PrintChar
@@ -154,6 +157,7 @@ startup_banner:
         lda     #LF
         _PrintChar
 
+        plp
         rts
 
 @line:  .repeat 32
