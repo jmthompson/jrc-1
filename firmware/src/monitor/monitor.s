@@ -102,7 +102,6 @@ start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
 monitor_start:
-        longmx
         _PrintString start_banner
         bra     monitor_loop
 

@@ -76,11 +76,11 @@ sysreset:
         jsr     startup_banner
 
         longmx
+
         jsl     dm_init
         jsl     spi_init
         jsl     sdcard_init
         jsl     dos_init
-        shortmx
 
         jml     monitor_start
 
