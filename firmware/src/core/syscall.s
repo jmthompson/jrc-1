@@ -52,7 +52,7 @@ syscall_table_init:
         .segment "OSROM"
 
 unsupported_syscall:
-        SC_ERROR ERR_NOT_SUPPORTED
+        ERROR   ERR_NOT_SUPPORTED
 
 default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $00

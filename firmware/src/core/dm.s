@@ -58,50 +58,29 @@ dm_init:
 ; c = 0 on success
 ; c = 1 on failure
 ;
-dm_register:
-@i_device   = $01
-@o_devicenr = @i_device + 4
+.proc dm_register
 
-        SC_ENTER
-        lda     @i_device
+BEGIN_PARAMS
+  PARAM i_device, .dword
+  PARAM o_devicenr, .word
+END_PARAMS
+
+        lda     i_device
         sta     device
-        lda     @i_device + 2
+        lda     i_device + 2
         sta     device + 2
         jsr     register_device
         lda     devicenr
-        sta     @o_devicenr
-        SC_EXIT
-
-;;
-; Register a device
-;
-; Stack frame:
-;
-; [2,I] <device ptr high>
-; [2,I] <evice ptr low>
-;
-; On exit:
-; c = 0 on success
-; c = 1 on failure
-;
-dm_register_internal:
-        lda     3,s
-        sta     device
-        lda     5,s
-        sta     device+2
-        lda     1,s
-        sta     5,s
-        tsc
-        clc
-        adcw    #4
-        tcs
-        jmp     register_device
+        sta     o_devicenr
+        rtl
+.endproc
 
 ;;
 ; Unregfister a device. Not currently implemented
 ;
-dm_unregister:
-        SC_ERROR ERR_NOT_SUPPORTED
+.proc dm_unregister
+        ERROR ERR_NOT_SUPPORTED
+.endproc
 
 ;;
 ; Return the number of registered devices
@@ -109,14 +88,16 @@ dm_unregister:
 ; Params:
 ; [2,O]: Device count
 ;
-dm_get_num_devices:
+.proc dm_get_num_devices
 
-@o_num_devices = $01
+BEGIN_PARAMS
+  PARAM o_num_devices, .word
+END_PARAMS
 
-        SC_ENTER
         lda     num_devices
-        sta     @o_num_devices
-        SC_SUCCESS
+        sta     o_num_devices
+        SUCCESS
+.endproc
 
 ;;
 ; Return device driver structure for a given device ID
@@ -125,22 +106,24 @@ dm_get_num_devices:
 ; [2,I]: Device ID
 ; [4,O]: Pointer to device structure
 ;
-dm_get_device:
+.proc dm_get_device
 
-@i_devicenr = $01
-@o_device   = @i_devicenr + 2
+BEGIN_PARAMS
+  PARAM i_devicenr, .word
+  PARAM o_device,   .dword
+END_PARAMS
 
-        SC_ENTER
-        lda     @i_devicenr
+        lda     i_devicenr
         sta     devicenr
         jsr     select_device
         bcc     :+
-        SC_EXIT
+        rtl
 :       lda     device
-        sta     @o_device
+        sta     o_device
         lda     device + 2
-        sta     @o_device + 2
-        SC_SUCCESS
+        sta     o_device + 2
+        SUCCESS
+.endproc
 
 ;;
 ; Return device ID for a given device name
@@ -149,17 +132,18 @@ dm_get_device:
 ; [4,I]: Pointer to device name
 ; [2,O]: Device number
 ;
-dm_find_device:
+.proc dm_find_device
 
-@i_device_name  = $01
-@o_devicenr     = @i_device_name + 4
-@ptr            = @i_device_name    ; reusing input param
+BEGIN_PARAMS
+  PARAM i_device_name, .dword
+  PARAM o_devicenr,   .word
+END_PARAMS
 
-        SC_ENTER
+@ptr = i_device_name  ; reused
 
-        lda     @i_device_name
+        lda     i_device_name
         sta     device_name
-        lda     @i_device_name + 2
+        lda     i_device_name + 2
         sta     device_name + 2
 
         stz     devicenr
@@ -185,10 +169,11 @@ dm_find_device:
         lda     devicenr
         cmp     num_devices
         bne     @check
-        SC_ERROR ERR_NO_SUCH_DEVICE
+        ERROR   ERR_NO_SUCH_DEVICE
 @found: lda     devicenr
-        sta     @o_devicenr
-        SC_SUCCESS
+        sta     o_devicenr
+        SUCCESS
+.endproc
 
 ;;
 ; Call a function on a device.
@@ -199,24 +184,51 @@ dm_find_device:
 ; +2: [I2] Function number
 ; +4 .. function-specific
 ;
-dm_call:
+.proc dm_call
 
-@i_param_block  = $01
-@i_function     = @i_param_block + 4
-@i_devicenr     = @i_function + 2
+BEGIN_PARAMS
+  PARAM i_param_block,  .dword
+  PARAM i_function,     .word
+  PARAM i_devicenr,     .word
+END_PARAMS
 
-        SC_ENTER
-        lda     @i_devicenr
+        lda     i_devicenr
         sta     devicenr
         jsr     select_device
         bcs     :+
-        lda     @i_param_block
-        ldy     @i_param_block + 2
-        ldx     @i_function
+        lda     i_param_block
+        ldy     i_param_block + 2
+        ldx     i_function
         jsr     call_device
-:       SC_EXIT
+:       rtl
+.endproc
 
 ;-------- Private methods --------;
+
+;;
+; Register a device
+;
+; Stack frame:
+;
+; [2,I] <device ptr high>
+; [2,I] <evice ptr low>
+;
+; On exit:
+; c = 0 on success
+; c = 1 on failure
+;
+dm_register_internal:
+        lda     3,s
+        sta     device
+        lda     5,s
+        sta     device+2
+        lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
+        ; fall through
 
 ;;
 ; Register currently selected device

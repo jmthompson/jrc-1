@@ -25,14 +25,14 @@
 ;;
 ; Push a 16-bit value onto the stack
 ;
-.macro  PushWord value
+.macro  _PushWord value
         pea .loword(value)
 .endmacro
 
 ;;
 ; Push a 32-bit value onto the stack
 ;
-.macro  PushLong value
+.macro  _PushLong value
         pea .hiword(value)
         pea .loword(value)
 .endmacro

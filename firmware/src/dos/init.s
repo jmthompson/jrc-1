@@ -72,7 +72,7 @@ dos_init:
         lda     cmd_buffer+2
         pha
         pea     $0001           ; use commas
-        PushLong strbuff
+        _PushLong strbuff
         jsl     format_decimal
         _PrintString strbuff
         _PrintString @mb
@@ -84,7 +84,7 @@ dos_init:
         lda     num_volumes
         pha
         pea     0
-        PushLong strbuff
+        _PushLong strbuff
         jsl     format_decimal
         _PrintString strbuff
         _PrintString @f2

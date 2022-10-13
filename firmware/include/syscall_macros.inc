@@ -1,40 +1,76 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Syscall handler macros. These assist in setting up the handler environment   ;
-; such as pulling call parameters.                                             ;
+; such as defining call parameters.                                            ;
 ;                                                                              ;
-; It is assumed that syscall hadnlers run with 16-bit registers by default.    ;
-; Handlers can of course switch modes as needed.                               ;
+; Syscalls must be defined as follows:                                         ;
+;                                                                              ;
+; .proc syscall_name                                                           ;
+;   BEGIN_PARAMS                                                               ;
+;     PARAM i_first_arg, .word                                                 ;
+;     PARAM i_second_arg, .word                                                ;
+;     PARAM o_ret_value, .dword                                                ;
+;   END_PARAMS                                                                 ;
+;                                                                              ;
+;   ... code here ...                                                          ;
+;                                                                              ;
+;   rtl                                                                        ;
+; .endproc                                                                     ;
+;                                                                              ;
+; This syscall woudl be called like this:                                      ;
+;                                                                              ;
+;   pha                                                                        ;
+;   pha       ; space for dword return value                                   ;
+;   pea first_arg                                                              ;
+;   pea second_parg                                                            ;
+;   cop $xx                                                                    ;
+;   pla                                                                        ;
+;   sta result                                                                 ;
+;   pla                                                                        ;
+;   sta result + 2                                                             ;
+;                                                                              ;
+; The use of .proc to define the function makes sure that the names of the     ;
+; parameters will not conflict with other, similarly-named parameters in other ;
+; functions in the same source file.                                           ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;
-; Enter a syscall handler. This will assure we are in 16-bit mode, and
-; initialize the Y register to zero for parameter access.
+; Begin defining the input/output parameters for a syscall
 ;
-.macro  SC_ENTER
+.macro  BEGIN_PARAMS
+.struct
+  .byte
 .endmacro
 
 ;;
-; Exit a syscall handler.
+; Declare a single parameter with name "name" and type "type". The type must include
+; the leading dot, e.g ".word", ".dword".
 ;
-.macro  SC_EXIT
+.macro PARAM name,type
+  name type
+.endmacro
+
+;;
+; Signal the end of parameter definitions
+;
+.macro END_PARAMS
+.endstruct
+.endmacro
+
+;;
+; Exit with a success code (0)
+;
+.macro SUCCESS
+        ldaw    #0
         rtl
 .endmacro
-;;
-; Exit a syscall with no error. Must be called in 16-bit mode.
-;
-.macro  SC_SUCCESS code
-        ldaw    #0
-        clc
-        SC_EXIT
-.endmacro
 
 ;;
-; Exit a syscall with an error code. Must be called in 16-bit mode.
+; Exit a syscall with an error code.
 ;
-.macro  SC_ERROR    code
+.macro  ERROR code
 .ifnblank code
         ldaw    #code
 .endif
         sec
-        SC_EXIT
+        rtl
 .endmacro
