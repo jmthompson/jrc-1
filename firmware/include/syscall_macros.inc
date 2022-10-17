@@ -34,11 +34,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;
-; Begin defining the input/output parameters for a syscall
+; Begin defining stack-based input/output parameters. Defaults to assuming that
+; parameters start at location $01, but this may be changed by specifying a
+; starting_offset parameter.
 ;
-.macro  BEGIN_PARAMS
+.macro  BEGIN_PARAMS starting_offset
 .struct
-  .byte
+.ifblank starting_offset
+        .res  1
+.else
+        .res  starting_offset
+.endif
 .endmacro
 
 ;;
