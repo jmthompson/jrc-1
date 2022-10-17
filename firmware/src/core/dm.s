@@ -325,7 +325,7 @@ call_device:
         asl
         asl
         clc
-        adcw    #14         ; Function pointers start at +12
+        adcw    #14         ; Function pointers start at +14
         tay
         lda     [ptr],y
         sta     trampoline+1
