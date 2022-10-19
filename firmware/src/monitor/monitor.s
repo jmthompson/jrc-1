@@ -380,6 +380,7 @@ set_memory:
 @hex:   jsr     skip_whitespace
         jsr     parse_hex
         beq     @done
+        shortm
         lda     arg
         sta     [start_loc]
         longm
@@ -494,6 +495,7 @@ set_register:
 ; or the end of line NULL, whichever occurs first.
 ;
 skip_whitespace:
+        php
 @loop:  shortm
         lda     [ibuffp]
         beq     @exit
@@ -502,5 +504,5 @@ skip_whitespace:
         longm
         inc     ibuffp
         bra     @loop
-@exit:  longm
+@exit:  plp
         rts
