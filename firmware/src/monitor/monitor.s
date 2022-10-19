@@ -17,6 +17,7 @@
         .import print_spaces
         .import XModemSend
         .import XModemRcv
+        .import mon_show_handles
         ;.import flash_update
 
         .importzp   cmd
@@ -50,6 +51,7 @@ k_reg:      .res    1
         .segment "OSROM"
 
 commands:
+        .byte   'h'
         .byte   'l'
         .byte   'm'
         .byte   'g'
@@ -82,6 +84,7 @@ num_commands = *-commands
 .endmacro
 
 handlers:
+        .addr   mon_show_handles-1
         .addr   disassemble-1
         .addr   dump_memory-1
         .addr   run_code-1

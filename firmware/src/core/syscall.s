@@ -24,6 +24,9 @@
         .import dm_find_device
         .import dm_call
 
+        .import MM_Allocate
+        .import MM_Free
+
         .export syscall_table_init
         .export syscall_table
 
@@ -59,8 +62,8 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $01
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $02
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $03
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $04
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $05
+        DEFINE_SYSCALL  MM_Allocate, 6              ; $04
+        DEFINE_SYSCALL  MM_Free, 4                  ; $05
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $06
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $07
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $08

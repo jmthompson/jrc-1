@@ -19,6 +19,7 @@
         .import dos_init
         .import syscall_table_init
         .import dm_init
+        .import mm_init
         .import spi_init
         .import sdcard_init 
 
@@ -26,6 +27,8 @@
         .import hw_revision
         .import rom_version
         .import rom_date
+
+        .import current_pid
 
         .segment "BSS"
 
@@ -62,6 +65,9 @@ sysreset:
         jsr     uart_init
         jsr     syscall_table_init
 
+        lda     #2
+        sta     current_pid
+
         cli
 
         ; Now do the remaining initialization. At this point all code
@@ -78,6 +84,7 @@ sysreset:
         jsr     console_init
         jsr     startup_banner
 
+        jsl     mm_init
         jsl     dm_init
         jsl     spi_init
         jsl     sdcard_init
