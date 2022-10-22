@@ -1,7 +1,7 @@
 
         .segment "OSROM"
 
-        .include "disasm_constants.s"
+        .include "opcodes.inc"
 
         .export length_table
         .export mnemonic_table
@@ -112,6 +112,7 @@ mnemonic_table:
         .byte "JSL", 0  ; $5B
         .byte "TCS", 0  ; $5C
         .byte "PHD", 0  ; $5D
+        .byte 0         ; end of table
 
 ;;
 ; Opcode table, maps actual opcodes to OP_xxx constants

@@ -11,7 +11,7 @@
         .include "console.inc"
         .include "ascii.inc"
 
-        .include "disasm_constants.s"
+        .include "opcodes.inc"
 
         .import length_table
         .import opcode_table
