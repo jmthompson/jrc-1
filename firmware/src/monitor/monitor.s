@@ -8,33 +8,14 @@
         .include "console.inc"
         .include "ascii.inc"
 
-        .import disassemble
-        .import assemble
-        .import read_line
-        .import parse_address
-        .import parse_hex
-        .import print_hex
-        .import print_spaces
-        .import XModemSend
-        .import XModemRcv
-        .import mon_show_handles
-        ;.import flash_update
+        .export   monitor_brk, monitor_nmi, monitor_start
 
-        .importzp   cmd
-        .importzp   arg
-        .importzp   start_loc
-        .importzp   end_loc
-        .importzp   row_end
-        .importzp   xmptr
-        .importzp   xmeofp
-
-        .importzp   ibuffp
-        .import     ibuff
-        .import     IBUFFSZ
-
-        .export monitor_start
-        .export monitor_brk
-        .export monitor_nmi
+        .import   print_hex, print_spaces, read_line
+        .import   parse_address, parse_hex, skip_whitespace
+        .import   XModemRcv, XModemSend
+        .import   assemble, disassemble, mon_show_handles
+        .import   ibuff, IBUFFSZ
+        .importzp arg, cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
         .segment "BSS"
 
@@ -488,21 +469,4 @@ set_register:
 @y:     longm
         lda     arg
         sta     y_reg
-        rts
-
-;;
-; Skip input_index ahead to either the first non-whitespace character,
-; or the end of line NULL, whichever occurs first.
-;
-skip_whitespace:
-        php
-@loop:  shortm
-        lda     [ibuffp]
-        beq     @exit
-        cmp     #' '+1
-        bge     @exit
-        longm
-        inc     ibuffp
-        bra     @loop
-@exit:  plp
         rts
