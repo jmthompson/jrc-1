@@ -11,9 +11,8 @@
         .export   monitor_brk, monitor_nmi, monitor_start
 
         .import   print_hex, print_spaces, read_line
-        .import   parse_address, parse_hex, skip_whitespace
-        .import   XModemRcv, XModemSend
-        .import   assemble, disassemble, mon_show_handles
+        .import   parse_address, parse_hex, skip_whitespace, syntax_error
+        .import   assemble, disassemble, mon_show_handles, XModemRcv, XModemSend
         .import   arg, ibuff, IBUFFSZ
         .importzp cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
@@ -139,12 +138,14 @@ monitor_loop:
         pha
         pea     IBUFFSZ
         jsl     read_line
+        jsr     parse_line
+        bcs     monitor_loop
+        pha
         ldaw    #CR
         _PrintChar
         ldaw    #LF
         _PrintChar
-        jsr     parse_line
-        bcs     monitor_loop
+        pla
         jsr     dispatch
         bra     monitor_loop
 @prompt: .byte  CR, LF, '*', 0
@@ -173,6 +174,7 @@ parse_line:
         bne     @find
         longm
         inc     ibuffp
+        ldxw    #4
         jsr     parse_hex       ; get end range
         beq     @bad
         lda     arg
@@ -202,15 +204,8 @@ parse_line:
         txa
         clc
         rts
-@bad:   jsr     syntax_error
-        longm
-        sec
-        rts
-
-syntax_error:
-        _PrintString @msg
-        rts
-@msg:   .byte   "Syntax Error", CR, LF, 0
+@bad:   longm
+        jmp     syntax_error
 
 ;
 ; Display the values of the saved CPU registers.
@@ -349,6 +344,7 @@ set_memory:
         shortm
         bra     @ascii
 @hex:   jsr     skip_whitespace
+        ldxw    #2
         jsr     parse_hex
         beq     @done
         shortm
@@ -433,9 +429,8 @@ set_register:
         beq     @x
         cmp     #'Y'
         beq     @y
-@err:   jsr     syntax_error
-        longm
-        rts
+@err:   longm
+        jmp     syntax_error
 @a:     longm
         lda     arg
         sta     a_reg

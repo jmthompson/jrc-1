@@ -8,10 +8,14 @@
 ;
 
         .include "common.inc"
+        .include "ascii.inc"
+        .include "console.inc"
+        .include "syscalls.inc"
 
-        .import   arg
+        .export   parse_address, parse_hex, skip_whitespace, syntax_error
+
+        .import   arg, ibuff
         .importzp ibuffp, maxhex, start_loc
-        .export   parse_address, parse_hex, skip_whitespace
 
         .segment "OSROM"
 
@@ -28,6 +32,7 @@
 ; start_loc = parsed address
 ;
 .proc parse_address
+        ldxw    #4
         jsr     parse_hex
         beq     @done       ; No address present
         shortm
@@ -38,6 +43,7 @@
         sta     start_loc+2 ; set bank byte
         longm
         inc     ibuffp      ; Skip the "/"
+        ldxw    #4
         jsr     parse_hex   ; Continue trying to parse an address
         beq     @done
 @addr:  longm
@@ -48,8 +54,11 @@
         .segment "OSROM"
 
 ;;
-; Attempt to parse up to 4 hex digits at the current ibuffp
+; Attempt to parse up to 8 hex digits at the current ibuffp
 ; and return the results in arg.
+;
+; On entry:
+; X = maximum number of digits to parse
 ;
 ; On exit:
 ;
@@ -58,7 +67,9 @@
 ;
 .proc parse_hex
         php
+        longm
         stz     arg
+        stz     arg + 2
         ldyw    #0
 @next:  shortm
         lda     [ibuffp]
@@ -79,12 +90,17 @@
         asl     arg
         asl     arg
         asl     arg
+        asl     arg + 2
+        asl     arg + 2
+        asl     arg + 2
+        asl     arg + 2
         shortm
         ora     arg
         sta     arg
         longm
         inc     ibuffp
         iny
+        dex
         bne     @next
 @done:  plp
         cpyw    #0
@@ -108,3 +124,30 @@
 @exit:  plp
         rts
 .endproc
+
+;;
+; Display the position of a syntax error in the input buffer
+; The error is assumed to be at the current input index.
+;
+.proc syntax_error
+        lda     ibuffp
+        sec
+        sbcw    #.loword(ibuff)
+        inc
+        tax
+        shortm
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
+@space: lda   #' '
+        _PrintChar
+        dex
+        bne     @space
+        _PrintString @msg
+        longm
+        sec
+        rts
+@msg:   .byte   "^ Syntax error", CR, LF, 0
+.endproc
+
