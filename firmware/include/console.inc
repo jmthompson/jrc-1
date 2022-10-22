@@ -20,7 +20,9 @@
 ; Output a null-terminated string
 ;
 .macro  _PrintString   string
+.ifnblank string
         pea     .hiword(string)
         pea     .loword(string)
+.endif
         _Call    SYS_CONSOLE_WRITELN
 .endmacro
