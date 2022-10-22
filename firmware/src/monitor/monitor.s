@@ -14,20 +14,10 @@
         .import   parse_address, parse_hex, skip_whitespace
         .import   XModemRcv, XModemSend
         .import   assemble, disassemble, mon_show_handles
-        .import   ibuff, IBUFFSZ
-        .importzp arg, cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
+        .import   arg, ibuff, IBUFFSZ
+        .importzp cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
-        .segment "BSS"
-
-a_reg:      .res    2
-b_reg:      .res    1
-d_reg:      .res    2
-p_reg:      .res    1
-s_reg:      .res    2
-x_reg:      .res    2
-y_reg:      .res    2
-pc_reg:     .res    2
-k_reg:      .res    1
+        .import   a_reg,b_reg,d_reg,p_reg,s_reg,x_reg,y_reg,pc_reg,k_reg,mwidth,xwidth
 
         .segment "OSROM"
 

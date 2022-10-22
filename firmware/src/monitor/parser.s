@@ -9,7 +9,8 @@
 
         .include "common.inc"
 
-        .importzp arg, ibuffp, maxhex, start_loc
+        .import   arg
+        .importzp ibuffp, maxhex, start_loc
         .export   parse_address, parse_hex, skip_whitespace
 
         .segment "OSROM"

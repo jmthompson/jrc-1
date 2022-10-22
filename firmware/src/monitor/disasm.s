@@ -13,6 +13,7 @@
 
         .include "opcodes.inc"
 
+        .import am, mwidth, opcode, len, xwidth
         .import length_table
         .import opcode_table
         .import am_table
@@ -22,11 +23,6 @@
 
         .importzp   start_loc
         .importzp   tmp
-        .importzp   mwidth
-        .importzp   xwidth
-        .importzp   opcode
-        .importzp   am
-        .importzp   len
 
         .export disassemble
 
