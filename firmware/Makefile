@@ -12,6 +12,7 @@ DUMPFILE := dump.bin
 RAMFILE  := ram.bin
 MAPFILE  := jrc-1.map
 CHIP     := W29C020C
+MEMSIM2  := /dev/memsim2
 
 ${ROMFILE}: ${OBJS}
 	${LD} ${OBJS} -o ${ROMFILE} -C jrc-1.cfg -m ${MAPFILE}
@@ -23,6 +24,9 @@ dump:
 
 prog: ${ROMFILE}
 	minipro -p ${CHIP} -w ${ROMFILE}
+
+upload: ${ROMFILE}
+	memsim2 -d ${MEMSIM2} -m 27020 -r -1 ${ROMFILE}
 
 clean:
 	rm -f buildinfo.s ${OBJS} ${LISTINGS} ${MAPFILE} ${ROMFILE} ${RAMFILE}
