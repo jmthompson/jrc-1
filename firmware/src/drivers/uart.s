@@ -13,10 +13,9 @@
         .export getc_serialb
         .export putc_seriala
         .export putc_serialb
+        .export jiffies
 
         .import noop
-
-        .importzp   jiffies
 
 buffer_size = 256
 
@@ -37,6 +36,8 @@ txb_on:     .res    1
 
         .segment "BSS"
 
+; System uptime counter
+jiffies:  .res    4
 ;
 ; Serial buffers
 ;
@@ -61,10 +62,11 @@ uart_init:
         stz     txa_wri
         stz     txb_wri
 
-        rep     #$30
-        stz     jiffies
-        stz     jiffies+2
-        sep     #$30
+        longm
+        ldaw    #0
+        sta     f:jiffies
+        sta     f:jiffies+2
+        shortm
 
         lda     #$80
         sta     txa_on
@@ -118,8 +120,14 @@ uart_irq:
 timer_irq:
         bit     nxp_base+nx_rct     ; reset the interrupt
         longm
-        inc32   jiffies
-        shortm
+        lda     f:jiffies
+        inc
+        sta     f:jiffies
+        bne     :+
+        lda     f:jiffies + 2
+        inc
+        sta     f:jiffies + 2
+:       shortm
         rts
 
 ;

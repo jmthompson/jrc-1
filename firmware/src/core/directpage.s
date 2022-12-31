@@ -11,7 +11,6 @@
         .exportzp   ptr
         .exportzp   tmp
 
-        .exportzp   jiffies
         .exportzp   lastblk
         .exportzp   blkno
         .exportzp   errcnt
@@ -25,9 +24,6 @@
 ; Generic temp locations, used lots of places. VERY temporary!
 ptr:            .res    4
 tmp:            .res    2
-
-; VIA driver variables
-jiffies:        .res    4
 
 ; Xmodem routines variables
 lastblk:        .res    1   ; flag for last block

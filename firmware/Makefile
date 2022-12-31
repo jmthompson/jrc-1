@@ -1,5 +1,4 @@
-ROM_VERSION := 01
-HW_REVISION := 01
+ROM_VERSION := 0010
 
 AS := ca65
 LD := ld65
@@ -33,11 +32,9 @@ clean:
 
 buildinfo.s:
 	echo ".segment \"BOOTROM\"" > buildinfo.s
-	echo ".export hw_revision" >> buildinfo.s
-	echo ".export rom_version" >> buildinfo.s
+	echo ".export jros_version" >> buildinfo.s
 	echo ".export rom_date" >> buildinfo.s
-	echo "hw_revision: .byte \$$${HW_REVISION}" >> buildinfo.s
-	echo "rom_version: .byte \$$${ROM_VERSION}" >> buildinfo.s
+	echo "jros_version: .word \$$${ROM_VERSION}" >> buildinfo.s
 	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
 
 %.o: %.s

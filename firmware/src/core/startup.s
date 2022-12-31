@@ -24,8 +24,7 @@
         .import sdcard_init 
 
         ;; from buildinfo.s
-        .import hw_revision
-        .import rom_version
+        .import jros_version
         .import rom_date
 
         .import current_pid
@@ -117,15 +116,13 @@ startup_banner:
         ; System ID
         _PrintString @sysid
 
-        ; HW Revision
-        _PrintString @hwrev
-        lda     f:hw_revision
+        ; JR/OS version
+        _PrintString @jros
+        lda     f:jros_version + 1
         jsr     print_decimal
-        _PrintString @hwrev2
-
-        ; ROM Version
-        _PrintString @romver
-        lda     f:rom_version
+        lda     #'.'
+        _PrintChar
+        lda     f:jros_version
         lsr
         lsr
         lsr
@@ -133,8 +130,8 @@ startup_banner:
         jsr     print_decimal
         lda     #'.'
         _PrintChar
-        lda     f:rom_version
-        and     #$0f
+        lda     f:jros_version
+        and     #$0F
         jsr     print_decimal
         lda     #' '
         _PrintChar
@@ -143,7 +140,7 @@ startup_banner:
         _PrintString rom_date
         lda     #')'
         _PrintChar
-        _PrintString @romver2
+        _PrintString @jros2
 
         ; bottom line of box
         lda     #SHIFT_OUT
@@ -167,20 +164,14 @@ startup_banner:
         plp
         rts
 
-@line:  .repeat 32
-        .byte   "q"
-        .endrepeat
-        .byte   0
+@line:  .asciiz "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+@sysid: .byte   SHIFT_OUT, "x", SHIFT_IN
+        .byte   "  JRC-1 65816 Single Board Computer  "
+        .byte   SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
-@sysid:  .byte  SHIFT_OUT, "x", SHIFT_IN
-         .byte  " JRC-1 Single Board Computer    "
-         .byte  SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
-
-@hwrev:  .byte  SHIFT_OUT, "x", SHIFT_IN, " Hardware Revision ", 0
-@hwrev2: .byte  "            ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
-
-@romver:  .byte SHIFT_OUT, "x", SHIFT_IN, " JR/OS Version ", 0
-@romver2: .byte " ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
+@jros:  .byte   SHIFT_OUT, "x", SHIFT_IN
+        .asciiz "  JR/OS Version "
+@jros2: .byte   "   ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
 ;;
 ; Print the 8-bit number in the accumulator in decimal

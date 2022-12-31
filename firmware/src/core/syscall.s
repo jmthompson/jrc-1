@@ -7,6 +7,8 @@
         .include "errors.inc"
         .include "kernel/syscall_macros.inc"
 
+        .import hw_version, jiffies, jros_version, monitor_start, sysreset
+
         .import console_reset
         .import console_writeln
         .import console_cls
@@ -57,11 +59,63 @@ syscall_table_init:
 unsupported_syscall:
         ERROR   ERR_NOT_SUPPORTED
 
+;;
+; Return the operating system version word
+;
+; Stack frame (top to bottm):
+;
+; |--------------------------------|
+; | [2] Space for returned version |
+; |--------------------------------|
+;
+; On exit:
+; c = 0
+;
+.proc sys_get_version
+
+BEGIN_PARAMS
+  PARAM o_version, .word
+END_PARAMS
+
+        lda     f:jros_version
+        sta     o_version
+        ldaw    #0
+        clc
+        rtl
+.endproc
+
+;;
+; Return the system uptime in 1/100ths of a second
+;
+; Stack frame (top to bottm):
+;
+; |------------------------------|
+; | [4] Space for returned value |
+; |------------------------------|
+;
+; On exit:
+; c = 0
+;
+.proc sys_get_uptime
+
+BEGIN_PARAMS
+  PARAM o_uptime, .dword
+END_PARAMS
+
+        lda     jiffies
+        sta     o_uptime
+        lda     jiffies + 2
+        sta     o_uptime + 2
+        ldaw    #0
+        clc
+        rtl
+.endproc
+
 default_table:
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $00
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $01
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $02
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $03
+        DEFINE_SYSCALL  sys_get_version, 0          ; $00
+        DEFINE_SYSCALL  sys_get_uptime, 0           ; $01
+        DEFINE_SYSCALL  sysreset, 0                 ; $02
+        DEFINE_SYSCALL  monitor_start, 0            ; $03
         DEFINE_SYSCALL  MM_Allocate, 6              ; $04
         DEFINE_SYSCALL  MM_Free, 4                  ; $05
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $06

@@ -2,8 +2,10 @@
 ; Definitions of available BIOS/OS syscall numbers ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SYS_GET_UPTIME      = $00
-SYS_GET_VERSION     = $01
+SYS_GET_VERSION     = $00
+SYS_GET_UPTIME      = $01
+SYS_REBOOT          = $02
+SYS_ENTER_MONITOR   = $03
 MM_ALLOCATE         = $04
 MM_FREE             = $05
 

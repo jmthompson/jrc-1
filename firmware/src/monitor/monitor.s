@@ -7,6 +7,8 @@
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
+        .include "kernel/syscall_macros.inc"
+
         .include "constants.inc"
 
         .export   monitor_brk, monitor_nmi, monitor_start
@@ -406,7 +408,9 @@ run_code:
 monitor_exit:
         pla                         ; pop return address of the dispatcher
         pla
-        rts
+        ldaw    #0
+        clc
+        rtl
 
 xmodem_send:
         shortm
