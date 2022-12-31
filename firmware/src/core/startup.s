@@ -4,10 +4,10 @@
 ; *******************************
 
         .include "common.inc"
-        .include "linker.inc"
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
+        .include "kernel/linker.inc"
 
         .export sysreset
         .export trampoline

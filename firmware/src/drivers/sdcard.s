@@ -6,7 +6,7 @@
         .include "common.inc"
         .include "syscalls.inc"
         .include "errors.inc"
-        .include "device.inc"
+        .include "kernel/device.inc"
 
         .export sdcard_init
 

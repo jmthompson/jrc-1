@@ -3,7 +3,7 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 
-        .include    "volume.inc"
+        .include    "kernel/volume.inc"
 
         .exportzp   blockp
         .exportzp   devicep

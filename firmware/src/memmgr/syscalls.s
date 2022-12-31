@@ -5,9 +5,9 @@
 
         .include  "common.inc"
         .include  "errors.inc"
-        .include  "linker.inc"
-        .include  "memory.inc"
-        .include  "syscall_macros.inc"
+        .include  "kernel/linker.inc"
+        .include  "kernel/memory.inc"
+        .include  "kernel/syscall_macros.inc"
 
         .export   MM_Allocate
         .export   MM_Free

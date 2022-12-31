@@ -5,7 +5,7 @@
 
         .include "common.inc"
         .include "errors.inc"
-        .include "syscall_macros.inc"
+        .include "kernel/syscall_macros.inc"
 
         .import console_reset
         .import console_writeln

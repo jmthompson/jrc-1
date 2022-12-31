@@ -6,9 +6,9 @@
         .include "common.inc"
         .include "ascii.inc"
         .include "console.inc"
-        .include "memory.inc"
         .include "syscalls.inc"
-        .include "syscall_macros.inc"
+        .include "kernel/memory.inc"
+        .include "kernel/syscall_macros.inc"
 
         .export mon_show_handles
 

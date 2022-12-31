@@ -5,9 +5,9 @@
 
         .include    "common.inc"
         .include    "syscalls.inc"
-        .include    "device.inc"
         .include    "console.inc"
         .include    "ascii.inc"
+        .include    "kernel/device.inc"
 
         .import     cmd_buffer
         .import     devicenr

@@ -6,7 +6,7 @@
         .include "common.inc"
         .include "console.inc"
         .include "syscalls.inc"
-        .include "syscall_macros.inc"
+        .include "kernel/syscall_macros.inc"
 
         .export print_hex
         .export print_address

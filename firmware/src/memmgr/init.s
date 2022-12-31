@@ -4,7 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "memory.inc"
+        .include "kernel/memory.inc"
 
         .export   mm_init
 

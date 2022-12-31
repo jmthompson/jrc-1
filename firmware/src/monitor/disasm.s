@@ -8,9 +8,9 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "syscall_macros.inc"
         .include "console.inc"
         .include "ascii.inc"
+        .include "kernel/syscall_macros.inc"
 
         .include "opcode.inc"
         .include "operand.inc"

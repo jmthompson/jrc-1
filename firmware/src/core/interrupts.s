@@ -4,7 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "linker.inc"
+        .include "kernel/linker.inc"
 
         .import monitor_start
         .import monitor_brk

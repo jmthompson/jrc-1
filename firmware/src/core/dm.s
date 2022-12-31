@@ -6,10 +6,10 @@
 ; This is the gbeneric device handling for the BIOS.
 
         .include    "common.inc"
-        .include    "device.inc"
         .include    "errors.inc"
-        .include    "linker.inc"
-        .include    "syscall_macros.inc"
+        .include    "kernel/device.inc"
+        .include    "kernel/linker.inc"
+        .include    "kernel/syscall_macros.inc"
 
         .importzp   ptr
         .importzp   tmp

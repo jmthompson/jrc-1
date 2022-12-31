@@ -9,7 +9,7 @@
 
         .include "common.inc"
         .include "errors.inc"
-        .include "device.inc"
+        .include "kernel/device.inc"
 
         .export spi_init
         .export spi_select_sdc

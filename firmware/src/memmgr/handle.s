@@ -5,8 +5,8 @@
 
         .include    "common.inc"
         .include    "errors.inc"
-        .include    "memory.inc"
-        .include    "syscall_macros.inc"
+        .include    "kernel/memory.inc"
+        .include    "kernel/syscall_macros.inc"
 
         .export     mm_alloc_handle
         .export     mm_check_low_water_mark

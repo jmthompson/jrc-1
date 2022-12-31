@@ -4,7 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "linker.inc"
+        .include "kernel/linker.inc"
         .include "nxp_uart.s"
 
         .export uart_init

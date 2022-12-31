@@ -5,8 +5,8 @@
 
         .include    "common.inc"
         .include    "syscalls.inc"
-        .include    "device.inc"
-        .include    "volume.inc"
+        .include    "kernel/device.inc"
+        .include    "kernel/volume.inc"
 
         .export     volume_scan
 
