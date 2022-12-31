@@ -12,9 +12,7 @@
 
         .export mon_show_handles
 
-        .import print_address
-        .import print_hex
-        .import print_spaces
+        .import print_address, print_hex
 
         ; Memory manager internals
         .import mm_active_list, mm_free_list
@@ -44,13 +42,9 @@
 ;
 ; Stack frame:
 ;
-;     |-------------------------------------|
-;  +1 | [2] Direct page register            |
-;     |-------------------------------------|
-;  +3 | [2] Return address                  |
-;     |-------------------------------------|
-;  +5 | [4] Pointer to first handle in list |
-;     |-------------------------------------|
+; |-------------------------------------|
+; | [4] Pointer to first handle in list |
+; |-------------------------------------|
 ;
 ; On exit:
 ; C,X,Y trashed

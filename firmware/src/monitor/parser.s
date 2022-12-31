@@ -11,10 +11,11 @@
         .include "ascii.inc"
         .include "console.inc"
         .include "syscalls.inc"
+        .include "syscall_macros.inc"
 
-        .export   parse_address, parse_hex, skip_whitespace, syntax_error
+        .include "parser.inc"
 
-        .import   arg, ibuff
+        .import   arg, error_loc, error_msg, ibuff
         .importzp ibuffp, maxhex, start_loc
 
         .segment "OSROM"
@@ -51,7 +52,6 @@
         sta     start_loc
 @done:  rts
 .endproc
-        .segment "OSROM"
 
 ;;
 ; Attempt to parse up to 8 hex digits at the current ibuffp
@@ -87,13 +87,13 @@
         bge     @done
 @store: longm
         asl     arg
+        rol     arg + 2
         asl     arg
+        rol     arg + 2
         asl     arg
+        rol     arg + 2
         asl     arg
-        asl     arg + 2
-        asl     arg + 2
-        asl     arg + 2
-        asl     arg + 2
+        rol     arg + 2
         shortm
         ora     arg
         sta     arg
@@ -104,6 +104,56 @@
         bne     @next
 @done:  plp
         cpyw    #0
+        rts
+.endproc
+
+;;
+; Check to see if the character in A is a hexidecimal digit.
+;
+; On exit:
+; c = 0 if character is a hex digit
+; c = 1 if character is not a hex digit
+;
+.proc is_hex_digit
+        php
+        shortm
+        pha
+        cmp     #'0'
+        blt     @no
+        cmp     #'9'+1
+        blt     @yes        ; it's 0..9
+        ora     #$20        ; shift uppercase to lower case
+        cmp     #'a'
+        blt     @no
+        cmp     #'f'+1
+        bge     @no
+@yes:   pla
+        plp
+        clc
+        rts
+@no:    pla
+        plp
+        sec
+        rts
+.endproc
+
+;;
+; Check to see if the character in A is whitespace
+;
+; On exit:
+; c = 0 if character is whitespce
+; c = 1 if character is not whitespace
+;
+.proc is_whitespace
+        php
+        shortm
+        cmp     #' '+1
+        blt     :+
+        plp
+        sec
+        rts
+:       plp
+        clc
         rts
 .endproc
 
@@ -126,11 +176,28 @@
 .endproc
 
 ;;
-; Display the position of a syntax error in the input buffer
-; The error is assumed to be at the current input index.
+; Display an error message pointing at a location on the input line.
 ;
-.proc syntax_error
-        lda     ibuffp
+.proc print_error
+
+BEGIN_PARAMS
+  PARAM s_dreg, .word
+  PARAM s_ret, .word
+  PARAM i_error_msg, .dword
+  PARAM i_error_loc, .word
+END_PARAMS
+
+@psize := 6
+@lsize := s_dreg - 1
+
+        phd
+        tsc
+        sec
+        sbcw    #@lsize
+        tcs
+        tcd
+
+        lda     i_error_loc
         sec
         sbcw    #.loword(ibuff)
         inc
@@ -140,14 +207,34 @@
         _PrintChar
         lda     #LF
         _PrintChar
-@space: lda   #' '
+:       lda   #' '
         _PrintChar
         dex
-        bne     @space
-        _PrintString @msg
+        bne     :-
+        lda     #'^'
+        _PrintChar
+        lda     #' '
+        _PrintChar
         longm
-        sec
+        lda     i_error_msg + 2
+        pha
+        lda     i_error_msg
+        pha
+        _PrintString 
+        shortm
+        lda     #CR
+        _PrintChar
+        lda     #LF
+        _PrintChar
+        longm
+        lda     s_dreg,s
+        sta     s_dreg+@psize,s
+        lda     s_ret,s
+        sta     s_ret+@psize,s
+        tsc
+        clc
+        adcw    #@psize + @lsize
+        tcs
+        pld
         rts
-@msg:   .byte   "^ Syntax error", CR, LF, 0
 .endproc
-

@@ -7,16 +7,17 @@
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
+        .include "constants.inc"
 
         .export   monitor_brk, monitor_nmi, monitor_start
 
-        .import   print_hex, print_spaces, read_line
-        .import   parse_address, parse_hex, skip_whitespace, syntax_error
+        .import   print_hex, read_line
+        .import   parse_address, parse_hex, skip_whitespace, print_error
         .import   assemble, disassemble, mon_show_handles, XModemRcv, XModemSend
         .import   arg, ibuff, IBUFFSZ
         .importzp cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
-        .import   a_reg,b_reg,d_reg,p_reg,s_reg,x_reg,y_reg,pc_reg,k_reg,mwidth,xwidth
+        .import   a_reg,b_reg,d_reg,p_reg,s_reg,x_reg,y_reg,pc_reg,k_reg,m_width,x_width
 
         .segment "OSROM"
 
@@ -26,7 +27,6 @@ commands:
         .byte   'm'
         .byte   'g'
         .byte   'q'
-        ;.byte   'u'
         .byte   '<'
         .byte   '>'
         .byte   ':'
@@ -59,7 +59,6 @@ handlers:
         .addr   dump_memory-1
         .addr   run_code-1
         .addr   monitor_exit-1
-        ;.addr   flash_update-1
         .addr   xmodem_receive-1
         .addr   xmodem_send-1
         .addr   set_memory-1
@@ -75,6 +74,10 @@ start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
 monitor_start:
+        shortm
+        stz     m_width
+        stz     x_width
+        longm
         _PrintString start_banner
         bra     monitor_loop
 
@@ -162,6 +165,7 @@ dispatch:
 ; Parse the current input line
 ;
 parse_line:
+        jsr     skip_whitespace
         jsr     parse_address
         lda     start_loc
         sta     end_loc
@@ -205,7 +209,13 @@ parse_line:
         clc
         rts
 @bad:   longm
-        jmp     syntax_error
+        lda     ibuffp
+        pha
+        pea     .hiword(Monitor::UNKNOWN_COMMAND)
+        pea     .loword(Monitor::UNKNOWN_COMMAND)
+        jsr     print_error
+        sec
+        rts
 
 ;
 ; Display the values of the saved CPU registers.
@@ -254,6 +264,18 @@ print_registers:
         putc    #'K'
         putc    #'='
         puthex  k_reg
+        putc    #' '
+        putc    #'m'
+        putc    #'='
+        lda     m_width
+        ora     #'0'
+        _PrintChar
+        putc    #' '
+        putc    #'x'
+        putc    #'='
+        lda     x_width
+        ora     #'0'
+        _PrintChar
         puteol
         longm
         rts
@@ -429,8 +451,17 @@ set_register:
         beq     @x
         cmp     #'Y'
         beq     @y
+        cmp     #'m'
+        beq     @mw
+        cmp     #'x'
+        beq     @xw
 @err:   longm
-        jmp     syntax_error
+        lda     ibuffp
+        pha
+        pea     .hiword(Monitor::UNKNOWN_REGISTER)
+        pea     .loword(Monitor::UNKNOWN_REGISTER)
+        jsr     print_error
+        rts
 @a:     longm
         lda     arg
         sta     a_reg
@@ -454,4 +485,14 @@ set_register:
 @y:     longm
         lda     arg
         sta     y_reg
+        rts
+@mw:    lda     arg
+        and     #1
+        sta     m_width
+        longm
+        rts
+@xw:    lda     arg
+        and     #1
+        sta     x_width
+        longm
         rts
