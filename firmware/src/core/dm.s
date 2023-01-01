@@ -23,6 +23,7 @@
         .export     dm_find_device
         .export     dm_call
 
+        .import     console_register, sdcard_register, spi_register, serial_register, via_register
         .import     strmatch
         .import     trampoline
 
@@ -44,10 +45,18 @@ device_name:    .res    4
 
 dm_init:
         stz     num_devices
-        rts
+
+        jsr     console_register
+        jsr     serial_register
+        jsr     spi_register
+        jsr     via_register
+        jsr     serial_register
+        jsr     sdcard_register
+
+        rtl
 
 ;;
-; Register a block device
+; Register a device
 ;
 ; Parameters
 ;

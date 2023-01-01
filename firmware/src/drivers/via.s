@@ -11,6 +11,7 @@
         .export     via_init
         .export     via_irq
         .export     wait_ms
+        .export     via_register
 
 PB_ACT_LED = $80        ; Activity LED
 PB_CONSOLE = $40        ; Console select jumper
@@ -85,3 +86,8 @@ wait_ms:
         and     #$20
         beq     @wait
         rtl
+
+        .segment "OSROM"
+
+via_register:
+        rts

@@ -12,16 +12,16 @@
         .export sysreset
         .export trampoline
 
-        .import uart_init
         .import monitor_start
-        .import via_init
         .import console_init
         .import dos_init
         .import syscall_table_init
         .import dm_init
         .import mm_init
+
+        .import uart_init
+        .import via_init
         .import spi_init
-        .import sdcard_init 
 
         ;; from buildinfo.s
         .import jros_version
@@ -62,6 +62,9 @@ sysreset:
         plb
         jsr     via_init
         jsr     uart_init
+        jsr     spi_init
+
+        ; initialize the syscall table
         jsr     syscall_table_init
 
         lda     #2
@@ -85,8 +88,6 @@ sysreset:
 
         jsl     mm_init
         jsl     dm_init
-        jsl     spi_init
-        jsl     sdcard_init
         jsl     dos_init
 
         jml     monitor_start

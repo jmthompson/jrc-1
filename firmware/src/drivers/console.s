@@ -9,6 +9,7 @@
         .export console_cll
         .export console_cls
         .export console_init
+        .export console_register
         .export console_reset
         .export console_writeln
 
@@ -21,6 +22,9 @@ console_init:
         jsl     console_reset
         jsl     console_cls
         plp
+        rts
+
+console_register:
         rts
 
 console_reset:

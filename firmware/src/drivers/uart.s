@@ -13,6 +13,7 @@
         .export getc_serialb
         .export putc_seriala
         .export putc_serialb
+        .export serial_register
         .export jiffies
 
         .import noop
@@ -277,6 +278,9 @@ nxpsutab:
 s_nxptab = *-nxpsutab
 
         .segment "OSROM"
+
+serial_register:
+        rts
 
 ;
 ; Get next character from serial channel A. On exit, C=1 if

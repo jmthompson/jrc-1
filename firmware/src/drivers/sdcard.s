@@ -8,7 +8,7 @@
         .include "errors.inc"
         .include "kernel/device.inc"
 
-        .export sdcard_init
+        .export sdcard_register
 
         .import dm_register_internal
         .import spi_select_sdc
@@ -66,10 +66,10 @@ sdcard_driver:
         longaddr    sdc_wrblock         ; #7
 @n:     .byte "SDCARD", 0
 
-sdcard_init:
+sdcard_register:
         stz     card_type
         REGISTER_DEVICE sdcard_driver
-        rtl
+        rts
 
 ;;
 ; STARTUP

@@ -12,16 +12,16 @@
         .include "kernel/device.inc"
 
         .export spi_init
+        .export spi_register
         .export spi_select_sdc
         .export spi_deselect
         .export spi_transfer
         .export spi_slow_speed
         .export spi_fast_speed
 
-        .import dm_register_internal
-
-        .importzp   ptr
-        .importzp   tmp
+        .import   dm_register_internal
+        .importzp ptr
+        .importzp tmp
 
 SPI_BASE = $F010
 
@@ -56,6 +56,21 @@ SPI_SS7     = $80   ; /SS7
 ; Nonzero if the SPI hardware is busy (has a slave selecteD)
 spi_busy:   .res    2
 
+        .segment "BOOTROM"
+
+;;
+; Initialize the 65SPI
+;
+spi_init:
+        lda     #SPI_SR
+        sta     SPI_CTRL_REG      ; reset chip to defaults
+        lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
+        sta     SPI_SS_REG        ; Disable all slaves
+        lda     #0
+        sta     f:spi_busy
+        sta     f:spi_busy + 1
+        rts
+
         .segment "OSROM"
 
 .macro  spi_driver  name, slave
@@ -88,17 +103,9 @@ spi6_driver:    spi_driver "SPI6", SPI_SS6
 spi7_driver:    spi_driver "SPI7", SPI_SS7
 
 ;;
-; Initialize the SPI hardware and register our devices
-spi_init:
-        shortm
-        lda     #SPI_SR
-        sta     f:SPI_CTRL_REG     ; reset chip to defaults
-        lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
-        sta     f:SPI_SS_REG       ; Disable all slaves
-        longm
-
-        stz     spi_busy
-
+; Register the SPI device drivers
+;
+spi_register:
         REGISTER_DEVICE spi1_driver
         REGISTER_DEVICE spi2_driver
         REGISTER_DEVICE spi3_driver
@@ -106,8 +113,7 @@ spi_init:
         REGISTER_DEVICE spi5_driver
         REGISTER_DEVICE spi6_driver
         REGISTER_DEVICE spi7_driver
-
-        rtl
+        rts
 
 ;;
 ; STARTUP
