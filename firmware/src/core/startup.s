@@ -5,15 +5,14 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
         .include "ascii.inc"
+        .include "kernel/console.inc"
         .include "kernel/linker.inc"
 
         .export sysreset
         .export trampoline
 
         .import monitor_start
-        .import console_init
         .import dos_init
         .import syscall_table_init
         .import dm_init
@@ -22,6 +21,8 @@
         .import uart_init
         .import via_init
         .import spi_init
+
+        .import kprint
 
         ;; from buildinfo.s
         .import jros_version
@@ -83,7 +84,6 @@ sysreset:
 
         longmx
 
-        jsr     console_init
         jsr     startup_banner
 
         jsl     mm_init
@@ -99,30 +99,31 @@ sysreset:
 startup_banner:
         php
         shortmx
+        _kprint @init
         ; top line of box
         lda     #SHIFT_OUT
-        _PrintChar
+        _kputc
         lda     #'l'
-        _PrintChar
-        _PrintString @line
+        _kputc
+        _kprint @line
         lda     #'k'
-        _PrintChar
+        _kputc
         lda     #SHIFT_IN
-        _PrintChar
+        _kputc
         lda     #CR
-        _PrintChar
+        _kputc
         lda     #LF
-        _PrintChar
+        _kputc
 
         ; System ID
-        _PrintString @sysid
+        _kprint @sysid
 
         ; JR/OS version
-        _PrintString @jros
+        _kprint @jros
         lda     f:jros_version + 1
         jsr     print_decimal
         lda     #'.'
-        _PrintChar
+        _kputc
         lda     f:jros_version
         lsr
         lsr
@@ -130,40 +131,47 @@ startup_banner:
         lsr
         jsr     print_decimal
         lda     #'.'
-        _PrintChar
+        _kputc
         lda     f:jros_version
         and     #$0F
         jsr     print_decimal
         lda     #' '
-        _PrintChar
+        _kputc
         lda     #'('
-        _PrintChar
-        _PrintString rom_date
+        _kputc
+        _kprint rom_date
         lda     #')'
-        _PrintChar
-        _PrintString @jros2
+        _kputc
+        _kprint @jros2
 
         ; bottom line of box
         lda     #SHIFT_OUT
-        _PrintChar
+        _kputc
         lda     #'m'
-        _PrintChar
-        _PrintString @line
+        _kputc
+        _kprint @line
         lda     #'j'
-        _PrintChar
+        _kputc
         lda     #SHIFT_IN
-        _PrintChar
+        _kputc
         lda     #CR
-        _PrintChar
+        _kputc
         lda     #LF
-        _PrintChar
+        _kputc
         lda     #CR
-        _PrintChar
+        _kputc
         lda     #LF
-        _PrintChar
+        _kputc
 
         plp
         rts
+
+
+@init:  .byte   ESC,"c"     ; reset terminal to default state
+        .byte   ESC,"[7h"   ; enable line wrap
+        .byte   ESC,")0"    ; set char set G1 to line drawing chars
+        .byte   ESC,"[2J"
+        .byte   0
 
 @line:  .asciiz "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
 @sysid: .byte   SHIFT_OUT, "x", SHIFT_IN
@@ -203,6 +211,6 @@ print_decimal:
 @digit: pha
         txa
         ora     #'0'
-        _Call   SYS_CONSOLE_WRITE
+        _kputc
         pla
         rts

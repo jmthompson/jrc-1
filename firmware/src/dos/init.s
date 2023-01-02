@@ -5,8 +5,8 @@
 
         .include    "common.inc"
         .include    "syscalls.inc"
-        .include    "console.inc"
         .include    "ascii.inc"
+        .include    "kernel/console.inc"
         .include    "kernel/device.inc"
 
         .import     cmd_buffer
@@ -32,7 +32,7 @@ dos_init:
         stz     num_devices
         stz     num_volumes
 
-        _PrintString @banner
+        _kprint @banner
 
         ; For each registered block device, display its name and status
         stz     devicenr
@@ -45,8 +45,9 @@ dos_init:
         sta     devicep
         pla
         sta     devicep+2
-        bcs     @done
-        ldyw    #2
+        bcc     :+
+        jmp     @done
+:       ldyw    #2
         lda     [devicep],Y         ; get device features
         andw    #DEVICE_TYPE_CHAR
         bne     @next
@@ -59,7 +60,7 @@ dos_init:
         andw    #DEVICE_ONLINE
         bne     @online
 @offline:
-        _PrintString @nomedia
+        _kprint @nomedia
         bra     @next
 @online:
         ldxw    #11
@@ -74,26 +75,27 @@ dos_init:
         pea     $0001           ; use commas
         _PushLong strbuff
         jsl     format_decimal
-        _PrintString strbuff
-        _PrintString @mb
+        _kprint strbuff
+        _kprint @mb
         jsr     volume_scan
 @next:  inc     devicenr
         brl     @scan
-@done:  _PrintString @f1
+@done:  _kprint @f1
         pea     0
         lda     num_volumes
         pha
         pea     0
         _PushLong strbuff
         jsl     format_decimal
-        _PrintString strbuff
-        _PrintString @f2
+        _kprint strbuff
+        _kprint @f2
         lda     num_volumes
         cmpw    #1
         beq     :+
         ldaw    #'s'
-        _PrintChar
-:       _PrintString @lf
+        _kputc
+
+:       _kprint @lf
         rtl
 @banner: 
         .byte   ESC, "[4m", "Scanning storage devices", ESC, "[0m", CR, LF, 0
