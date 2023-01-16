@@ -29,10 +29,3 @@ SYS_FIND_DEVICE         = $44
 SYS_DEV_CALL            = $45
 SYS_DEV_OPEN            = $46
 SYS_DEV_CLOSE           = $47
-
-JROS_MOUNT_DEVICE       = $41
-JROS_EJECT_DEVICE       = $42
-JROS_FORMAT_DEVICE      = $43
-JROS_DEVICE_STATUS      = $44
-JROS_READ_BLOCK         = $45
-JROS_WRITE_BLOCK        = $46

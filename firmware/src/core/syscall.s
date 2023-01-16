@@ -7,7 +7,7 @@
         .include "errors.inc"
         .include "kernel/syscall_macros.inc"
 
-        .import hw_version, jiffies, jros_version, monitor_start, sysreset
+        .import hw_version, jiffies, jrcos_version, monitor_start, sysreset
 
         .import console_reset
         .import console_writeln
@@ -77,7 +77,7 @@ BEGIN_PARAMS
   PARAM o_version, .word
 END_PARAMS
 
-        lda     f:jros_version
+        lda     f:jrcos_version
         sta     o_version
         ldaw    #0
         clc

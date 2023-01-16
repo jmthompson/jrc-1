@@ -25,7 +25,7 @@
         .import kprint
 
         ;; from buildinfo.s
-        .import jros_version
+        .import jrcos_version
         .import rom_date
 
         .import current_pid
@@ -118,13 +118,13 @@ startup_banner:
         ; System ID
         _kprint @sysid
 
-        ; JR/OS version
-        _kprint @jros
-        lda     f:jros_version + 1
+        ; jrcOS version
+        _kprint @jrcos
+        lda     f:jrcos_version + 1
         jsr     print_decimal
         lda     #'.'
         _kputc
-        lda     f:jros_version
+        lda     f:jrcos_version
         lsr
         lsr
         lsr
@@ -132,7 +132,7 @@ startup_banner:
         jsr     print_decimal
         lda     #'.'
         _kputc
-        lda     f:jros_version
+        lda     f:jrcos_version
         and     #$0F
         jsr     print_decimal
         lda     #' '
@@ -142,7 +142,7 @@ startup_banner:
         _kprint rom_date
         lda     #')'
         _kputc
-        _kprint @jros2
+        _kprint @jrcos2
 
         ; bottom line of box
         lda     #SHIFT_OUT
@@ -178,9 +178,9 @@ startup_banner:
         .byte   "  JRC-1 65816 Single Board Computer  "
         .byte   SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
-@jros:  .byte   SHIFT_OUT, "x", SHIFT_IN
-        .asciiz "  JR/OS Version "
-@jros2: .byte   "   ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
+@jrcos:  .byte   SHIFT_OUT, "x", SHIFT_IN
+        .asciiz "  jrcOS Version "
+@jrcos2: .byte   "   ", SHIFT_OUT, "x", SHIFT_IN, CR, LF, 0
 
 ;;
 ; Print the 8-bit number in the accumulator in decimal

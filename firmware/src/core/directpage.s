@@ -2,7 +2,7 @@
 ; *******************************
 
 ;;
-; This file defines the direct page locations for the BIOS and JR/OS
+; This file defines the direct page locations for the BIOS and jrcOS
 ;
 ; Currently this file has a lot of locations that are only used by one
 ; specific routine and could be consolidated to save space.

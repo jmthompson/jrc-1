@@ -1,4 +1,4 @@
-ROM_VERSION := 0010
+ROM_VERSION := 0020
 
 AS := ca65
 LD := ld65
@@ -32,9 +32,9 @@ clean:
 
 buildinfo.s:
 	echo ".segment \"BOOTROM\"" > buildinfo.s
-	echo ".export jros_version" >> buildinfo.s
+	echo ".export jrcos_version" >> buildinfo.s
 	echo ".export rom_date" >> buildinfo.s
-	echo "jros_version: .word \$$${ROM_VERSION}" >> buildinfo.s
+	echo "jrcos_version: .word \$$${ROM_VERSION}" >> buildinfo.s
 	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
 
 %.o: %.s
