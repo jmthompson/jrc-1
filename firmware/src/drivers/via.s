@@ -68,23 +68,31 @@ via_irq:
  
 @exit:  rts
 
-; Wait up to 15ms (assuming 4MHz phi2 clock), with about 3% error because
-; we use a x4096 multiplier instead of x4000.
+; Wait up to 7ms (assuming 8MHz phi2 clock), with about 1% error because
+; we use a x8192 multiplier instead of x8000. Must be called with m=1.
 ;
-; Inputs:
-; A = number of ms to wait
+; On entry:
+; A = number of ms to wait, 0-7.
+;
+; On exit:
+; A trashed
 
 wait_ms:
-        and     #$0f        ; can't wait more than about 15 ms
+        pha
+        lda     #0
+        sta     f:via_base+via_t2cl
+        pla
+        and     #$07        ; can't wait more than about 7 ms
         asl
         asl
         asl
-        asl                 ; x4096 because this will be the upper byte
-        stz     via_base+via_t2cl
-        sta     via_base+via_t2ch
-@wait:  lda     via_base+via_ifr
+        asl
+        asl                 ; x8192 because this will be the upper byte
+        sta     f:via_base+via_t2ch
+:       lda     f:via_base+via_ifr
         and     #$20
-        beq     @wait
+        beq     :-
+        lda     f:via_base+via_t2cl
         rtl
 
         .segment "OSROM"
