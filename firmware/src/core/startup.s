@@ -12,6 +12,7 @@
         .export sysreset
         .export trampoline
 
+        .import __BSS_START__, __BSS_SIZE__
         .import monitor_start
         .import dos_init
         .import syscall_table_init
@@ -46,14 +47,23 @@ sysreset:
         clc
         xce
 
-        shortx
-
         longm
         ldaw    #OS_DP
         tcd
         ldaw    #OS_STACKTOP
         tcs
         shortm
+
+        ; Zero out the BSS segment
+        lda     #0
+        sta     f:__BSS_START__
+        longmx
+        ldxw    #.loword(__BSS_START__)
+        txy
+        iny
+        ldaw    #__BSS_SIZE__-1
+        mvn     __BSS_START__,__BSS_START__
+        shortmx
 
         ; Hardware initialization is done first. note that the drivers
         ; expect the DB register to be in bank $00.
