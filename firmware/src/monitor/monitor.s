@@ -15,7 +15,7 @@
 
         .import   print_hex, read_line
         .import   parse_address, parse_hex, skip_whitespace, print_error
-        .import   assemble, disassemble, XModemRcv, XModemSend
+        .import   assemble, disassemble, mon_show_heap, XModemRcv, XModemSend
         .import   arg, ibuff, IBUFFSZ
         .importzp cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
@@ -24,6 +24,7 @@
         .segment "OSROM"
 
 commands:
+        .byte   'h'
         .byte   'l'
         .byte   'm'
         .byte   'g'
@@ -55,6 +56,7 @@ num_commands = *-commands
 .endmacro
 
 handlers:
+        .addr   mon_show_heap-1
         .addr   disassemble-1
         .addr   dump_memory-1
         .addr   run_code-1
