@@ -19,13 +19,6 @@
         .import getc_serialb
         .import putc_serialb
 
-        .import dm_register
-        .import dm_unregister
-        .import dm_get_num_devices
-        .import dm_get_device
-        .import dm_find_device
-        .import dm_call
-
         .import MM_Allocate
         .import MM_Free
 
@@ -182,13 +175,12 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $3E
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $3F
 
-        ; Devices
-        DEFINE_SYSCALL  dm_register, 4              ; $40
-        DEFINE_SYSCALL  dm_unregister, 2            ; $41
-        DEFINE_SYSCALL  dm_get_num_devices, 0       ; $42
-        DEFINE_SYSCALL  dm_get_device, 2            ; $43
-        DEFINE_SYSCALL  dm_find_device, 4           ; $44
-        DEFINE_SYSCALL  dm_call, 8                  ; $45
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $40
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $41
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $42
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $43
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $44
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $45
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $46
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $47
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $48

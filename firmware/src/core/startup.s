@@ -14,7 +14,6 @@
 
         .import __BSS_START__, __BSS_SIZE__
         .import monitor_start
-        .import dos_init
         .import syscall_table_init
         .import dm_init
         .import mm_init
@@ -98,7 +97,6 @@ sysreset:
 
         jsl     mm_init
         jsl     dm_init
-        jsl     dos_init
 
         jml     monitor_start
 
