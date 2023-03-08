@@ -8,12 +8,12 @@
         .include "ascii.inc"
         .include "kernel/console.inc"
         .include "kernel/linker.inc"
+        .include "kernel/scheduler.inc"
 
         .export sysreset
         .export trampoline
 
         .import __BSS_START__, __BSS_SIZE__
-        .import monitor_start
         .import syscall_table_init
         .import dm_init
 
@@ -26,8 +26,6 @@
         ;; from buildinfo.s
         .import jrcos_version
         .import rom_date
-
-        .import current_pid
 
         .segment "BSS"
 
@@ -76,9 +74,6 @@ sysreset:
         ; initialize the syscall table
         jsr     syscall_table_init
 
-        lda     #2
-        sta     current_pid
-
         cli
 
         ; Now do the remaining initialization. At this point all code
@@ -95,8 +90,7 @@ sysreset:
         jsr     startup_banner
 
         jsl     dm_init
-
-        jml     monitor_start
+        jml     scheduler_start
 
 ;;
 ;
