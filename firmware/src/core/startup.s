@@ -16,7 +16,6 @@
         .import monitor_start
         .import syscall_table_init
         .import dm_init
-        .import mm_init
 
         .import uart_init
         .import via_init
@@ -95,7 +94,6 @@ sysreset:
 
         jsr     startup_banner
 
-        jsl     mm_init
         jsl     dm_init
 
         jml     monitor_start
