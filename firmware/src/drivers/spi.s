@@ -76,20 +76,20 @@ spi_init:
 .macro  spi_driver  name, slave
         .word       0                   ; version
         .word       DEVICE_TYPE_CHAR    ; feature flags
-        longaddr    @n                  ; device name
-        longaddr    @p                  ; private data
+        .dword      @n                  ; device name
+        .dword      @p                  ; private data
         .word       11                  ; number of functions
-        longaddr    spi_startup         ; #0
-        longaddr    spi_shutdown        ; #1
-        longaddr    spi_status          ; #2
-        longaddr    spi_open            ; #3
-        longaddr    spi_close           ; #4
-        longaddr    spi_xfer_byte       ; #5
-        longaddr    spi_xfer_bytes      ; #6
-        longaddr    spi_xfer_byte       ; #7
-        longaddr    spi_xfer_bytes      ; #8
-        longaddr    spi_get_mode        ; #9
-        longaddr    spi_set_mode        ; #10
+        .dword      spi_startup         ; #0
+        .dword      spi_shutdown        ; #1
+        .dword      spi_status          ; #2
+        .dword      spi_open            ; #3
+        .dword      spi_close           ; #4
+        .dword      spi_xfer_byte       ; #5
+        .dword      spi_xfer_bytes      ; #6
+        .dword      spi_xfer_byte       ; #7
+        .dword      spi_xfer_bytes      ; #8
+        .dword      spi_get_mode        ; #9
+        .dword      spi_set_mode        ; #10
 @n:     .byte   name, 0
 @p:     .byte   slave^$FF
 .endmacro

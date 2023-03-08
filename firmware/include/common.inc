@@ -10,9 +10,12 @@
 :       
 .endmacro
 
-.macro  longaddr addr
-        .faraddr addr
-        .byte 0
+; Decrement a 32-bit value in memory
+.macro  dec32   addr
+        lda     addr
+        bne     :+
+        dec     addr+2
+:       dec     addr
 .endmacro
 
 ;;
@@ -47,6 +50,45 @@
 
 .macro  bge     label
         bcs     label
+.endmacro
+
+;;
+; Synthesized conditional jumps
+;
+.macro  jcs     label
+        bcc     :+
+        jmp     label
+:
+.endmacro
+
+.macro  jcc     label
+        bcs     :+
+        jmp     label
+:
+.endmacro
+
+.macro  jeq     label
+        bne     :+
+        jmp     label
+:
+.endmacro
+
+.macro  jne     label
+        beq     :+
+        jmp     label
+:
+.endmacro
+
+.macro  jvs     label
+        bvc     :+
+        jmp     label
+:
+.endmacro
+
+.macro  jvc     label
+        bvs     :+
+        jmp     label
+:
 .endmacro
 
 ;;

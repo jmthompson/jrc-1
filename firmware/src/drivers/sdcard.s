@@ -53,17 +53,17 @@ retries:    .res    2
 sdcard_driver:
         .word       0                   ; version
         .word       DEVICE_TYPE_BLOCK   ; feature flags
-        longaddr    @n                  ; device name
-        longaddr    0                   ; private data
+        .dword      @n                  ; device name
+        .dword      0                   ; private data
         .word       9                   ; number of functions
-        longaddr    sdc_startup         ; #0
-        longaddr    sdc_shutdown        ; #1
-        longaddr    sdc_status          ; #2
-        longaddr    sdc_mount           ; #3
-        longaddr    sdc_eject           ; #4
-        longaddr    sdc_format          ; #5
-        longaddr    sdc_rdblock         ; #6
-        longaddr    sdc_wrblock         ; #7
+        .dword      sdc_startup         ; #0
+        .dword      sdc_shutdown        ; #1
+        .dword      sdc_status          ; #2
+        .dword      sdc_mount           ; #3
+        .dword      sdc_eject           ; #4
+        .dword      sdc_format          ; #5
+        .dword      sdc_rdblock         ; #6
+        .dword      sdc_wrblock         ; #7
 @n:     .byte "SDCARD", 0
 
 sdcard_register:
