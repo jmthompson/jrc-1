@@ -7,6 +7,7 @@
         .include "syscalls.inc"
         .include "ascii.inc"
         .include "kernel/console.inc"
+        .include "kernel/heap.inc"
         .include "kernel/linker.inc"
         .include "kernel/scheduler.inc"
 
@@ -87,6 +88,7 @@ sysreset:
 
         longmx
 
+        jsr     heap_init
         jsr     startup_banner
 
         jsl     dm_init
