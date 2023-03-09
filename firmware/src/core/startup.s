@@ -99,22 +99,21 @@ sysreset:
 ; Print the boot banner to the console
 ;
 startup_banner:
-        php
-        shortmx
         _kprint @init
+
         ; top line of box
-        lda     #SHIFT_OUT
+        ldaw    #SHIFT_OUT
         _kputc
-        lda     #'l'
+        ldaw    #'l'
         _kputc
         _kprint @line
-        lda     #'k'
+        ldaw    #'k'
         _kputc
-        lda     #SHIFT_IN
+        ldaw    #SHIFT_IN
         _kputc
-        lda     #CR
+        ldaw    #CR
         _kputc
-        lda     #LF
+        ldaw    #LF
         _kputc
 
         ; System ID
@@ -122,50 +121,51 @@ startup_banner:
 
         ; jrcOS version
         _kprint @jrcos
-        lda     f:jrcos_version + 1
+        ldaw    f:jrcos_version + 1
+        andw    #255
         jsr     print_decimal
-        lda     #'.'
+        ldaw    #'.'
         _kputc
         lda     f:jrcos_version
+        andw    #255
         lsr
         lsr
         lsr
         lsr
         jsr     print_decimal
-        lda     #'.'
+        ldaw    #'.'
         _kputc
         lda     f:jrcos_version
-        and     #$0F
+        andw    #$0F
         jsr     print_decimal
-        lda     #' '
+        ldaw    #' '
         _kputc
-        lda     #'('
+        ldaw    #'('
         _kputc
         _kprint rom_date
-        lda     #')'
+        ldaw    #')'
         _kputc
         _kprint @jrcos2
 
         ; bottom line of box
-        lda     #SHIFT_OUT
+        ldaw    #SHIFT_OUT
         _kputc
-        lda     #'m'
+        ldaw    #'m'
         _kputc
         _kprint @line
-        lda     #'j'
+        ldaw    #'j'
         _kputc
-        lda     #SHIFT_IN
+        ldaw    #SHIFT_IN
         _kputc
-        lda     #CR
+        ldaw    #CR
         _kputc
-        lda     #LF
+        ldaw    #LF
         _kputc
-        lda     #CR
+        ldaw    #CR
         _kputc
-        lda     #LF
+        ldaw    #LF
         _kputc
 
-        plp
         rts
 
 
@@ -190,6 +190,7 @@ startup_banner:
 ; Accumulator is corrupted on exit
 ;
 print_decimal:
+        shortmx
         ldx     #$ff
         sec
 @pr100: inx
@@ -210,6 +211,9 @@ print_decimal:
         jsr     @digit
 @skip10:
         tax
+        jsr     @digit
+        longmx
+        rts
 @digit: pha
         txa
         ora     #'0'
