@@ -15,6 +15,9 @@
 
         .import putc_seriala
 
+        .segment "ZEROPAGE"
+tmp:    .res 4
+
         .segment "BOOTROM"
 
 console_init:
@@ -70,13 +73,13 @@ console_cll:
 ; Print a null-terminated string up to 255 characters in length.
 ;
 console_writeln:
-
-; Input parameters
-@str = $01
-
+        lda     $11,s
+        sta     tmp
+        lda     $13,s
+        sta     tmp + 2
         shortmx
         ldy     #0
-@loop:  lda     [@str],y
+@loop:  lda     [tmp],y
         beq     @exit
         jsl     putc_seriala
         iny

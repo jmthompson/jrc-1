@@ -22,28 +22,33 @@
         .export sysnmi
         .export sysbrk
 
+        .segment "ZEROPAGE"
+
+copsig:   .res  4
+cf_size:  .res  2
+
 ; Processor status register bits
 PREG_I      =   %00000100
 PREG_C      =   %00000001
 
         .segment "BOOTROM"
 
-syscop:
-; syscall stack frame
-@copsig  := 1                   ; Pointer to COP signature byte
-@cf_size := @copsig + 4         ; Size of caller's stack frame (size of parameters)
-@y_reg   := @cf_size + 2        ; Y
-@x_reg   := @y_reg + 2          ; X
-@a_reg   := @x_reg + 2          ; A
-@d_reg   := @a_reg + 2          ; D
-@db_reg  := @d_reg + 2          ; DB
-@sc_size := @db_reg + 1 - @copsig
+.proc syscop
 
-; COP instruction stack frame
-@p_reg   := @db_reg + 1         ; P
-@pc_reg  := @p_reg  + 1         ; PC
-@pb_reg  := @pc_reg + 2         ; PB
-@cop_size := @pb_reg + 1 - @p_reg
+        ; Stack relative variables
+        .struct
+          .org 1
+          y_reg     .word
+          x_reg     .word
+          a_reg     .word
+          d_reg     .word
+          b_reg     .byte
+          p_reg     .byte   ; start of COP frame
+          ret_addr  .addr
+        .endstruct
+
+        @sc_size  := p_reg - y_reg
+        @cop_size := 4
 
         longmx
         phb
@@ -51,82 +56,68 @@ syscop:
         pha
         phx
         phy
-        pha                     ; Make space for our local variables
-        pha                     ; """
-        pha                     ; """
-        tsc
-        tcd                     ; DP now points to our local stack frame
+        ldaw    #OS_DP
+        tcd
         shortm
         lda     #OS_DB
         pha
-        plb                     ; Set kernel data bank
-        lda     @p_reg
+        plb
+        lda     p_reg,s
         and     #~PREG_C&$FF    ; clear carry
-        sta     @p_reg
+        sta     p_reg,s
         bit     #PREG_I         ; were interrupts disabled?
         bne     :+
         cli                     ; no, so re-enable them
-:       longm
-        lda     @pc_reg
+:       lda     ret_addr + 2,s
+        sta     copsig + 2
+        longm
+        lda     ret_addr,s
         dec
-        sta     @copsig
-        lda     @pb_reg
-        sta     @copsig+2
-        lda     [@copsig]
+        sta     copsig
+        lda     [copsig]
         andw    #255
         asl
         asl
         asl
         tax
-        lda     syscall_table+4,x       ; Parameter frame size
-        sta     @cf_size
-        lda     syscall_table+2,x       ; Top word of handler address
-        sta     trampoline+3
+        lda     syscall_table + 4,x     ; Parameter frame size
+        sta     cf_size
+        lda     syscall_table + 2,x     ; Top word of handler address
+        sta     trampoline + 3
         lda     syscall_table,x         ; Low word of handler address
-        sta     trampoline+1
-        phd                             ; save our DP for after dispatch
-        lda     @a_reg                  ; Grab A; it might be a parameter
-        pha                             ; save it while we switch direct pages
-        tdc
-        clc
-        adcw    #@sc_size+@cop_size
-        tcd
-        pla                             ; restore A from caller
+        sta     trampoline + 1
+        lda     a_reg,s                 ; Grab A; it might be a parameter
         jsl     trampoline
         longmx
-        pld
-        sta     @a_reg                  ; return value of A to caller
+        sta     a_reg,s                 ; return value of A to caller
         bcc     @noerr
         shortm
-        lda     @p_reg
+        lda     p_reg,s
         ora     #PREG_C                 ; set carry on return to caller
-        sta     @p_reg
+        sta     p_reg,s
         longm
-
-@noerr: lda     @cf_size
+@noerr: lda     cf_size
         beq     @nocopy
 
         tsc
         clc
-        adcw    #@sc_size+@cop_size
+        adcw    #@sc_size + @cop_size
         tax                             ; copy from end of cop stack frame
-        adc     @cf_size
+        adc     cf_size
         tay                             ; copy to end of params frame
-        ldaw    #@sc_size+@cop_size-1   ; copy local + cop frame
+        ldaw    #@sc_size + @cop_size - 1   ; copy local + cop frame
         mvp     0,0                     ; remove parameters
         tya                             ; Y will end up one byte lower than the last byte written
         tcs                             ;  which is exactly where our stack frame starts
 
 @nocopy:
-        ply                             ; remove space used for local vars
-        ply                             ; """
-        ply                             ; """
         ply
         plx
         pla
         pld
         plb
         rti
+.endproc
 
 sysirq: 
         rep     #$30
