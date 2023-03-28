@@ -6,7 +6,7 @@
         .include "common.inc"
         .include "console.inc"
         .include "syscalls.inc"
-        .include "kernel/syscall_macros.inc"
+        .include "kernel/function_macros.inc"
 
         .export print_hex
         .export print_address
@@ -58,20 +58,12 @@ print_hex:
 ; c=1 on error
 ;
 .proc print_address
+        _BeginDirectPage
+          _StackFrameRTL
+          i_addr  .dword
+        _EndDirectPage
 
-BEGIN_PARAMS
-  PARAM s_dreg, .word
-  PARAM s_ret,  .faraddr
-  PARAM i_addr, .dword
-END_PARAMS
-
-@lsize := s_dreg - 1
-@psize := 4
-
-        phd
-        tsc
-        tcd
-
+        _SetupDirectPage
         shortmx
         lda   i_addr + 2
         jsl   print_hex
@@ -85,14 +77,7 @@ END_PARAMS
         lda   s_ret + 2,s
         sta   s_ret + 2 + @psize,s
         longmx
-        lda   s_ret,s
-        sta   s_ret + @psize,s
-        lda   s_dreg,s
-        sta   s_dreg + @psize,s
-        tsc
-        clc
-        adcw    #@psize + @lsize
-        tcs
+        _RemoveParams
         pld
         rtl
 .endproc

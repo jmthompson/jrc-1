@@ -11,7 +11,7 @@
         .include "ascii.inc"
         .include "console.inc"
         .include "syscalls.inc"
-        .include "kernel/syscall_macros.inc"
+        .include "kernel/function_macros.inc"
 
         .include "parser.inc"
 
@@ -179,24 +179,13 @@
 ; Display an error message pointing at a location on the input line.
 ;
 .proc print_error
+        _BeginDirectPage
+          _StackFrameRTS
+          i_error_msg   .dword
+          i_error_loc   .word
+        _EndDirectPage
 
-BEGIN_PARAMS
-  PARAM s_dreg, .word
-  PARAM s_ret, .word
-  PARAM i_error_msg, .dword
-  PARAM i_error_loc, .word
-END_PARAMS
-
-@psize := 6
-@lsize := s_dreg - 1
-
-        phd
-        tsc
-        sec
-        sbcw    #@lsize
-        tcs
-        tcd
-
+        _SetupDirectPage
         lda     i_error_loc
         sec
         sbcw    #.loword(ibuff)
@@ -227,14 +216,7 @@ END_PARAMS
         lda     #LF
         _PrintChar
         longm
-        lda     s_dreg,s
-        sta     s_dreg+@psize,s
-        lda     s_ret,s
-        sta     s_ret+@psize,s
-        tsc
-        clc
-        adcw    #@psize + @lsize
-        tcs
+        _RemoveParams
         pld
         rts
 .endproc

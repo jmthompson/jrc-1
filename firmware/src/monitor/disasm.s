@@ -10,7 +10,7 @@
         .include "syscalls.inc"
         .include "console.inc"
         .include "ascii.inc"
-        .include "kernel/syscall_macros.inc"
+        .include "kernel/function_macros.inc"
 
         .include "opcode.inc"
         .include "operand.inc"
@@ -121,28 +121,18 @@ PREG_X  = $10
 ; X = number of bytes disassembled
 ;
 .proc print_instruction
+        _BeginDirectPage
+          l_tmp     .byte
+          l_len     .byte
+          l_am      .byte
+          l_instr   .byte
+          _StackFrameRTS
+          i_xwidth  .byte
+          i_mwidth  .byte
+          i_ptr     .dword
+        _EndDirectPage
 
-BEGIN_PARAMS
-  PARAM l_tmp     .byte
-  PARAM l_len     .byte
-  PARAM l_am      .byte
-  PARAM l_instr   .byte
-  PARAM s_dreg    .word
-  PARAM s_ret     .word
-  PARAM i_xwidth  .byte
-  PARAM i_mwidth  .byte
-  PARAM i_ptr     .dword
-END_PARAMS
-
-@lsize  := s_dreg - 1
-@psize  := 6
-
-        phd
-        tsc
-        sec
-        sbcw    #@lsize
-        tcs
-        tcd
+        _SetupDirectPage
         shortmx
         lda     [i_ptr]
         tax
@@ -213,14 +203,7 @@ END_PARAMS
         _PrintChar
         ldx     l_len
         longmx
-        lda     s_dreg,s
-        sta     s_dreg + @psize,s
-        lda     s_ret,s
-        sta     s_ret + @psize,s
-        tsc
-        clc
-        adcw    #@psize + @lsize
-        tcs
+        _RemoveParams
         pld
         rts
 
