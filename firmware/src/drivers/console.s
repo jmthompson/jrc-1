@@ -5,6 +5,7 @@
 
         .include "common.inc"
         .include "ascii.inc"
+        .include "kernel/syscall_macros.inc"
 
         .export console_cll
         .export console_cls
@@ -73,10 +74,9 @@ console_cll:
 ; Print a null-terminated string up to 255 characters in length.
 ;
 console_writeln:
-        lda     $11,s
+        _GetParam32 0
         sta     tmp
-        lda     $13,s
-        sta     tmp + 2
+        stx     tmp + 2
         shortmx
         ldy     #0
 @loop:  lda     [tmp],y

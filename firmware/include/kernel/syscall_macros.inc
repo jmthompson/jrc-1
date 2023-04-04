@@ -1,82 +1,50 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Syscall handler macros. These assist in setting up the handler environment   ;
-; such as defining call parameters.                                            ;
-;                                                                              ;
-; Syscalls must be defined as follows:                                         ;
-;                                                                              ;
-; .proc syscall_name                                                           ;
-;   BEGIN_PARAMS                                                               ;
-;     PARAM i_first_arg, .word                                                 ;
-;     PARAM i_second_arg, .word                                                ;
-;     PARAM o_ret_value, .dword                                                ;
-;   END_PARAMS                                                                 ;
-;                                                                              ;
-;   ... code here ...                                                          ;
-;                                                                              ;
-;   rtl                                                                        ;
-; .endproc                                                                     ;
-;                                                                              ;
-; This syscall woudl be called like this:                                      ;
-;                                                                              ;
-;   pha                                                                        ;
-;   pha       ; space for dword return value                                   ;
-;   pea first_arg                                                              ;
-;   pea second_parg                                                            ;
-;   cop $xx                                                                    ;
-;   pla                                                                        ;
-;   sta result                                                                 ;
-;   pla                                                                        ;
-;   sta result + 2                                                             ;
-;                                                                              ;
-; The use of .proc to define the function makes sure that the names of the     ;
-; parameters will not conflict with other, similarly-named parameters in other ;
-; functions in the same source file.                                           ;
+; Syscall handler macros. These assist in reading and writing parameters to    ;
+; and from the user stack.                                                     ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+        .importzp scparams
+
 ;;
-; Begin defining stack-based input/output parameters. Defaults to assuming that
-; parameters start at location $01, but this may be changed by specifying a
-; starting_offset parameter.
+; Retrieve a 2-byte parameter from the user stack.
+; Returns the parameter in A.
 ;
-.macro  BEGIN_PARAMS starting_offset
-.struct
-.ifblank starting_offset
-        .res  1
-.else
-        .res  starting_offset
-.endif
+.macro  _GetParam16 offset
+        ldyw    #offset
+        lda     [scparams],y
 .endmacro
 
 ;;
-; Declare a single parameter with name "name" and type "type". The type must include
-; the leading dot, e.g ".word", ".dword".
+; Retrieve a 4-byte parameter from the user stack
+; Returns the parameter in A/X (low/high)
 ;
-.macro PARAM name,type
-  name type
+.macro  _GetParam32 offset
+        ldyw    #offset + 2
+        lda     [scparams],y
+        tax
+        dey
+        dey
+        lda     [scparams],y
 .endmacro
 
 ;;
-; Signal the end of parameter definitions
+; Store a 2-byte parameter onto the user stack.
+; The parameter should be in A.
 ;
-.macro END_PARAMS
-.endstruct
+.macro  _PutParam16 offset
+        ldyw    #offset
+        sta     [scparams],y
 .endmacro
 
 ;;
-; Exit with a success code (0)
+; Retrieve a 4-byte parameter from the user stack
+; The parameter should be in A/X (low/high)
 ;
-.macro SUCCESS
-        ldaw    #0
-        rtl
-.endmacro
-
-;;
-; Exit a syscall with an error code.
-;
-.macro  ERROR code
-.ifnblank code
-        ldaw    #code
-.endif
-        sec
-        rtl
+.macro  _PutParam32 offset
+        ldyw    #offset
+        sta     [scparams],y
+        iny
+        iny
+        txa
+        sta     [scparams],y
 .endmacro

@@ -69,10 +69,10 @@ dm_init:
 ;
 .proc dm_register
 
-BEGIN_PARAMS
-  PARAM i_device, .dword
-  PARAM o_devicenr, .word
-END_PARAMS
+.struct
+  i_device    .dword
+  o_devicenr  .word
+.endstruct
 
         lda     i_device
         sta     device
@@ -88,7 +88,9 @@ END_PARAMS
 ; Unregfister a device. Not currently implemented
 ;
 .proc dm_unregister
-        ERROR ERR_NOT_SUPPORTED
+        ldaw    #ERR_NOT_SUPPORTED
+        sec
+        rtl
 .endproc
 
 ;;
@@ -99,13 +101,15 @@ END_PARAMS
 ;
 .proc dm_get_num_devices
 
-BEGIN_PARAMS
-  PARAM o_num_devices, .word
-END_PARAMS
+.struct
+  o_num_devices   .word
+.endstruct
 
         lda     num_devices
         sta     o_num_devices
-        SUCCESS
+        ldaw    #0
+        clc
+        rtl
 .endproc
 
 ;;
@@ -117,10 +121,10 @@ END_PARAMS
 ;
 .proc dm_get_device
 
-BEGIN_PARAMS
-  PARAM i_devicenr, .word
-  PARAM o_device,   .dword
-END_PARAMS
+.struct
+  i_devicenr  .word
+  o_device    .dword
+.endstruct
 
         lda     i_devicenr
         sta     devicenr
@@ -131,7 +135,9 @@ END_PARAMS
         sta     o_device
         lda     device + 2
         sta     o_device + 2
-        SUCCESS
+        ldaw    #0
+        clc
+        rtl
 .endproc
 
 ;;
@@ -143,10 +149,10 @@ END_PARAMS
 ;
 .proc dm_find_device
 
-BEGIN_PARAMS
-  PARAM i_device_name, .dword
-  PARAM o_devicenr,   .word
-END_PARAMS
+.struct
+  i_device_name   .dword
+  o_devicenr      .word
+.endstruct
 
 @ptr = i_device_name  ; reused
 
@@ -178,10 +184,14 @@ END_PARAMS
         lda     devicenr
         cmp     num_devices
         bne     @check
-        ERROR   ERR_NO_SUCH_DEVICE
+        ldaw    #ERR_NO_SUCH_DEVICE
+        sec
+        rtl
 @found: lda     devicenr
         sta     o_devicenr
-        SUCCESS
+        ldaw    #0
+        clc
+        rtl
 .endproc
 
 ;;
@@ -195,11 +205,11 @@ END_PARAMS
 ;
 .proc dm_call
 
-BEGIN_PARAMS
-  PARAM i_param_block,  .dword
-  PARAM i_function,     .word
-  PARAM i_devicenr,     .word
-END_PARAMS
+.struct
+  i_param_block   .dword
+  i_function      .word
+  i_devicenr      .word
+.endstruct
 
         lda     i_devicenr
         sta     devicenr

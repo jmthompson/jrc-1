@@ -17,6 +17,8 @@
         .import syscall_table
         .import trampoline
 
+        .importzp scparams
+
         .export syscop
         .export sysirq
         .export sysnmi
@@ -74,6 +76,11 @@ PREG_C      =   %00000001
         lda     ret_addr,s
         dec
         sta     copsig
+        tsc
+        clc
+        adcw    #@sc_size + @cop_size + 1
+        sta     scparams
+        stz     scparams + 2
         lda     [copsig]
         andw    #255
         asl

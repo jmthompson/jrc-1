@@ -47,7 +47,9 @@ syscall_table_init:
         .segment "OSROM"
 
 unsupported_syscall:
-        ERROR   ERR_NOT_SUPPORTED
+        ldaw    #ERR_NOT_SUPPORTED
+        sec
+        rtl
 
 ;;
 ; Return the operating system version word
@@ -62,13 +64,8 @@ unsupported_syscall:
 ; c = 0
 ;
 .proc sys_get_version
-
-BEGIN_PARAMS
-  PARAM o_version, .word
-END_PARAMS
-
         lda     f:jrcos_version
-        sta     o_version
+        _PutParam16 0
         ldaw    #0
         clc
         rtl
@@ -87,15 +84,9 @@ END_PARAMS
 ; c = 0
 ;
 .proc sys_get_uptime
-
-BEGIN_PARAMS
-  PARAM o_uptime, .dword
-END_PARAMS
-
         lda     jiffies
-        sta     o_uptime
-        lda     jiffies + 2
-        sta     o_uptime + 2
+        ldx     jiffies + 2
+        _PutParam32 0
         ldaw    #0
         clc
         rtl
