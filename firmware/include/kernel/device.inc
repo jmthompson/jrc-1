@@ -1,145 +1,77 @@
 ;;
-; BIOS bdevice support
+; ==============
+; Device support
+; ==============
 ;
+; The jrcOS kernel supports character and block devices. The function
+; register_device is used to register a device with the system:
+;
+;        pea  .hiword(device_name)
+;        pea  .loword(device_name)
+;        pea  MAJORID
+;        pea  .hiword(ops)
+;        pea  .loword(ops)
+;        pea  .hiword(privatedata)
+;        pea  .loword(privatedata)
+;        jsr  register_device
+;
+; Where:
+;
+; device_name is a pointer to a null-terminated string naming the device.
+; The name is used primarliy for displaying kernel messags about the
+; device.
+;
+; MAJORID is the major device ID for this device. All minor numbers
+; for this major are implicitly handled by this driver. The device ID
+; must have bit 15 set if this is a block device.
+;
+; <ops> is a pointer to a FileOperations (for char devices) or
+; BlockOperations (for block devices) table.
+;
+; <privatedata> is an optional pointer to a private data structure for
+; use by the driver. It can be NULL.
+;
+; As with most kernel functions it returns with carry clear on success
+; or carry set on error. On error an error code will also be returned
+; in the accumulator.
+
+        .global register_device, find_device
+        .global bdev_open, bdev_release, bdev_rdblock, bdev_wrblock
+        .global cdev_open, cdev_release, cdev_read, cdev_write 
 
 ;;
-; Enter a device driver. Currently no-op but may change in the future.
+; Device IDs
 ;
-.macro  DRVR_ENTER
-.endmacro
+DEVICE_ID_CONSOLE  = 1      ; char device #1
+DEVICE_ID_SERIAL   = 2      ; char device #2
+DEVICE_ID_SPI      = 3      ; char device #3
+DEVICE_ID_USERPORT = 4      ; char device #4
+DEVICE_ID_SDCARD   = $8001  ; block device #1
 
 ;;
-; Exit a device driver.
+; Device structure representing a device. A single linked list of Device
+; structures is used to track all registered devices, both block and
+; character.
 ;
-.macro  DRVR_EXIT
-        rtl
-.endmacro
-;;
-; Exit a device driver with no error. Must be called in 16-bit mode.
-;
-.macro  DRVR_SUCCESS
-        ldaw    #0
-        clc
-        DRVR_EXIT
-.endmacro
+.struct Device
+        refcount      .word   ; number of references currently held to this device
+        name          .dword  ; Pointer to name string
+        major         .word   ; Major device ID
+        ops           .dword  ; Pointer to operations table
+        private       .dword  ; Pointer to private driver data
+.endstruct
 
 ;;
-; Get the private data pointer and store it in the given location
+; The BlockOperations structure is a table of pointers to functions that
+; implement block device functions.
 ;
-.macro  DRVR_PRIVATE    loc
-        lda     4,s
-        sta     loc
-        lda     6,s
-        sta     loc+2
-.endmacro
+.struct BlockOperations
+        open          .dword      ; Pointer to open function
+        release       .dword      ; Pointer to release function
+        rdblock       .dword      ; Pointer to rdblock function
+        wrblock       .dword      ; Pointer to wrblock function
+        ioctl         .dword      ; Pointer to ioctl function
+        mediachanged  .dword      ; Pointer to mediachanged function
+.endstruct
 
-;;
-; Get the parameters pointer and store it in the given location
-;
-.macro  DRVR_PARAMS loc
-        lda     8,s
-        sta     loc
-        lda     10,s
-        sta     loc+2
-.endmacro
-
-;;
-; Exit a device driver with an error code. Must be called in 16-bit mode.
-;
-.macro  DRVR_ERROR    code
-.ifnblank code
-        ldaw    #code
-.endif
-        sec
-        DRVR_EXIT
-.endmacro
-
-;;
-; Register a driver via the DM internal interface
-;
-.macro  REGISTER_DEVICE device
-        pea     .hiword(device)
-        pea     .loword(device)
-        jsr     dm_register_internal
-.endmacro
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Device driver structure:
-;
-; +0:  [2] Device driver version, currently $0000
-; +2:  [2] Device flags
-;       bit 15: 0 = char, 1 = block
-;       bite 0: 0 = offline, 1 = online
-; +4:  [4] Pointer to device name
-; +8:  [4] Pointer to device private data (may be null)
-; +12: [2] Number of functions
-; +14: [4 x n] Function pointers, four bytes per function
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; Maximum number of devices
-MAX_DEVICES  = 16
-
-; Device feature flags
-DEVICE_TYPE_BLOCK = $0000   ; Block device
-DEVICE_TYPE_CHAR  = $8000   ; Character device
-
-; device status flags
-DEVICE_ONLINE   = $0001 ; device is online if set
-
-; Generic device driver function numbers
-DEV_STARTUP     = 0
-DEV_SHUITDOWN   = 1
-DEV_STATUS      = 2
-
-; Block device funcctions
-DEV_MOUNT   = 3
-DEV_EJECT   = 4
-DEV_FORMAT  = 5
-DEV_RDBLOCK = 6
-DEV_WRBLOCK = 7
-
-; Character device functions
-DEV_OPEN        = 3
-DEV_CLOSE       = 4
-DEV_READ_BYTE   = 5
-DEV_READ_BYTES  = 6
-DEV_WRITE_BYTE  = 7
-DEV_WRITE_BYTES = 8
-DEV_GET_MODE    = 9
-DEV_SET_MODE    = 10
-
-;;
-; Macros for making common device calls.
-;
-.macro  _DMCalLDevice   devicenr, funcnr, params
-        lda     devicenr
-        pha
-        pea     funcnr
-        pea     .hiword(params)
-        pea     .loword(params)
-        _Call   SYS_DEV_CALL
-.endmacro
-
-.macro  _DMGetStatus    nr, params
-        _DMCalLDevice   nr, DEV_STATUS, params
-.endmacro
-
-.macro  _DMMount        nr, params
-        _DMCalLDevice   nr, DEV_MOUNT, params
-.endmacro
-
-.macro  _DMEject        nr, params
-        _DMCalLDevice   nr, DEV_EJECT, params
-.endmacro
-
-.macro  _DMFormat       nr, params
-        _DMCalLDevice   nr, DEV_FORMAT, params
-.endmacro
-
-.macro  _DMReadBlock    nr, params
-        _DMCalLDevice   nr, DEV_RDBLOCK, params
-.endmacro
-
-.macro  _DMRWritelock    nr, params
-        _DMCalLDevice   nr, DEV_WRBLOCK, params
-.endmacro
+NUM_DEVICES := 8

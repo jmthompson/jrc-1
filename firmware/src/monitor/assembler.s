@@ -8,12 +8,12 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
         .include "ascii.inc"
         .include "constants.inc"
         .include "opcode.inc"
         .include "operand.inc"
         .include "parser.inc"
+        .include "stdio.inc"
 
         .export   assemble
 
@@ -49,7 +49,7 @@
 .endproc
 
 .proc show_prompt
-        _PrintString @p
+        _puts @p
         rts
 @p:     .byte   '!', 0
 .endproc
@@ -205,9 +205,9 @@
         lda       operand_size
         pha
         pha                           ; use as both m and x width
-        _Call     SYS_CONSOLE_CLL
+        _puts     @cll
         lda       #CR
-        _PrintChar
+        _putchar
         longm
         jsr       print_instruction
         lda       start_loc
@@ -216,6 +216,7 @@
         sta       start_loc
         clc
         rts
+@cll:   .byte     ESC, LBRACKET, "2K", 0
 
 match_immediate:
         lda       operand_type

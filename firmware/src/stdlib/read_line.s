@@ -5,7 +5,7 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
+        .include "stdio.inc"
         .include "ascii.inc"
 
         .export     read_line
@@ -34,7 +34,7 @@ read_line:
         shortm
         longx
         ldyw    #0
-@loop:  _GetChar
+@loop:  _getchar
         bcs     @loop
         cmp     #BS
         beq     @bs
@@ -45,7 +45,7 @@ read_line:
         cmp     #' '
         bcc     @loop
         sta     [@ibuffp],Y
-        _PrintChar
+        _putchar
         iny
         cpyw    @ibuffsz
         bne     @loop
@@ -66,8 +66,8 @@ read_line:
         rtl
 @bs:    cpyw    #0
         beq     @loop
-        _PrintChar
+        _putchar
         dey
         bra     @loop
-@cls:   _PrintChar
+@cls:   _putchar
         bra     @loop

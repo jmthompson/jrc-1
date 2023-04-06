@@ -5,7 +5,8 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
+        .include "stdio.inc"
+        .include "fcntl.inc"
         .include "ascii.inc"
         .include "kernel/syscall_macros.inc"
 
@@ -40,14 +41,14 @@ num_commands = *-commands
 
 .macro putc char
         lda char
-        _PrintChar
+        _putchar
 .endmacro
 
 .macro puteol
         lda #CR
-        _PrintChar
+        _putchar
         lda #LF
-        _PrintChar
+        _putchar
 .endmacro
 
 .macro puthex value
@@ -76,12 +77,33 @@ start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
 monitor_start:
+        pha
+        _PushLong @console
+        _PushWord 0
+        _PushWord O_RDONLY
+        _open               ; open stdin
+        pla
+        pha
+        _PushLong @console
+        _PushWord 0
+        _PushWord O_WRONLY
+        _open               ; open stdou
+        pla
+        pha
+        _PushLong @console
+        _PushWord 0
+        _PushWord O_WRONLY
+        _open               ; open stderr
+        pla
         shortm
         stz     m_width
         stz     x_width
         longm
-        _PrintString start_banner
+        _puts   start_banner
         bra     monitor_loop
+
+@console:
+        .asciiz "/dev/console"
 
 ;;
 ; Capture the processor registers from an IRQ/NMI/BRK stack frame
@@ -119,7 +141,7 @@ capture_registers:
 monitor_brk:
         longmx
         jsr     capture_registers
-        _PrintString brk_banner
+        _puts   brk_banner
         jsr     print_registers
         bra     monitor_loop
 
@@ -129,12 +151,12 @@ monitor_brk:
 monitor_nmi:
         longmx
         jsr     capture_registers
-        _PrintString nmi_banner
+        _puts   nmi_banner
         jsr     print_registers
         ; fall through
 
 monitor_loop:        
-        _PrintString @prompt
+        _puts   @prompt
         ldaw    #.hiword(ibuff)
         sta     ibuffp+2
         pha
@@ -147,9 +169,9 @@ monitor_loop:
         bcs     monitor_loop
         pha
         ldaw    #CR
-        _PrintChar
+        _putchar
         ldaw    #LF
-        _PrintChar
+        _putchar
         pla
         jsr     dispatch
         bra     monitor_loop
@@ -271,13 +293,13 @@ print_registers:
         putc    #'='
         lda     m_width
         ora     #'0'
-        _PrintChar
+        _putchar
         putc    #' '
         putc    #'x'
         putc    #'='
         lda     x_width
         ora     #'0'
-        _PrintChar
+        _putchar
         puteol
         longm
         rts
@@ -321,7 +343,7 @@ dump_memory:
         bcs     @printable
         lda     #'?'
 @printable:
-        _PrintChar
+        _putchar
         lda     start_loc
         cmp     row_end
         beq     @endofrow

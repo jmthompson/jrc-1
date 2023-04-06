@@ -10,6 +10,8 @@
         .include "common.inc"
         .include "errors.inc"
         .include "kernel/device.inc"
+        .include "kernel/fs.inc"
+        .include "kernel/function_macros.inc"
 
         .export spi_init
         .export spi_register
@@ -19,7 +21,6 @@
         .export spi_slow_speed
         .export spi_fast_speed
 
-        .import   dm_register_internal
         .importzp ptr
         .importzp tmp
 
@@ -66,179 +67,190 @@ spi_init:
         sta     SPI_CTRL_REG      ; reset chip to defaults
         lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
         sta     SPI_SS_REG        ; Disable all slaves
-        lda     #0
-        sta     f:spi_busy
-        sta     f:spi_busy + 1
+        stz     spi_busy
         rts
 
         .segment "OSROM"
 
-.macro  spi_driver  name, slave
-        .word       0                   ; version
-        .word       DEVICE_TYPE_CHAR    ; feature flags
-        .dword      @n                  ; device name
-        .dword      @p                  ; private data
-        .word       11                  ; number of functions
-        .dword      spi_startup         ; #0
-        .dword      spi_shutdown        ; #1
-        .dword      spi_status          ; #2
-        .dword      spi_open            ; #3
-        .dword      spi_close           ; #4
-        .dword      spi_xfer_byte       ; #5
-        .dword      spi_xfer_bytes      ; #6
-        .dword      spi_xfer_byte       ; #7
-        .dword      spi_xfer_bytes      ; #8
-        .dword      spi_get_mode        ; #9
-        .dword      spi_set_mode        ; #10
-@n:     .byte   name, 0
-@p:     .byte   slave^$FF
-.endmacro
+spi_units:
+        .byte   SPI_SS0^$FF
+        .byte   SPI_SS1^$FF
+        .byte   SPI_SS2^$FF
+        .byte   SPI_SS3^$FF
+        .byte   SPI_SS4^$FF
+        .byte   SPI_SS5^$FF
+        .byte   SPI_SS6^$FF
+        .byte   SPI_SS7^$FF
 
-spi1_driver:    spi_driver "SPI1", SPI_SS1
-spi2_driver:    spi_driver "SPI2", SPI_SS2
-spi3_driver:    spi_driver "SPI3", SPI_SS3
-spi4_driver:    spi_driver "SPI4", SPI_SS4
-spi5_driver:    spi_driver "SPI5", SPI_SS5
-spi6_driver:    spi_driver "SPI6", SPI_SS6
-spi7_driver:    spi_driver "SPI7", SPI_SS7
+spi_name:
+        .asciiz     "spi"
+
+spi_ops:
+        .dword      spi_open
+        .dword      spi_release
+        .dword      spi_seek
+        .dword      spi_xfer_bytes
+        .dword      spi_xfer_bytes
+        .dword      spi_flush
+        .dword      spi_poll
+        .dword      spi_ioctl
 
 ;;
 ; Register the SPI device drivers
 ;
-spi_register:
-        REGISTER_DEVICE spi1_driver
-        REGISTER_DEVICE spi2_driver
-        REGISTER_DEVICE spi3_driver
-        REGISTER_DEVICE spi4_driver
-        REGISTER_DEVICE spi5_driver
-        REGISTER_DEVICE spi6_driver
-        REGISTER_DEVICE spi7_driver
+.proc spi_register
+        _PushLong spi_name
+        _PushWord DEVICE_ID_SPI
+        _PushLong spi_ops
+        _PushLong 0
+        jsr     register_device
         rts
+.endproc
+
+;-------- FileOperations methods --------;
 
 ;;
-; STARTUP
+; Open the SPI device and select the slave device corresponding to the
+; unit number.
 ;
-; Start the SPI device. Currently a no-op
+; Stack frame (top to bottom):
 ;
-; Parameters:
-; none
+; |---------------------------------------------|
+; | [4] pointer to File representing the device |
+; |---------------------------------------------|
 ;
-spi_startup:
-        DRVR_SUCCESS
+; On exit:
+; c = 0 on success, 1 on failure
+; C,Y trashed
+;
+.proc spi_open
+        _BeginDirectPage
+          _StackFrameRTL
+          i_file  .dword
+        _EndDirectPage
 
-;;
-; SHUTDOWN
-;
-; Shut down the SPI device. Currently a no-op
-;
-; Parameters:
-; none
-;
-spi_shutdown:
-        DRVR_SUCCESS
-
-;;
-; STATUS
-;
-; Return the device status
-;
-; Parameters:
-; none
-;
-spi_status:
-        DRVR_SUCCESS
-
-;;
-; OPEN
-;
-; Open the SPI device. This causes the target SPI slave to be selected.
-;
-; Parameters:
-; none
-;
-spi_open:
-        DRVR_ENTER
-        DRVR_PRIVATE ptr
-
+        _SetupDirectPage
         bit     spi_busy
-        bmi     @busy
-        ldaw    #$8000
-        sta     spi_busy
+        bpl     :+
+        ldyw    #ERR_DEVICE_BUSY
+        bra     @exit
+:       dec     spi_busy
+        ldyw    #File::unit
+        lda     [i_file],y
+        tax
         shortm
-        lda     [ptr]       ; get slave select bit from private data
+        lda     f:spi_units,x
         sta     f:SPI_SS_REG
         longm
-
-        DRVR_SUCCESS
-@busy:  DRVR_ERROR  ERR_DEVICE_BUSY
+        ldyw    #0
+@exit:  _RemoveParams
+        _SetExitState
+        pld
+        rtl
+.endproc
 
 ;;
-; CLOSE
+; Release the SPI device, deselecting the targeted slave device.
 ;
-; Close the SPI device. This causes the target SPI slave to be deselected.
+; Stack frame (top to bottom):
+;
+; |---------------------------------------------|
+; | [4] pointer to File representing the device |
+; |---------------------------------------------|
+;
+; On exit:
+; c = 0 on success, 1 on failure
+; C,Y trashed
 ;
 ; Parameters:
 ; none
 ;
-spi_close:
-        DRVR_ENTER
+.proc spi_release
+        _BeginDirectPage
+          _StackFrameRTL
+          i_file  .dword
+        _EndDirectPage
 
+        _SetupDirectPage
         shortm
         lda     #SPI_SS0|SPI_SS1|SPI_SS2|SPI_SS3|SPI_SS4|SPI_SS5|SPI_SS6|SPI_SS7
         sta     f:SPI_SS_REG
         longm
         stz     spi_busy
-
-        DRVR_SUCCESS
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
 
 ;;
-; READ_BYTE/WRITE_BYTE
+; Seek
 ;
-; Transmit a single byte to the SPI slave, while simultaneously
-; receiving a single byte in return
+; Stack frame:
 ;
-; Parameters:
-; A = byte to send
+; |-------------------------------|
+; | [4] Space for returned offset |
+; |-------------------------------|
+; | [4] Offset                    |
+; |-------------------------------|
+; | [2] Whence                    |
+; |-------------------------------|
+; | [4] Pointer to File           |
+; |-------------------------------|
 ;
 ; On exit:
-; A = Byte received
+; C,X,Y trashed
 ;
-spi_xfer_byte:
-        DRVR_ENTER
+.proc spi_seek
+        _BeginDirectPage
+          _StackFrameRTL
+          i_filep   .dword
+          i_whence  .word
+          i_offset  .dword
+          o_offset  .dword
+        _EndDirectPage
 
-        shortm
-        jsl     spi_transfer
-        longm
+        _SetupDirectPage
+        _RemoveParams o_offset
+        ldaw    #0
         clc
-
-        DRVR_EXIT
+        pld
+        rtl
+.endproc
 
 ;;
-; READ_BYTES/WRITE_BYTES
+; Read/write the SPI device. As SPI is bidirectional one function
+; is used for both, and both operations happen at the same time.
 ;
-; Transmit multiple bytes to the SPI slave, while simultaneously
-; receiving an equal number of bytes in return.
+; Stack frame (top to bottom):
+;
+; |---------------------------------------------|
+; | [4] pointer to File representing the device |
+; |---------------------------------------------|
+; | [4] Pointer to buffer                       |
+; |---------------------------------------------|
+; | [4] Number of bytes to transfer             |
+; |---------------------------------------------|
 ;
 ; Parameters:
 ; +0 : [2] Number of bytes to exchange
 ; +2 : [4] Pointer to buffer
 ;
-spi_xfer_bytes:
-        DRVR_ENTER
-        DRVR_PARAMS ptr
+.proc spi_xfer_bytes
+        _BeginDirectPage
+          _StackFrameRTL
+          i_len     .dword
+          i_buffer  .dword
+          i_file    .dword
+        _EndDirectPage
 
-        lda     [ptr]
-        sta     tmp         ; Get byte count
-        ldyw    #2
-        lda     [ptr],y
-        tax
-        iny
-        iny
-        lda     [ptr],y
-        sta     ptr+2       ; [ptr] now points to buffer
-        stx     ptr
-        
-        shortm
+        _SetupDirectPage
+        lda     i_len + 2
+        beq     :+
+        ldyw    #ERR_NOT_SUPPORTED
+        bra     @exit
+:       shortm
         ldyw    #0
 @xfer:  lda     [ptr],y
         jsl     spi_transfer
@@ -247,32 +259,54 @@ spi_xfer_bytes:
         cpy     tmp
         bne     @xfer
         longm
+        ldaw    #0
+@exit:  _RemoveParams
+        _SetExitState
+        pld
+        rtl
+.endproc 
 
-        DRVR_SUCCESS
+.proc spi_flush
+        _BeginDirectPage
+          _StackFrameRTL
+          i_file    .dword
+        _EndDirectPage
 
-;;
-; GET_MODE
-;
-; Get the SPI transfer mode.
-;
-; Parameters;
-; +0 : [2] 0 = slow mode, 1 = fast mode
-;
-spi_get_mode:
-        DRVR_SUCCESS
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
 
-;;
-; SET_MODE
-;
-; Set the SPI transfer mode.
-;
-; Parameters;
-; +0 : [2] 0 = slow mode, 1 = fast mode
-;
-spi_set_mode:
-        DRVR_SUCCESS
-        DRVR_PARAMS ptr
-        DRVR_SUCCESS
+.proc spi_poll
+        _BeginDirectPage
+          _StackFrameRTL
+          i_file    .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+.proc spi_ioctl
+        _BeginDirectPage
+          _StackFrameRTL
+          i_file    .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
 
 ;-------- Private/Internal methods --------;
 

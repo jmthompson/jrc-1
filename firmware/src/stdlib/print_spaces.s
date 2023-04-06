@@ -5,7 +5,7 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
+        .include "stdio.inc"
 
         .export print_spaces
 
@@ -21,7 +21,7 @@ print_spaces:
         pha
         phx
 @loop:  lda     #' '
-        _PrintChar
+        _putchar
         dex
         bne     @loop
         plx

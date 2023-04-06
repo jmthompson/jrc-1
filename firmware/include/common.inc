@@ -19,9 +19,9 @@
 .endmacro
 
 ;;
-; Call a BIOS or OS function
+; Make a system call.
 ;
-.macro  _Call   funcid
+.macro  _syscall funcid
         cop     funcid
 .endmacro
 

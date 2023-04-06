@@ -5,7 +5,7 @@
 
         .include "common.inc"
         .include "ascii.inc"
-        .include "console.inc"
+        .include "stdio.inc"
         .include "syscalls.inc"
         .include "kernel/function_macros.inc"
 
@@ -38,9 +38,9 @@
         jsl   print_address
         shortm
         lda     #' '
-        _PrintChar
+        _putchar
         lda     #' '
-        _PrintChar
+        _putchar
         ldyw    #1
         lda     [l_ptr],y
         jsl     print_hex
@@ -51,13 +51,13 @@
         and     #1
         beq     :+
         lda     #' '
-        _PrintChar
+        _putchar
         lda     #'*'
-        _PrintChar
+        _putchar
 :       lda     #CR
-        _PrintChar
+        _putchar
         lda     #LF
-        _PrintChar
+        _putchar
         longm
         lda     [l_ptr]
         andw    #$FFFC

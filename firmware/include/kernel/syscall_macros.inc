@@ -48,3 +48,51 @@
         txa
         sta     [scparams],y
 .endmacro
+
+;;
+; Retrieve a 2-byte parameter from the user stack
+; and push it onto the kernel stack.
+;
+.macro  _PushParam16 offset
+        ldyw    #offset
+        lda     [scparams],y
+        pha
+.endmacro
+
+;;
+; Retrieve a 4-byte parameter from the user stack
+; and push it onto the kernel stack.
+;
+.macro  _PushParam32 offset
+        ldyw    #offset + 2
+        lda     [scparams],y
+        pha
+        dey
+        dey
+        lda     [scparams],y
+        pha
+.endmacro
+
+;;
+; Pull a 2-byte parameter from the kernel stack and store
+; it onto the user stack.
+;
+.macro  _PullParam16 offset
+        ldyw    #offset
+        pla
+        sta     [scparams],y
+.endmacro
+
+;;
+; Pull a 4-byte parameter from the kernel stack and store
+; it onto the user stack.
+;
+.macro  _PullParam32 offset
+        ldyw    #offset
+        pla
+        sta     [scparams],y
+        iny
+        iny
+        pla
+        sta     [scparams],y
+.endmacro

@@ -42,7 +42,7 @@
 ;
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
+        .include "stdio.inc"
         .include "ascii.inc"
 
         .importzp   lastblk
@@ -58,13 +58,15 @@
 
 ; Get a single character
 .macro  getc_ser
-        _Call   SYS_READ_SERIALA
+        _getchar
 .endmacro
 
 ; Output a single character
 .macro  putc_ser char
+.ifnblank char
         lda     char
-        _Call   SYS_WRITE_SERIALA
+.endif
+        _putchar
 .endmacro
 
 ;
@@ -91,14 +93,14 @@ Rbuff:  .res    132
 ; pointed to by xmeofp & xmeofph.
 ;
 XModemSend:
-        _PrintString start_msg
+        _puts   start_msg
         stz     errcnt      ; error counter set to 0
         stz     lastblk     ; set flag to false
         lda     #$01
         sta     blkno       ; set block # to 1
 @wait4crc:
         jsr     set_retry
-        _Call   SYS_CONSOLE_READ
+        _getchar
         bcs     @noesc
         cmp     #ESC        ; Did someone hit ESC on the console?
         bne     @noesc
@@ -161,7 +163,7 @@ XModemSend:
         putc_ser #SOH       ; send SOH
 @sendblk:
         lda     Rbuff,X     ; Send 132 bytes in buffer to the console
-        _Call   SYS_WRITE_SERIALA
+        putc_ser
         inx
         cpx     #$84        ; last byte?
         bne     @sendblk    ; no, get next
@@ -182,7 +184,7 @@ XModemSend:
         bne     @resend     ; no, resend block
 @prtabort:
         jsr     flush       ; yes, too many errors, flush buffer,
-        _PrintString failure_msg
+        _puts   failure_msg
         sec
         rts
 @done:  jsr     success_msg
@@ -193,7 +195,7 @@ XModemSend:
 ;
 ;
 XModemRcv:
-        _PrintString start_msg
+        _puts   start_msg
         lda     #$01
         sta     blkno       ; set block # to 1
 @startcrc:
@@ -232,7 +234,7 @@ XModemRcv:
         lda     Rbuff,X     ; get block # from buffer
         cmp     blkno       ; compare to expected block #    
         beq     @goodblk1   ; matched!
-        _PrintString failure_msg ; Unexpected block number - abort    
+        _puts   failure_msg ; Unexpected block number - abort    
         jsr     flush       ; mismatched - flush buffer and then do BRK
         sec
         rts                 ; abort, return to caller
@@ -241,7 +243,7 @@ XModemRcv:
         inx
         cmp     Rbuff,X     ; compare with expected 1's comp of block #
         beq     @goodblk2   ; matched!
-        _PrintString failure_msg ; Unexpected block number - abort    
+        _puts   failure_msg ; Unexpected block number - abort    
         jsr     flush       ; mismatched - flush buffer and then do BRK
         sec
         rts
@@ -274,7 +276,7 @@ XModemRcv:
         jmp     @startblk   ; get next block
 @done:  putc_ser #ACK       ; last block, send ACK and exit.
         jsr     flush       ; get leftover characters, if any
-        _PrintString success_msg
+        _puts   success_msg
         clc
         rts
 

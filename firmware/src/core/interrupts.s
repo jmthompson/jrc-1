@@ -10,7 +10,7 @@
         .import monitor_brk
         .import monitor_nmi
 
-        .import uart_irq
+        .import serial_irq
         .import spi_irq
         .import via_irq
 
@@ -141,7 +141,7 @@ sysirq:
         plb                 ; Set interrupt data bank
 
         jsr     via_irq
-        jsr     uart_irq
+        jsr     serial_irq
 
         rep     #$30
         ply

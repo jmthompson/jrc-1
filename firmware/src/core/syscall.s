@@ -16,8 +16,8 @@
 
         .import getc_seriala
         .import putc_seriala
-        .import getc_serialb
-        .import putc_serialb
+
+        .import sys_open, sys_seek, sys_read, sys_write
 
         .export syscall_table_init
         .export syscall_table
@@ -110,13 +110,12 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $0E
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $0F
 
-        ; Console
-        DEFINE_SYSCALL  console_reset, 0            ; $10
-        DEFINE_SYSCALL  getc_seriala, 0             ; $11
-        DEFINE_SYSCALL  putc_seriala, 0             ; $12
-        DEFINE_SYSCALL  console_writeln, 4          ; $13
-        DEFINE_SYSCALL  console_cls, 0              ; $14
-        DEFINE_SYSCALL  console_cll, 0              ; $15
+        DEFINE_SYSCALL  sys_open,            8      ; $10
+        DEFINE_SYSCALL  sys_seek,            8      ; $11
+        DEFINE_SYSCALL  sys_read,            10     ; $12
+        DEFINE_SYSCALL  sys_write,           10     ; $13
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $14
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $15
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $16
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $17
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $18
@@ -128,11 +127,10 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $1E
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $1F
 
-        ; Serial ports
-        DEFINE_SYSCALL  getc_seriala, 0             ; $20
-        DEFINE_SYSCALL  putc_seriala, 0             ; $21
-        DEFINE_SYSCALL  getc_serialb, 0             ; $22
-        DEFINE_SYSCALL  putc_serialb, 0             ; $23
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $20
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $21
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $22
+        DEFINE_SYSCALL  unsupported_syscall, 0      ; $23
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $24
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $25
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $26
@@ -166,7 +164,7 @@ default_table:
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $40
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $41
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $42
-        DEFINE_SYSCALL  unsupported_syscall, 0      ; $43
+        DEFINE_SYSCALL  unsupported_syscall, 4      ; $43
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $44
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $45
         DEFINE_SYSCALL  unsupported_syscall, 0      ; $46

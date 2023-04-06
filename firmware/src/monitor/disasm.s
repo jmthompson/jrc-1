@@ -8,7 +8,7 @@
 
         .include "common.inc"
         .include "syscalls.inc"
-        .include "console.inc"
+        .include "stdio.inc"
         .include "ascii.inc"
         .include "kernel/function_macros.inc"
 
@@ -158,7 +158,7 @@ PREG_X  = $10
 @len:   lda     i_ptr + 2
         jsl     print_hex
         lda     #'/'
-        _PrintChar
+        _putchar
         lda     i_ptr + 1
         jsl     print_hex
         lda     i_ptr
@@ -169,7 +169,7 @@ PREG_X  = $10
 @hex:   lda     [i_ptr],y
         jsl     print_hex
         lda     #' '
-        _PrintChar
+        _putchar
         iny
         cpy     l_len
         bne     @hex
@@ -185,22 +185,22 @@ PREG_X  = $10
         jsr     print_spaces        ; fill in the blanks
 :       lda     l_instr
         pea     .hiword(instr_mnemonics)
-        longm
+        longmx
         andw    #$FF                ; mask high byte garbage
         asl
         asl                         ; x4
         clc
         adcw    #.loword(instr_mnemonics)
         pha                         ; low word
-        _PrintString
-        shortm
+        _puts
+        shortmx
         ldx     #3
         jsr     print_spaces
         jsr     print_operand
         lda     #CR
-        _PrintChar
+        _putchar
         lda     #LF
-        _PrintChar
+        _putchar
         ldx     l_len
         longmx
         _RemoveParams
@@ -255,7 +255,7 @@ print_operand:
 ;;
 print_immediate_operand:
         lda   #'#'    ; fall through to print_constant
-        _PrintChar
+        _putchar
 
 ;;
 ; Print the operand
@@ -302,26 +302,32 @@ disp_am_implied:
 
 disp_am_dix:
         lda     #'('
-        _PrintChar
+        _putchar
         jsr     print_constant
-        _PrintString @str
+        longmx
+        _puts   @str
+        shortmx
         rts
 @str:   .byte   "),Y", 0
 
 disp_am_dixl:
         lda     #'['
-        _PrintChar
+        _putchar
         jsr     print_constant
-        _PrintString @str
+        longmx
+        _puts   @str
+        shortmx
         rts
 @str:   .byte   "],Y", 0
 
 disp_am_dxi:
 disp_am_axi:
         lda     #'('
-        _PrintChar
+        _putchar
         jsr     print_constant
-        _PrintString @str
+        longmx
+        _puts   @str
+        shortmx
         rts
 @str:   .byte   ",X)", 0
 
@@ -330,9 +336,9 @@ disp_am_axx:
 disp_am_alxx:
         jsr     print_constant
         lda     #','
-        _PrintChar
+        _putchar
         lda     #'X'
-        _PrintChar
+        _putchar
         rts
 
 disp_am_dxy:
@@ -340,9 +346,9 @@ disp_am_axy:
         ldy     l_len
         jsr     print_constant
         lda     #','
-        _PrintChar
+        _putchar
         lda     #'Y'
-        _PrintChar
+        _putchar
         rts
 
 disp_am_pcr:
@@ -382,37 +388,39 @@ disp_am_pcrl:
 disp_am_ai:
 disp_am_di:
         lda     #'('
-        _PrintChar
+        _putchar
         ldy     l_len
         jsr     print_constant
         lda     #')'
-        _PrintChar
+        _putchar
         rts
 
 disp_am_dil:
         lda     #'['
-        _PrintChar
+        _putchar
         ldy     l_len
         jsr     print_constant
         lda     #']'
-        _PrintChar
+        _putchar
         rts
 
 disp_am_sr:
         ldy     l_len
         jsr     print_constant
         lda     #','
-        _PrintChar
+        _putchar
         lda     #'S'
-        _PrintChar
+        _putchar
         rts
 
 disp_am_srix:
         lda     #'('
-        _PrintChar
+        _putchar
         ldy     l_len
         jsr     print_constant
-        _PrintString @str
+        longmx
+        _puts   @str
+        shortmx
         rts
 @str:   .byte   ",S),Y", 0
 
@@ -421,7 +429,7 @@ disp_am_blockmove:
         lda     [i_ptr],y
         jsl     print_hex
         lda     #','
-        _PrintChar
+        _putchar
         iny
         lda     [i_ptr],y
         jsl     print_hex
@@ -435,7 +443,7 @@ print_spaces:
         cpx     #0
         beq     :+
         lda     #' '
-        _PrintChar
+        _putchar
         dex
         bra     print_spaces
 :       rts

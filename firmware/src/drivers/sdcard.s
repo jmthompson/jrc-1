@@ -7,10 +7,12 @@
         .include "syscalls.inc"
         .include "errors.inc"
         .include "kernel/device.inc"
+        .include "kernel/fs.inc"
+        .include "kernel/heap.inc"
+        .include "kernel/function_macros.inc"
 
         .export sdcard_register
 
-        .import dm_register_internal
         .import spi_select_sdc
         .import spi_deselect
         .import spi_transfer
@@ -18,84 +20,80 @@
         .import spi_fast_speed
         .import wait_ms
 
-        .importzp ptr
-        .importzp tmp
+SD_CMD_SIZE     := 6    ; acmd flag + cmd byte + 4 byte arg + CRC
+SD_DATA_TOKEN   := $FE  ; start of data token
+SD_FILL         := $FF  ; fill byte
 
+CARD_TYPE_UNKNOWN := 0
+CARD_TYPE_V1      := 1
+CARD_TYPE_V2      := 2
+
+;;
+; Macro for sending a 6-byte command to the SD card.
+;
 .macro  send    bytes
-        pea     .hiword(bytes)
-        pea     .loword(bytes)
+        ldxw    #SD_CMD_SIZE-1
+:       lda     f:bytes,X
+        sta     cmd,X
+        dex
+        bpl     :-
         jsr     send_cmd
 .endmacro
 
-SD_CMD_SIZE     = 6     ; acmd flag + cmd byte + 4 byte arg + CRC
-SD_DATA_TOKEN   = $FE   ; start of data token
-SD_FILL         = $FF   ; fill byte
-
-CARD_TYPE_UNKNOWN = 0
-CARD_TYPE_V1      = 1
-CARD_TYPE_V2      = 2
-
-        .segment "ZEROPAGE"
-
-blockp:         .res    4
-device_params:  .res    4
-
         .segment "BSS"
 
-cmd:
+cmd:        .res    SD_CMD_SIZE
 csd:        .res    16
+csdtmp:     .res    2
 nr_sectors: .res    4
 card_type:  .res    2
 retries:    .res    2
 
         .segment "OSROM"
 
-sdcard_driver:
-        .word       0                   ; version
-        .word       DEVICE_TYPE_BLOCK   ; feature flags
-        .dword      @n                  ; device name
-        .dword      0                   ; private data
-        .word       9                   ; number of functions
-        .dword      sdc_startup         ; #0
-        .dword      sdc_shutdown        ; #1
-        .dword      sdc_status          ; #2
-        .dword      sdc_mount           ; #3
-        .dword      sdc_eject           ; #4
-        .dword      sdc_format          ; #5
-        .dword      sdc_rdblock         ; #6
-        .dword      sdc_wrblock         ; #7
-@n:     .byte "SDCARD", 0
+sdcard_name:
+        .asciiz     "sdcard0"
 
-sdcard_register:
+sdcard_ops:
+        .dword      sdc_open
+        .dword      sdc_release
+        .dword      sdc_rdblock
+        .dword      sdc_wrblock
+        .dword      sdc_ioctl
+        .dword      sdc_mediachanged
+
+.proc sdcard_register
         stz     card_type
-        REGISTER_DEVICE sdcard_driver
+        _PushLong sdcard_name
+        _PushWord DEVICE_ID_SDCARD
+        _PushLong sdcard_ops
+        _PushLong 0
+        jsr     register_device
         rts
+.endproc
+
+;-------- BlockOperations methods --------;
 
 ;;
-; STARTUP
-;
-; Init the driver; does nothing for now
-;
-sdc_startup:
-        DRVR_SUCCESS
-
-;;
-; SHUTDOWN
-;
-; Shut dowwn the SD card. Not much to do here other than zero the card type.
-;
-sdc_shutdown:
-        DRVR_ENTER
-        stz     card_type
-        DRVR_SUCCESS
-
-;;
-; MOUNT
-;
 ; Attempt to initialize the SD card and bring it online
 ;
-sdc_mount:
-        DRVR_ENTER
+; Stack frame (top to bottm):
+;
+; |-----------------------|
+; | [4] Pointer to Device |
+; |-----------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc sdc_open
+        _BeginDirectPage
+          l_diskp     .dword
+          _StackFrameRTL
+          i_devicep   .dword
+        _EndDirectPage
+
+        _SetupDirectPage
         shortm
         lda     #255
         sta     retries
@@ -106,103 +104,166 @@ sdc_mount:
         jsr     read_csd
         bcs     @try
         longm
-
-        DRVR_SUCCESS
-@error: longm
-        DRVR_ERROR ERR_NO_MEDIA
-
-;;
-; EJECT
-;
-; Ejects (unmounts) the card, which for us is just zeroing out the
-; card_type.
-;
-sdc_eject:
-        DRVR_ENTER
-        stz     card_type
-        DRVR_SUCCESS
-
-;;
-; STATUS
-;
-; Returns online/offline status and the device size in sectors
-;
-sdc_status:
-        DRVR_ENTER
-        DRVR_PARAMS device_params
-
-        lda     card_type
-        beq     @error
-        ldaw    #DEVICE_ONLINE
-        ldyw    #0
-        sta     [device_params],Y
+        pha
+        pha
+        jsr     allocate_disk
+        pla
+        sta     l_diskp
+        pla
+        sta     l_diskp + 2
+        ldyw    #Disk::device
+        ldaw    i_devicep
+        sta     [l_diskp],y     ; device (lo)
+        iny
+        iny
+        ldaw    i_devicep + 2
+        sta     [l_diskp],y     ; device (hi)
+        iny
+        iny
+        ldaw    #0
+        sta     [l_diskp],y     ; parent (lo)
+        iny
+        iny
+        sta     [l_diskp],y     ; parent (hi)
+        iny
+        iny
+        sta     [l_diskp],y     ; start_sector (lo)
+        iny
+        iny
+        sta     [l_diskp],y     ; start_sector (hi)
         iny
         iny
         lda     nr_sectors
-        sta     [device_params],Y
+        sta     [l_diskp],y     ; num_sectors (lo)
         iny
         iny
-        lda     nr_sectors+2
-        sta     [device_params],Y
-
-        DRVR_SUCCESS
-
-@error: ldaw    #0
-        sta     [device_params]    ; Offline
-        ldyw    #2
-        sta     [device_params],Y
+        lda     nr_sectors + 2
+        sta     [l_diskp],y     ; num_sectors (hi)
         iny
         iny
-        sta     [device_params],Y
-
-        DRVR_SUCCESS
+        ldaw    #0
+        sta     [l_diskp],y     ; type
+        lda     l_diskp + 2
+        pha
+        lda     l_diskp
+        pha
+        jsr     attach_disk
+        tay
+@exit:  _RemoveParams
+        _SetExitState
+        pld
+        rtl
+@error: longm
+        ldyw    #ERR_NO_MEDIA
+        bra     @exit
+.endproc
 
 ;;
-; FORMAT
+; Release the card.
 ;
-; SD cards do not support formatting
+; Stack frame (top to bottm):
 ;
-sdc_format:
-        DRVR_ERROR  ERR_NOT_SUPPORTED
+; |-----------------------|
+; | [4] Pointer to Device |
+; |-----------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc sdc_release
+        _BeginDirectPage
+          _StackFrameRTL
+          i_devicep  .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        stz     card_type
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
 
 ;;
-; READ_BLOCK
+; Ioctl handler
 ;
+; Stack frame (top to bottm):
+;
+; |--------------------------|
+; | [4] Pointer to Device    |
+; |--------------------------|
+; | [2] Request              |
+; |--------------------------|
+; | [4] Reauest data pointer |
+; |--------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc sdc_ioctl
+        _BeginDirectPage
+          _StackFrameRTL
+          i_devicep   .dword
+          i_datap     .dword
+          i_request   .word
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #ERR_NOT_SUPPORTED
+        sec
+        pld
+        rtl
+.endproc
+
+;;
 ; Read a single 512-byte block from the card
 ;
-sdc_rdblock:
-        DRVR_ENTER
-        DRVR_PARAMS device_params
+; Stack frame (top to bottm):
+;
+; |----------------------------|
+; | [4] Pointer to Device      |
+; |----------------------------|
+; | [4] Sector number          |
+; |----------------------------|
+; | [4] Pointer to data buffer |
+; |----------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc sdc_rdblock
+        _BeginDirectPage
+          _StackFrameRTL
+          i_devicep   .dword
+          i_bufferp   .dword
+          i_sector    .dword
+        _EndDirectPage
 
+        _SetupDirectPage
         lda     card_type
         bne     :+
-        DRVR_ERROR ERR_NO_MEDIA
+        ldyw    #ERR_NO_MEDIA
+        bra     @exit
 :       shortm
         lda     #$51            ; CMD17
         sta     cmd
-        ldxw    #4
-        ldyw    #0
-:       lda     [device_params],Y
-        sta     cmd,X           ; flip byte order
-        iny
-        dex
+        ldxw    #0
+        ldyw    #4
+:       lda     i_sector,X
+        sta     cmd,Y           ; flip byte order
+        inx
+        dey
         bne     :-
-        longm
-        lda     [device_params],Y
-        sta     blockp
-        iny
-        iny
-        lda     [device_params],Y
-        sta     blockp+2
-        shortm
-        send    cmd
-        bne     @error
+        jsr     send_cmd
+        bne     @ioerr
         jsr     wait_data
-        bcs     @error
+        bcs     @ioerr
         ldyw    #0
 :       lda     #SD_FILL
         jsl     spi_transfer
-        sta     [blockp],Y
+        sta     [i_bufferp],Y
         iny
         cpyw    #512
         bne     :-
@@ -210,88 +271,137 @@ sdc_rdblock:
         jsl     spi_transfer    ; Eat two-byte CRC
         jsr     deselect
         longm
-        DRVR_SUCCESS
-@error: jsr     deselect
+        ldyw    #0
+@exit:  _RemoveParams
+        _SetExitState
+        pld
+        rtl
+@ioerr: jsr     deselect
         longm
-        DRVR_ERROR ERR_IO_ERROR
+        ldyw    #ERR_IO_ERROR
+        bra     @exit
+.endproc
 
 ;;
-; WRITE_BLOCK
-;
 ; Write a single 512-byte block to the card
 ;
-sdc_wrblock:
-        DRVR_ENTER
-        DRVR_PARAMS device_params
+; Stack frame (top to bottm):
+;
+; |----------------------------|
+; | [4] Pointer to Device      |
+; |----------------------------|
+; | [4] Sector number          |
+; |----------------------------|
+; | [4] Pointer to data buffer |
+; |----------------------------|
+;
+.proc sdc_wrblock
+        _BeginDirectPage
+          _StackFrameRTL
+          i_devicep   .dword
+          i_bufferp   .dword
+          i_sector    .dword
+        _EndDirectPage
 
+        _SetupDirectPage
         lda     card_type
         bne     :+
-        DRVR_ERROR ERR_NO_MEDIA
+        ldyw    #ERR_NO_MEDIA
+        bra     @exit
 :       shortm
         lda     #$58            ; CMD24
         sta     cmd
         ldxw    #4
         ldyw    #0
-:       lda     [device_params],Y
+:       lda     i_sector,Y
         sta     cmd,X           ; flip byte order
         iny
         dex
         bne     :-
-        longm
-        lda     [device_params],Y
-        sta     blockp
-        iny
-        iny
-        lda     [device_params],Y
-        sta     blockp+2
-        shortm
-        send    cmd
-        bne     @error
+        jsr     send_cmd
+        bne     @ioerr
         lda     #SD_DATA_TOKEN
         jsl     spi_transfer
         ldyw    #0
-:       lda     [blockp],Y
+:       lda     [i_bufferp],Y
         jsl     spi_transfer
         iny
         cpyw    #512
         bne     :-
         jsr     wait_rdy
-        bcs     @error
+        bcs     @ioerr
         and     #$1F
         cmp     #$05
-        bne     @error
+        bne     @ioerr
         ldxw    #255
 :       lda     #SD_FILL
         jsl     spi_transfer
-        bne     @exit           ; exit when non-zero byte received
+        bne     @exit       ; exit when non-zero byte received
         dex
         bne     :-
-@error: jsr     deselect
+@ioerr: jsr     deselect
         longm
-        DRVR_ERROR ERR_IO_ERROR
-@exit:  longm
-        DRVR_SUCCESS
+        ldyw    #ERR_IO_ERROR
+        bra     @exit
+@done:  longm
+        ldyw    #0
+@exit:  _RemoveParams
+        _SetExitState
+        pld
+        rtl
+.endproc
+
+;;
+; Return true (nonzero) if the media was changed since the last call
+;
+; Stack frame (top to bottm):
+;
+; |-----------------------|
+; | [4] Pointer to Device |
+; |-----------------------|
+;
+; On exit:
+; C = nonzero if media was changed, 0 if it was not
+;
+.proc sdc_mediachanged
+        _BeginDirectPage
+          _StackFrameRTL
+          i_devicep  .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+; -------- Private functions --------
 
 ;;
 ; Attempt to initialize the SD card
 ;
 ; On exit:
-; All registers trashed
 ; c = 0 on success
 ; c = 1 on failure
+; C/X/Y trashed
 ;
-init_card:
+.proc init_card
         jsl     spi_slow_speed
         jsr     set_spi_mode
         jsr     set_idle
-        bcs     @error
-        send    @cmd08
+        bcc     :+
+        jmp     @error
+:       send    @cmd08
         bcs     @v1             ; Might be an older card
         jsl     spi_transfer
-        bne     @error
-        jsl     spi_transfer
-        bne     @error
-        jsl     spi_transfer
+        beq     :+
+        jmp     @error
+:       jsl     spi_transfer
+        beq     :+
+        jmp     @error
+:       jsl     spi_transfer
         cmp     #$01
         bne     @error
         jsl     spi_transfer
@@ -334,13 +444,15 @@ init_card:
 @cmd55:     .byte   $77,$00,$00,$00,$00,$65
 @acmd41:    .byte   $69,$40,$00,$00,$00,$01
 
+.endproc
+
 ;;
 ; Put the SD card into SPI mode
 ;
 ; On exit: 
 ; C,X trashed
 ;
-set_spi_mode:
+.proc set_spi_mode
         rts
         jsr     deselect
         ldxw    #10
@@ -349,6 +461,7 @@ set_spi_mode:
         dex
         bne     :-
         rts
+.endproc
 
 ;;
 ; Put the SD card into the idle state
@@ -358,9 +471,9 @@ set_spi_mode:
 ; c = 0 on success
 ; c = 1 on failure
 ;
-set_idle:
+.proc set_idle
         ldxw    #8
-:       send    @cmd00
+        send    @cmd00
         bcc     @r1
         lda     #1
         jsl     wait_ms
@@ -375,6 +488,7 @@ set_idle:
         clc
         rts
 @cmd00: .byte   $40,$00,$00,$00,$00,$95
+.endproc
 
 ;;
 ; Read the card's CSD to determine card type and size
@@ -385,7 +499,7 @@ set_idle:
 ; c=0 and card_type set on success
 ; c=1 on error
 ;
-read_csd:
+.proc read_csd
         send    @cmd09
         bne     @error
         jsr     wait_data
@@ -422,6 +536,8 @@ read_csd:
 
 @cmd09: .byte   $49,$00,$00,$00,$00,$01
 
+.endproc
+
 ;;
 ; Wait for the SD card to be ready (return something other than $FF)
 ; 
@@ -431,7 +547,7 @@ read_csd:
 ; C contains received byte
 ; c=0 on success, 1 on failure
 ;
-wait_rdy:
+.proc wait_rdy
         ldxw    #255
         lda     #SD_FILL
 @wait:  jsl     spi_transfer
@@ -443,6 +559,7 @@ wait_rdy:
         rts
 @done:  clc
         rts
+.endproc
 
 ;;
 ; Wait for the data start token
@@ -452,44 +569,29 @@ wait_rdy:
 ; C,X trashed
 ; c=0 on success, 1 on failure
 ;
-wait_data:
-        ldxw    #255
+.proc wait_data
+        ldxw    #0
 @wait:  lda     #SD_FILL
         jsl     spi_transfer
         cmp     #SD_DATA_TOKEN
         beq     @done
-        dex
+        inx
+        cpxw    #512
         bne     @wait
         sec
         rts
 @done:  clc
         rts
+.endproc
 
 ;;
 ; Send a command to the SD card. The pointer to the command to send should be
 ; on the stack.
 ;
-send_cmd:
-        longm
-        lda     3,s
-        sta     ptr
-        lda     5,s
-        sta     ptr+2
-        lda     1,s
-        sta     5,s
-        tsc
-        clc
-        adcw    #4
-        tcs
-        shortm
-
-        phx
-        phy
-
+.proc send_cmd
         jsl     spi_select_sdc
-
         ldyw    #0
-:       lda     [ptr],Y
+:       lda     cmd,Y
         jsl     spi_transfer
         iny
         cpyw    #SD_CMD_SIZE
@@ -510,19 +612,19 @@ send_cmd:
         bne     @error
         pla
         clc
-@exit:  ply
-        plx
-        ora     #0          ; set N/Z flags for caller
+@exit:  ora     #0
         rts
+.endproc
 
 ;;
 ; Deselect the SD card interface board
 ;
-deselect:
+.proc deselect
         jsl     spi_deselect
         lda     #SD_FILL
         jsl     spi_transfer        ; give SD card time to release DO
         rts
+.endproc
 
 ;; Calculate the number of sectors from a v1 CSD
 ;
@@ -544,7 +646,7 @@ deselect:
 ; nr_sectors populated
 ; C,X,Y trashed
 ;
-get_nr_sectors_v1:
+.proc get_nr_sectors_v1
         stz     nr_sectors+3
         stz     nr_sectors+2    ; Bits 31-15 are all zero
         lda     csd+6
@@ -562,15 +664,16 @@ get_nr_sectors_v1:
         rol     nr_sectors+1
         lda     csd+9
         and     #$03            ; upper two bits of C_SIZE_MULT
-        sta     tmp
+        sta     csdtmp
         lda     csd+10
         asl
-        rol     tmp
-        stz     tmp+1
-        ldx     tmp
+        rol     csdtmp
+        stz     csdtmp+1
+        ldx     csdtmp
         inx
         inx                     ; C_SIZE_MULT+2
         jmp     csize_to_nr_sectors
+.endproc
 
 ;; Calculate the number of sectors from a v2 CSD
 ;
@@ -589,7 +692,7 @@ get_nr_sectors_v1:
 ; nr_sectors populated
 ; C,X,Y trashed
 ;
-get_nr_sectors_v2:
+.proc get_nr_sectors_v2
         stz     nr_sectors+3    ; bits 31-24 are always 0 since C_SIZE is 22 bits
         lda     csd+7
         and     #%00111111
@@ -600,6 +703,7 @@ get_nr_sectors_v2:
         sta     nr_sectors      ; bits 7-0
         ldxw    #10             ; Multiplier is fixed at 2^10 for v2
         ; fall through
+.endproc
  
 ;;
 ; Set nr_sectors = (nr_sectors+1)*(2^X)
@@ -614,7 +718,7 @@ get_nr_sectors_v2:
 ; nr_sectors updated
 ; X trashed
 ;
-csize_to_nr_sectors:
+.proc csize_to_nr_sectors
         longm
         inc32   nr_sectors      ; Do the +1
 :       asl     nr_sectors
@@ -623,3 +727,4 @@ csize_to_nr_sectors:
         bne     :-
         shortm
         rts
+.endproc

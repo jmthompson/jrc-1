@@ -4,6 +4,7 @@
 ; *******************************
 
         .include "common.inc"
+        .include "kernel/function_macros.inc"
 
         .export   kprint
 
@@ -19,27 +20,21 @@
 ; C,X undefined
 ;
 .proc kprint
-        php
-        longmx
-        lda     5,s
-        sta     ptr
-        lda     7,s
-        sta     ptr + 2
-        lda     1,s
-        sta     5,s
-        lda     3,s
-        sta     7,s
-        tsc
-        clc
-        adcw    #4
-        tcs
+        _BeginDirectPage
+          _StackFrameRTL
+          i_ptr   .dword
+        _EndDirectPage
+
+        _SetupDirectPage
         shortm
         ldyw    #0
-@loop:  lda     [ptr],y
+@loop:  lda     [i_ptr],y
         beq     @exit
         jsl     putc_seriala
         iny
         bne     @loop
-@exit:  plp
+@exit:  longm
+        _RemoveParams
+        pld
         rtl
 .endproc

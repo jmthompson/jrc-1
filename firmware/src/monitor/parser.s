@@ -8,9 +8,9 @@
 ;
 
         .include "common.inc"
-        .include "ascii.inc"
-        .include "console.inc"
         .include "syscalls.inc"
+        .include "ascii.inc"
+        .include "stdio.inc"
         .include "kernel/function_macros.inc"
 
         .include "parser.inc"
@@ -193,28 +193,28 @@
         tax
         shortm
         lda     #CR
-        _PrintChar
+        _putchar
         lda     #LF
-        _PrintChar
+        _putchar
 :       lda   #' '
-        _PrintChar
+        _putchar
         dex
         bne     :-
         lda     #'^'
-        _PrintChar
+        _putchar
         lda     #' '
-        _PrintChar
+        _putchar
         longm
         lda     i_error_msg + 2
         pha
         lda     i_error_msg
         pha
-        _PrintString 
+        _puts
         shortm
         lda     #CR
-        _PrintChar
+        _putchar
         lda     #LF
-        _PrintChar
+        _putchar
         longm
         _RemoveParams
         pld

@@ -15,10 +15,10 @@
         .export trampoline
 
         .import __BSS_START__, __BSS_SIZE__
+        .import fs_init
         .import syscall_table_init
-        .import dm_init
 
-        .import uart_init
+        .import serial_init
         .import via_init
         .import spi_init
 
@@ -69,7 +69,7 @@ sysreset:
         pha
         plb
         jsr     via_init
-        jsr     uart_init
+        jsr     serial_init
         jsr     spi_init
 
         ; initialize the syscall table
@@ -91,7 +91,7 @@ sysreset:
         jsr     heap_init
         jsr     startup_banner
 
-        jsl     dm_init
+        jsl     fs_init
         jml     scheduler_start
 
 ;;

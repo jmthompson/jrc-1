@@ -4,8 +4,8 @@
 ; *******************************
 
         .include "common.inc"
-        .include "console.inc"
         .include "syscalls.inc"
+        .include "stdio.inc"
         .include "kernel/function_macros.inc"
 
         .export print_hex
@@ -38,7 +38,7 @@ print_hex:
         cmp     #'9'+1
         blt     :+
         adc     #6
-:       _PrintChar
+:       _putchar
         rts
 
 ;;
@@ -68,7 +68,7 @@ print_hex:
         lda   i_addr + 2
         jsl   print_hex
         lda   #'/'
-        _PrintChar
+        _putchar
         lda   i_addr + 1
         jsl   print_hex
         lda   i_addr

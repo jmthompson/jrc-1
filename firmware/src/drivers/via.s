@@ -5,62 +5,59 @@
 
         .include "common.inc"
         .include "errors.inc"
-
-        .importzp   jiffies
+        .include "kernel/device.inc"
+        .include "kernel/fs.inc"
+        .include "kernel/function_macros.inc"
 
         .export     via_init
         .export     via_irq
-        .export     wait_ms
         .export     via_register
+        .export     wait_ms
 
-PB_ACT_LED = $80        ; Activity LED
-PB_CONSOLE = $40        ; Console select jumper
+.struct VIA
+        .org $F000
 
-; VIA register numbers
-via_portb  = $00
-via_porta  = $01
-via_ddrb   = $02
-via_ddra   = $03
-via_t1cl   = $04
-via_t1ch   = $05
-via_t1ll   = $06
-via_t1lh   = $07
-via_t2cl   = $08
-via_t2ch   = $09
-via_sr     = $0A
-via_acr    = $0B
-via_pcr    = $0C
-via_ifr    = $0D
-via_ier    = $0E
-via_portax = $0F
-
-via_base := $F000
+        portb   .byte
+        porta   .byte
+        ddrb    .byte
+        ddra    .byte
+        t1cl    .byte
+        t1ch    .byte
+        t1ll    .byte
+        t1lh    .byte
+        t2cl    .byte
+        t2ch    .byte
+        sr      .byte
+        acr     .byte
+        pcr     .byte
+        ifr     .byte
+        ier     .byte
+        portaxA .byte
+.endstruct
 
         .segment "BOOTROM"
-
-        .a8
-        .i8
 
 via_init:
         ; Disable all interrupts
         lda     #$7F
-        sta     via_base+via_ier
+        sta     VIA::ier
 
         ; Disable timers & shift registers
-        stz     via_base+via_acr
+        stz     VIA::acr
 
         ; VIA ports A & B
-        stz     via_base+via_porta
-        stz     via_base+via_portb
-        stz     via_base+via_ddra
+        stz     VIA::porta
+        stz     VIA::portb
+        stz     VIA::ddra
 
         ; SPI clock 400 kHZ
         lda     #$C0
-        sta     via_base+via_acr
+        sta     VIA::acr
         lda     #8                ; assuming 8 MHz phi2
-        sta     via_base+via_t1cl
-        stz     via_base+via_t1ch
+        sta     VIA::t1cl
+        stz     VIA::t1ch
 
+        bit     VIA::porta
         rts
 
 via_irq:
@@ -80,7 +77,7 @@ via_irq:
 wait_ms:
         pha
         lda     #0
-        sta     f:via_base+via_t2cl
+        sta     f:VIA::t2cl
         pla
         and     #$07        ; can't wait more than about 7 ms
         asl
@@ -88,14 +85,275 @@ wait_ms:
         asl
         asl
         asl                 ; x8192 because this will be the upper byte
-        sta     f:via_base+via_t2ch
-:       lda     f:via_base+via_ifr
+        sta     f:VIA::t2ch
+:       lda     f:VIA::ifr
         and     #$20
         beq     :-
-        lda     f:via_base+via_t2cl
+        lda     f:VIA::t2cl
         rtl
 
         .segment "OSROM"
 
-via_register:
+via_name:
+        .asciiz     "userport"
+
+; Serial operations for port 1
+via_ops:
+        .dword  via_open
+        .dword  via_release
+        .dword  via_seek
+        .dword  via_read
+        .dword  via_write
+        .dword  via_flush
+        .dword  via_poll
+        .dword  via_ioctl
+
+;;
+; Register the SPI device drivers
+;
+.proc via_register
+        _PushLong via_name
+        _PushWord DEVICE_ID_USERPORT
+        _PushLong via_ops
+        _PushLong 0
+        jsr     register_device
         rts
+.endproc
+
+;-------- FileOperations methods --------;
+
+;;
+; Open the user port. Currently a no-op
+;
+; Stack frame:
+;
+; |-----------------------|
+; | [4] Pointer to File   |
+; |-----------------------|
+; | [4] Pointer to Inode  |
+; |-----------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_open
+        _BeginDirectPage
+          _StackFrameRTL
+          i_inodep  .dword
+          i_filep   .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+;;
+; Close the user port
+;
+; Stack frame:
+;
+; |-----------------------|
+; | [4] Pointer to File   |
+; |-----------------------|
+; | [4] Pointer to Inode  |
+; |-----------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_release
+        _BeginDirectPage
+          _StackFrameRTL
+          i_inodep  .dword
+          i_filep   .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+;;
+; Seek
+;
+; Stack frame:
+;
+; |-------------------------------|
+; | [4] Space for returned offset |
+; |-------------------------------|
+; | [4] Offset                    |
+; |-------------------------------|
+; | [2] Whence                    |
+; |-------------------------------|
+; | [4] Pointer to File           |
+; |-------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_seek
+        _BeginDirectPage
+          _StackFrameRTL
+          i_filep   .dword
+          i_whence  .word
+          i_offset  .dword
+          o_offset  .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams o_offset
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+;;
+; Read from the user port
+;
+; Stack frame:
+;
+; |------------------------------|
+; | [4] Space for returned count |
+; |------------------------------|
+; | [4] Pointer to File          |
+; |------------------------------|
+; | [4] Pointer to buffer        |
+; |------------------------------|
+; | [4] Number of bytes to read  |
+; |------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_read
+        _BeginDirectPage
+          _StackFrameRTL
+          i_size      .dword
+          i_bufferp   .dword
+          i_filep     .dword
+          o_size      .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        stz     o_size
+        stz     o_size + 2
+        _RemoveParams o_size
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+;;
+; Write to the user port
+;
+; Stack frame:
+;
+; |------------------------------|
+; | [4] Space for returned count |
+; |------------------------------|
+; | [4] Number of bytes to write |
+; |------------------------------|
+; | [4] Pointer to buffer        |
+; |------------------------------|
+; | [4] Pointer to File          |
+; |------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_write
+        _BeginDirectPage
+          _StackFrameRTL
+          i_filep     .dword
+          i_bufferp   .dword
+          i_size      .dword
+          o_size      .dword
+        _EndDirectPage
+
+        _SetupDirectPage
+        stz     o_size
+        stz     o_size + 2
+        _RemoveParams o_size
+        ldaw    #0
+        clc
+        pld
+        rtl
+.endproc
+
+;;
+; Flush user port buffers. This is a noop
+;
+; Stack frame:
+;
+; |------------------------------|
+; | [4] Pointer to File          |
+; |------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_flush
+        _BeginDirectPage
+          _StackFrameRTL
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        pld
+        rtl
+.endproc
+
+;;
+; Poll the user port
+;
+; Stack frame:
+;
+; |------------------------------|
+; | [4] Pointer to File          |
+; |------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_poll
+        _BeginDirectPage
+          _StackFrameRTL
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        pld
+        rtl
+.endproc
+
+;;
+; User port ioctl
+;
+; Stack frame:
+;
+; |------------------------------|
+; | [4] Pointer to File          |
+; |------------------------------|
+;
+; On exit:
+; C,X,Y trashed
+;
+.proc via_ioctl
+        _BeginDirectPage
+          _StackFrameRTL
+        _EndDirectPage
+
+        _SetupDirectPage
+        _RemoveParams
+        pld
+        rtl
+.endproc

@@ -6,8 +6,6 @@
 ; Operand parsing for the miniassembler.
 
         .include "common.inc"
-        .include "console.inc"
-        .include "syscalls.inc"
         .include "constants.inc"
         .include "parser.inc"
         .include "operand.inc"
