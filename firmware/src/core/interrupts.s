@@ -4,6 +4,7 @@
 ; *******************************
 
         .include "common.inc"
+        .include "errors.inc"
         .include "kernel/linker.inc"
 
         .import monitor_start
@@ -93,8 +94,14 @@ PREG_C      =   %00000001
         sta     trampoline + 3
         lda     syscall_table,x         ; Low word of handler address
         sta     trampoline + 1
-        lda     a_reg,s                 ; Grab A; it might be a parameter
+        ora     trampoline + 3
+        bne     @valid
+        ldaw    #ERR_NOT_SUPPORTED
+        sec
+        bra     @cleanup
+@valid: lda     a_reg,s                 ; Grab A; it might be a parameter
         jsl     trampoline
+@cleanup:
         longmx
         sta     a_reg,s                 ; return value of A to caller
         bcc     @noerr
