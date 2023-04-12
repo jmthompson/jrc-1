@@ -333,7 +333,7 @@ serial_ops:
         lda     [i_filep],y
         cmpw    #2
         blt     @ok
-        ldyw    #ERR_NOT_SUPPORTED
+        ldyw    #ENOSYS
         bra     @exit
 @ok:    ldyw    #0
 @exit:  _RemoveParams

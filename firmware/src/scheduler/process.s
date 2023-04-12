@@ -46,7 +46,7 @@ tmp:    .res    4
         
         jsr     get_task_slot
         bcc     @bank0
-        ldyw    #ERR_NO_FREE_PROC
+        ldyw    #ENOMEM
         bra     @exit
 
         ; Each process gets 1K in bank $00, so multiply pid
@@ -125,7 +125,7 @@ tmp:    .res    4
 @notfound:
         stz     ptr
         stz     ptr + 2
-        ldaw    #ERR_OUT_OF_MEMORY
+        ldaw    #ENOMEM
         sec
         rts
 .endproc

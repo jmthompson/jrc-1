@@ -48,7 +48,7 @@
         pla
         sta     o_filep + 2
         bcc     @found
-        ldyw    #ERR_NO_FREE_FILES
+        ldyw    #ENFILE
         bra     @exit
 @found: ldaw    #1
         sta     [o_filep]

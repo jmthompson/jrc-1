@@ -165,7 +165,7 @@
         ldaw    #0
         pld
         rts
-@oom:   ldaw    #ERR_OUT_OF_MEMORY
+@oom:   ldaw    #ENOMEM
         sec
         pld
         rts

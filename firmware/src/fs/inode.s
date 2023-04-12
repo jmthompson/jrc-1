@@ -101,7 +101,7 @@
         pla
         sta     o_inodep + 2
         bcc     @load
-        ldyw    #ERR_NO_FREE_INODES
+        ldyw    #ENOMEM
         bra     @exit
 @load:
 
@@ -182,7 +182,7 @@
         pla
         sta     o_inodep + 2
         bcc     @make
-        ldyw    #ERR_NO_FREE_INODES
+        ldyw    #ENOMEM
         bra     @exit
 @make:  ldaw    #1
         sta     [o_inodep]

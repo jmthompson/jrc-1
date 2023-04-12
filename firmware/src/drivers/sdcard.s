@@ -154,7 +154,7 @@ sdcard_ops:
         pld
         rtl
 @error: longm
-        ldyw    #ERR_NO_MEDIA
+        ldyw    #ENOMEDIUM
         bra     @exit
 .endproc
 
@@ -211,7 +211,7 @@ sdcard_ops:
 
         _SetupDirectPage
         _RemoveParams
-        ldaw    #ERR_NOT_SUPPORTED
+        ldaw    #ENOSYS
         sec
         pld
         rtl
@@ -244,7 +244,7 @@ sdcard_ops:
         _SetupDirectPage
         lda     card_type
         bne     :+
-        ldyw    #ERR_NO_MEDIA
+        ldyw    #ENOMEDIUM
         bra     @exit
 :       shortm
         lda     #$51            ; CMD17
@@ -278,7 +278,7 @@ sdcard_ops:
         rtl
 @ioerr: jsr     deselect
         longm
-        ldyw    #ERR_IO_ERROR
+        ldyw    #EIO
         bra     @exit
 .endproc
 
@@ -306,7 +306,7 @@ sdcard_ops:
         _SetupDirectPage
         lda     card_type
         bne     :+
-        ldyw    #ERR_NO_MEDIA
+        ldyw    #ENOMEDIUM
         bra     @exit
 :       shortm
         lda     #$58            ; CMD24
@@ -341,7 +341,7 @@ sdcard_ops:
         bne     :-
 @ioerr: jsr     deselect
         longm
-        ldyw    #ERR_IO_ERROR
+        ldyw    #EIO
         bra     @exit
 @done:  longm
         ldyw    #0

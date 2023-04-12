@@ -65,7 +65,7 @@
         pla
         sta     l_inodep + 2
         bcc     @alloc
-        ldyw    #ERR_FILE_NOT_FOUND
+        ldyw    #ENOENT
         jmp     @exit
 
         ; Got the inode, now try to allocate a slot for it in the global file table

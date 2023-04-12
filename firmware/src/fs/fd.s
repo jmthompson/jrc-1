@@ -37,7 +37,7 @@
         inx
         cpxw    #PROC_MAX_FDS
         bne     @loop
-        ldaw    #ERR_NO_FREE_FILES
+        ldaw    #EMFILE
         sec
         rts
 @found: stx     currfd
@@ -77,7 +77,7 @@
         ldaw    #0
         clc
         rts
-@bad:   ldaw    #ERR_BAD_FILE
+@bad:   ldaw    #EINVAL
         sec
         rts
 .endproc

@@ -59,7 +59,7 @@
         pla
         sta     l_ptr + 2
         bcc     @found
-        ldyw    #ERR_NO_MORE_DEVICES
+        ldyw    #ENOMEM
         bra     @exit
 @found: ldyw    #Device::name
         lda     i_name
@@ -141,6 +141,6 @@
         _SetExitState
         pld
         rts
-@error: ldyw    #ERR_NO_SUCH_DEVICE
+@error: ldyw    #ENXIO
         bra     @exit
 .endproc

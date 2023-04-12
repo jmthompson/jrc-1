@@ -66,6 +66,6 @@
         _SetExitState
         pld
         rts
-@error: ldyw    #ERR_OUT_OF_MEMORY
+@error: ldyw    #ENOMEM
         bra     @exit
 .endproc

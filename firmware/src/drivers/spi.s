@@ -132,7 +132,7 @@ spi_ops:
         _SetupDirectPage
         bit     spi_busy
         bpl     :+
-        ldyw    #ERR_DEVICE_BUSY
+        ldyw    #EBUSY
         bra     @exit
 :       dec     spi_busy
         ldyw    #File::unit
@@ -248,7 +248,7 @@ spi_ops:
         _SetupDirectPage
         lda     i_len + 2
         beq     :+
-        ldyw    #ERR_NOT_SUPPORTED
+        ldyw    #ENOTSUP
         bra     @exit
 :       shortm
         ldyw    #0

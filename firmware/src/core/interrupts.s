@@ -96,7 +96,7 @@ PREG_C      =   %00000001
         sta     trampoline + 1
         ora     trampoline + 3
         bne     @valid
-        ldaw    #ERR_NOT_SUPPORTED
+        ldaw    #ENOSYS
         sec
         bra     @cleanup
 @valid: lda     a_reg,s                 ; Grab A; it might be a parameter

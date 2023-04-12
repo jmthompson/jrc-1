@@ -50,7 +50,7 @@
         pla
         sta     o_diskp + 2
         bcc     @found
-        ldyw    #ERR_NO_FREE_FILES
+        ldyw    #ENOMEM
         bra     @exit
 @found: ldaw    #1
         sta     [o_diskp]
