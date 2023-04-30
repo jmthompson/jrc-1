@@ -33,9 +33,7 @@ flag:   .res    1
         phy
         ldaw    #OS_DP
         tcd
-        jsr     save_context
         jsl     scheduler_tick
-        jsr     restore_context
         ply
         plx
         pla

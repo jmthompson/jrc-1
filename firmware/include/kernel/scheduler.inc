@@ -28,11 +28,6 @@ PROC_MAX_FDS := 16
         gid     .word         ; real group ID
         euid    .word         ; effective user ID
         egid    .word         ; effective group ID
-        a_reg   .word         ; A register
-        b_reg   .byte         ; B register
-        d_reg   .word         ; D register
-        x_reg   .word         ; X register
-        y_reg   .word         ; Y register
         sp      .word         ; stack pointer
         files   .dword        ; Pointer to file descriptor table
 .endstruct
@@ -41,3 +36,9 @@ TASK_UNUSED   := 0            ; marker for empty process table slot
 TASK_RUNNABLE := 1
 TASK_BLOCKED  := 2
 TASK_STOPPED  := 3
+
+TASK_BANK0_SIZE       := 1024
+TASK_STACK_DP         := 0
+TASK_STACK_SIZE       := TASK_BANK0_SIZE-256
+TASK_STACK_TOP        := TASK_BANK0_SIZE-1
+

@@ -5,7 +5,9 @@
 
         .include "common.inc"
         .include "errors.inc"
+        .include "kernel/interrupts.inc"
         .include "kernel/linker.inc"
+        .include "kernel/scheduler.inc"
 
         .import monitor_start
         .import monitor_brk
@@ -37,22 +39,6 @@ PREG_C      =   %00000001
         .segment "BOOTROM"
 
 .proc syscop
-
-        ; Stack relative variables
-        .struct
-          .org 1
-          y_reg     .word
-          x_reg     .word
-          a_reg     .word
-          d_reg     .word
-          b_reg     .byte
-          p_reg     .byte   ; start of COP frame
-          ret_addr  .addr
-        .endstruct
-
-        @sc_size  := p_reg - y_reg
-        @cop_size := 4
-
         longmx
         phb
         phd
@@ -65,21 +51,21 @@ PREG_C      =   %00000001
         lda     #OS_DB
         pha
         plb
-        lda     p_reg,s
+        lda     IntStackFrame::p_reg,s
         and     #~PREG_C&$FF    ; clear carry
-        sta     p_reg,s
+        sta     IntStackFrame::p_reg,s
         bit     #PREG_I         ; were interrupts disabled?
         bne     :+
         cli                     ; no, so re-enable them
-:       lda     ret_addr + 2,s
+:       lda     IntStackFrame::k_reg,s
         sta     copsig + 2
         longm
-        lda     ret_addr,s
+        lda     IntStackFrame::pc_reg,s
         dec
         sta     copsig
         tsc
         clc
-        adcw    #@sc_size + @cop_size + 1
+        adcw    #IntStackFrame::sc_params
         sta     scparams
         stz     scparams + 2
         lda     [copsig]
@@ -99,27 +85,27 @@ PREG_C      =   %00000001
         ldaw    #ENOSYS
         sec
         bra     @cleanup
-@valid: lda     a_reg,s                 ; Grab A; it might be a parameter
+@valid: lda     IntStackFrame::a_reg,s ; Grab A; it might be a parameter
         jsl     trampoline
 @cleanup:
         longmx
-        sta     a_reg,s                 ; return value of A to caller
+        sta     IntStackFrame::a_reg,s ; return value of A to caller
         bcc     @noerr
         shortm
-        lda     p_reg,s
+        lda     IntStackFrame::p_reg,s
         ora     #PREG_C                 ; set carry on return to caller
-        sta     p_reg,s
+        sta     IntStackFrame::p_reg,s
         longm
 @noerr: lda     cf_size
         beq     @nocopy
 
         tsc
         clc
-        adcw    #@sc_size + @cop_size
+        adcw    #INT_STACK_FRAME_SIZE
         tax                             ; copy from end of cop stack frame
         adc     cf_size
         tay                             ; copy to end of params frame
-        ldaw    #@sc_size + @cop_size - 1   ; copy local + cop frame
+        ldaw    #INT_STACK_FRAME_SIZE - 1 ; copy local + cop frame
         mvp     0,0                     ; remove parameters
         tya                             ; Y will end up one byte lower than the last byte written
         tcs                             ;  which is exactly where our stack frame starts

@@ -9,6 +9,7 @@
         .include    "errors.inc"
         .include    "kernel/function_macros.inc"
         .include    "kernel/heap.inc"
+        .include    "kernel/interrupts.inc"
         .include    "kernel/scheduler.inc"
 
         .import     processes
@@ -35,22 +36,17 @@ tmp:    .res    4
 ; PID in something
 ;
 .proc start_task
-        _BeginDirectPage
-          l_bank0   .dword
-          _StackFrameRTS
-        _EndDirectPage
-
-        _SetupDirectPage
         sta     tmp
         stx     tmp + 2
         
         jsr     get_task_slot
         bcc     @bank0
-        ldyw    #ENOMEM
-        bra     @exit
+        ldaw    #ENOMEM
+        sec
+        rts
 
         ; Each process gets 1K in bank $00, so multiply pid
-        ; by 1024 to get the base adress of this region.
+        ; by 1024 to get the base address of this region.
 
 @bank0: lda     [ptr]               ; get PID
         ldxw    #10
@@ -60,35 +56,48 @@ tmp:    .res    4
         sta     bank0
         stz     bank0 + 2
 
-        ldyw    #Process::d_reg
-        sta     [ptr],y
-        ldyw    #Process::sp
-        clc
-        adcw    #$03FB
-        sta     [ptr],y
-
         ; TODO: clear fd table
         ; init uid/gid/etc
         ldyw    #Process::state
         ldaw    #TASK_RUNNABLE
         sta     [ptr],y
+        ldyw    #Process::sp
+        lda     bank0
+        clc
+        adcw    #TASK_STACK_TOP
+        sta     [ptr],y
 
-        ; make fake stack frame
-
+        ; build the task stack frame
+        ldyw    #TASK_STACK_TOP - (INT_STACK_FRAME_SIZE - IntStackFrame::y_reg)
+        ldaw    #0
+        sta     [bank0],y         ; Y
+        iny
+        iny
+        sta     [bank0],y         ; X
+        iny
+        iny
+        sta     [bank0],y         ; A
+        iny
+        iny
+        lda     bank0
+        sta     [bank0],y         ; D
+        iny
+        iny
         shortm
-        ldyw    #$03FC
+        lda     #1
+        sta     [bank0],y         ; B
+        iny
         lda     #0
         sta     [bank0],y         ; P
-        ldyw    #$03FF
+        ldyw    #TASK_STACK_TOP - (INT_STACK_FRAME_SIZE - IntStackFrame::k_reg)
         lda     tmp + 2
         sta     [bank0],y         ; K
+        dey
+        dey
         longm
-        ldyw    #$03FD
         lda     tmp
         sta     [bank0],y         ; PC
-@exit:  _RemoveParams
-        _SetExitState
-        pld
+@exit:  clc
         rts
 .endproc
 
