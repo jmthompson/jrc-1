@@ -6,52 +6,45 @@
 ; Most of this is a rough translation of the C++ code in the
 ; XGS debugger
 
-        .include "common.inc"
-        .include "syscalls.inc"
-        .include "stdio.inc"
-        .include "ascii.inc"
-        .include "kernel/function_macros.inc"
 
-        .include "opcode.inc"
-        .include "operand.inc"
 
-        .export   disassemble, print_instruction
+                .global         disassemble, print_instruction
 
-        .import   m_width,x_width
-        .import   print_hex
-        .importzp start_loc
+                .extern         m_width,x_width
+                .extern         print_hex
+                .importzp       start_loc
 
-        .segment "OSROM"
+                .section        "OSROM"
 
-PREG_M  = $20
-PREG_X  = $10
+PREG_M          =               $20
+PREG_X          =               $10
 
 ;;
 ; Entry point for the monitor's (L)ist command
 ;;
-.proc disassemble
-        ldxw    #20
-@loop:  phx
-        jsr     update_widths
-        lda     start_loc + 2
-        pha
-        lda     start_loc
-        pha
-        shortm
-        lda     m_width
-        pha
-        lda     x_width
-        pha
-        longm
-        jsr     print_instruction
-        txa
-        clc
-        adc     start_loc
-        sta     start_loc
-        plx
-        dex
-        bne     @loop
-        rts
+.proc           disassemble
+                ldx             ##20
+loop$:          phx
+                jsr             update_widths
+                lda             start_loc + 2
+                pha
+                lda             start_loc
+                pha
+                shortm
+                lda             m_width
+                pha
+                lda             x_width
+                pha
+                longm
+                jsr             print_instruction
+                txa
+                clc
+                adc             start_loc
+                sta             start_loc
+                plx
+                dex
+                bne             loop$
+                rts
 .endproc
 
 ;; Update M/X widths based on current instruction
@@ -61,46 +54,46 @@ PREG_X  = $10
 ; A/Y trashed
 ; m/x bit values possibly updated
 ;
-.proc update_widths
-        shortm
-        lda     [start_loc]
-        cmp     #$C2            ; REP
-        beq     @rep
-        cmp     #$E2            ; SEP
-        beq     @sep
-        cmp     #$FB            ; XCE
-        beq     @xce
-@exit:  longm
-        rts
+.proc           update_widths
+                shortm
+                lda             [start_loc]
+                cmp             #$C2            ; REP
+                beq             rep$
+                cmp             #$E2            ; SEP
+                beq             sep$
+                cmp             #$FB            ; XCE
+                beq             xce$
+exit$:          longm
+                rts
 
-@rep:   ldyw    #1
-        lda     [start_loc],y
-        and     #PREG_M
-        beq     :+
-        stz     m_width
-:       lda     [start_loc],y
-        and     #PREG_X
-        beq     @exit
-        stz     x_width
-        bra     @exit
-@sep:   ldyw    #1
-        lda     [start_loc],y
-        and     #PREG_M
-        beq     :+
-        lda     #1
-        sta     m_width
-:       lda     [start_loc],y
-        and     #PREG_X
-        beq     @exit
-        lda     #1
-        sta     x_width
-        bra     @exit
-@xce:   lda     #1
-        sta     m_width
-        sta     x_width
-        bra     @exit
+rep$:           ldy             ##1
+                lda             [start_loc],y
+                and             #PREG_M
+                beq             :+
+                stz             m_width
+:               lda             [start_loc],y
+                and             #PREG_X
+                beq             exit$
+                stz             x_width
+                bra             exit$
+sep$:           ldy             ##1
+                lda             [start_loc],y
+                and             #PREG_M
+                beq             :+
+                lda             #1
+                sta             m_width
+:               lda             [start_loc],y
+                and             #PREG_X
+                beq             exit$
+                lda             #1
+                sta             x_width
+                bra             exit$
+xce$:           lda             #1
+                sta             m_width
+                sta             x_width
+                bra             exit$
 .endproc
-        
+
 ;;
 ; Disassemble the instruction at the given address, and return the
 ; number fo byte disassembled.
@@ -120,131 +113,131 @@ PREG_X  = $10
 ; C,Y trashed
 ; X = number of bytes disassembled
 ;
-.proc print_instruction
-        _BeginDirectPage
-          l_tmp     .byte
-          l_len     .byte
-          l_am      .byte
-          l_instr   .byte
-          _StackFrameRTS
-          i_xwidth  .byte
-          i_mwidth  .byte
-          i_ptr     .dword
-        _EndDirectPage
+.proc           print_instruction
+                _BeginDirectPage
+                l_tmp           .byte
+                l_len           .byte
+                l_am            .byte
+                l_instr         .byte
+                _StackFrameRTS
+                i_xwidth        .byte
+                i_mwidth        .byte
+                i_ptr           .dword
+                _EndDirectPage
 
-        _SetupDirectPage
-        shortmx
-        lda     [i_ptr]
-        tax
-        lda     f:opcode_instr,x
-        sta     l_instr
-        lda     f:opcode_operands,x
-        sta     l_am
-        tax
-        lda     f:instr_lengths,x
-        sta     l_len
-        cpx     #Operand::immediate_m
-        bne     :+
-        lda     i_mwidth
-        bne     @len
-        inc     l_len
-        bra     @len
-:       cpx     #Operand::immediate_x
-        bne     @len
-        lda     i_xwidth
-        bne     @len
-        inc     l_len
-        bra     @len
-@len:   lda     i_ptr + 2
-        jsl     print_hex
-        lda     #'/'
-        _putchar
-        lda     i_ptr + 1
-        jsl     print_hex
-        lda     i_ptr
-        jsl     print_hex
-        ldx     #2
-        jsr     print_spaces
-        ldy     #0
-@hex:   lda     [i_ptr],y
-        jsl     print_hex
-        lda     #' '
-        _putchar
-        iny
-        cpy     l_len
-        bne     @hex
-        lda     #4
-        sec
-        sbc     l_len               ; If len < 4 then we need filler spaces
-        bcc     :+
-        sta     l_tmp
-        asl                         ; x2
-        clc
-        adc     l_tmp               ; x3
-        tax
-        jsr     print_spaces        ; fill in the blanks
-:       lda     l_instr
-        pea     .hiword(instr_mnemonics)
-        longmx
-        andw    #$FF                ; mask high byte garbage
-        asl
-        asl                         ; x4
-        clc
-        adcw    #.loword(instr_mnemonics)
-        pha                         ; low word
-        _puts
-        shortmx
-        ldx     #3
-        jsr     print_spaces
-        jsr     print_operand
-        lda     #CR
-        _putchar
-        lda     #LF
-        _putchar
-        ldx     l_len
-        longmx
-        _RemoveParams
-        pld
-        rts
+                _SetupDirectPage
+                shortmx
+                lda             [i_ptr]
+                tax
+                lda             f:opcode_instr,x
+                sta             l_instr
+                lda             f:opcode_operands,x
+                sta             l_am
+                tax
+                lda             f:instr_lengths,x
+                sta             l_len
+                cpx             #Operand::immediate_m
+                bne             :+
+                lda             i_mwidth
+                bne             len$
+                inc             l_len
+                bra             len$
+:               cpx             #Operand::immediate_x
+                bne             len$
+                lda             i_xwidth
+                bne             len$
+                inc             l_len
+                bra             len$
+len$:           lda             i_ptr + 2
+                jsl             print_hex
+                lda             #'/'
+                _putchar
+                lda             i_ptr + 1
+                jsl             print_hex
+                lda             i_ptr
+                jsl             print_hex
+                ldx             #2
+                jsr             print_spaces
+                ldy             #0
+hex$:           lda             [i_ptr],y
+                jsl             print_hex
+                lda             #' '
+                _putchar
+                iny
+                cpy             l_len
+                bne             hex$
+                lda             #4
+                sec
+                sbc             l_len           ; If len < 4 then we need filler spaces
+                bcc             :+
+                sta             l_tmp
+                asl             ; x2
+                clc
+                adc             l_tmp           ; x3
+                tax
+                jsr             print_spaces    ; fill in the blanks
+:               lda             l_instr
+                pea             .hiword(instr_mnemonics)
+                longmx
+                and             ##$FF           ; mask high byte garbage
+                asl
+                asl             ; x4
+                clc
+                adc             ##.loword(instr_mnemonics)
+                pha             ; low word
+                _puts
+                shortmx
+                ldx             #3
+                jsr             print_spaces
+                jsr             print_operand
+                lda             #CR
+                _putchar
+                lda             #LF
+                _putchar
+                ldx             l_len
+                longmx
+                _RemoveParams
+                pld
+                rts
 
 ;;
 ; Print the operand
 ;
 print_operand:
-        lda     l_am
-        asl
-        tax
-        longm
-        lda     f:@handlers,x
-        pha
-        shortm
-        rts
-@handlers:
-        .addr   disp_am_immediate-1
-        .addr   disp_am_immediate-1
-        .addr   disp_am_a-1
-        .addr   disp_am_al-1
-        .addr   disp_am_d-1
-        .addr   disp_am_implied-1
-        .addr   disp_am_dix-1
-        .addr   disp_am_dixl-1
-        .addr   disp_am_dxi-1
-        .addr   disp_am_dxx-1
-        .addr   disp_am_dxy-1
-        .addr   disp_am_axx-1
-        .addr   disp_am_alxx-1
-        .addr   disp_am_axy-1
-        .addr   disp_am_pcr-1
-        .addr   disp_am_pcrl-1
-        .addr   disp_am_ai-1
-        .addr   disp_am_di-1
-        .addr   disp_am_dil-1
-        .addr   disp_am_axi-1
-        .addr   disp_am_sr-1
-        .addr   disp_am_srix-1
-        .addr   disp_am_blockmove-1
-        .addr   disp_am_immediate_m-1
-        .addr   disp_am_immediate_x-1
+                lda             l_am
+                asl
+                tax
+                longm
+                lda             f:@handlers,x
+                pha
+                shortm
+                rts
+handlers$:
+                .addr           disp_am_immediate-1
+                .addr           disp_am_immediate-1
+                .addr           disp_am_a-1
+                .addr           disp_am_al-1
+                .addr           disp_am_d-1
+                .addr           disp_am_implied-1
+                .addr           disp_am_dix-1
+                .addr           disp_am_dixl-1
+                .addr           disp_am_dxi-1
+                .addr           disp_am_dxx-1
+                .addr           disp_am_dxy-1
+                .addr           disp_am_axx-1
+                .addr           disp_am_alxx-1
+                .addr           disp_am_axy-1
+                .addr           disp_am_pcr-1
+                .addr           disp_am_pcrl-1
+                .addr           disp_am_ai-1
+                .addr           disp_am_di-1
+                .addr           disp_am_dil-1
+                .addr           disp_am_axi-1
+                .addr           disp_am_sr-1
+                .addr           disp_am_srix-1
+                .addr           disp_am_blockmove-1
+                .addr           disp_am_immediate_m-1
+                .addr           disp_am_immediate_x-1
 
 ;;
 ; Print the immediate mode operand
@@ -254,8 +247,8 @@ print_operand:
 ; Y = instruction length
 ;;
 print_immediate_operand:
-        lda   #'#'    ; fall through to print_constant
-        _putchar
+                lda             #'#'            ; fall through to print_constant
+                _putchar
 
 ;;
 ; Print the operand
@@ -265,186 +258,186 @@ print_immediate_operand:
 ; Y = instruction length
 ;;
 print_constant:
-        ldy     l_len
-@loop:  dey
-        bne     :+
-        rts
-:       lda     [i_ptr],y
-        jsl     print_hex
-        bra     @loop
+                ldy             l_len
+loop$:          dey
+                bne             :+
+                rts
+:               lda             [i_ptr],y
+                jsl             print_hex
+                bra             loop$
 
 disp_am_immediate:
-        ldy     l_len
-        jmp     print_immediate_operand
+                ldy             l_len
+                jmp             print_immediate_operand
 
 disp_am_immediate_m:
-        ldy     #2
-        lda     i_mwidth
-        bne     :+
-        iny
-:       jmp     print_immediate_operand
+                ldy             #2
+                lda             i_mwidth
+                bne             :+
+                iny
+:               jmp             print_immediate_operand
 
 disp_am_immediate_x:
-        ldy     #2
-        lda     i_xwidth
-        bit     #PREG_X
-        bne     :+
-        iny
-:       jmp     print_immediate_operand
+                ldy             #2
+                lda             i_xwidth
+                bit             #PREG_X
+                bne             :+
+                iny
+:               jmp             print_immediate_operand
 
 disp_am_a:
 disp_am_al:
 disp_am_d:
-        jmp     print_constant
+                jmp             print_constant
 
 disp_am_implied:
-        rts
+                rts
 
 disp_am_dix:
-        lda     #'('
-        _putchar
-        jsr     print_constant
-        longmx
-        _puts   @str
-        shortmx
-        rts
-@str:   .byte   "),Y", 0
+                lda             #'('
+                _putchar
+                jsr             print_constant
+                longmx
+                _puts           str$
+                shortmx
+                rts
+str$:           .byte           "),Y", 0
 
 disp_am_dixl:
-        lda     #'['
-        _putchar
-        jsr     print_constant
-        longmx
-        _puts   @str
-        shortmx
-        rts
-@str:   .byte   "],Y", 0
+                lda             #'['
+                _putchar
+                jsr             print_constant
+                longmx
+                _puts           str$
+                shortmx
+                rts
+str$:           .byte           "],Y", 0
 
 disp_am_dxi:
 disp_am_axi:
-        lda     #'('
-        _putchar
-        jsr     print_constant
-        longmx
-        _puts   @str
-        shortmx
-        rts
-@str:   .byte   ",X)", 0
+                lda             #'('
+                _putchar
+                jsr             print_constant
+                longmx
+                _puts           str$
+                shortmx
+                rts
+str$:           .byte           ",X)", 0
 
 disp_am_dxx:
 disp_am_axx:
 disp_am_alxx:
-        jsr     print_constant
-        lda     #','
-        _putchar
-        lda     #'X'
-        _putchar
-        rts
+                jsr             print_constant
+                lda             #','
+                _putchar
+                lda             #'X'
+                _putchar
+                rts
 
 disp_am_dxy:
 disp_am_axy:
-        ldy     l_len
-        jsr     print_constant
-        lda     #','
-        _putchar
-        lda     #'Y'
-        _putchar
-        rts
+                ldy             l_len
+                jsr             print_constant
+                lda             #','
+                _putchar
+                lda             #'Y'
+                _putchar
+                rts
 
 disp_am_pcr:
-        ldy     #1
-        lda     [i_ptr],y
-        longm
-        andw    #$ff
-        bitw    #$80
-        beq     :+
-        oraw    #$ff00
-:       clc
-        adc     i_ptr
-        inc
-        inc
-        shortm
-        xba
-        jsl     print_hex   ; print high byte
-        xba
-        jsl     print_hex   ; print low byte
-        rts
+                ldy             #1
+                lda             [i_ptr],y
+                longm
+                and             ##$ff
+                bit             ##$80
+                beq             :+
+                ora             ##$ff00
+:               clc
+                adc             i_ptr
+                inc
+                inc
+                shortm
+                xba
+                jsl             print_hex       ; print high byte
+                xba
+                jsl             print_hex       ; print low byte
+                rts
 
 disp_am_pcrl:
-        ldy     #1
-        longm
-        lda     [i_ptr],y
-        clc
-        adc     i_ptr
-        clc
-        adcw    #3
-        shortm
-        xba
-        jsl     print_hex   ; print high byte
-        xba
-        jsl     print_hex   ; print low byte
-        rts
+                ldy             #1
+                longm
+                lda             [i_ptr],y
+                clc
+                adc             i_ptr
+                clc
+                adc             ##3
+                shortm
+                xba
+                jsl             print_hex       ; print high byte
+                xba
+                jsl             print_hex       ; print low byte
+                rts
 
 disp_am_ai:
 disp_am_di:
-        lda     #'('
-        _putchar
-        ldy     l_len
-        jsr     print_constant
-        lda     #')'
-        _putchar
-        rts
+                lda             #'('
+                _putchar
+                ldy             l_len
+                jsr             print_constant
+                lda             #')'
+                _putchar
+                rts
 
 disp_am_dil:
-        lda     #'['
-        _putchar
-        ldy     l_len
-        jsr     print_constant
-        lda     #']'
-        _putchar
-        rts
+                lda             #'['
+                _putchar
+                ldy             l_len
+                jsr             print_constant
+                lda             #']'
+                _putchar
+                rts
 
 disp_am_sr:
-        ldy     l_len
-        jsr     print_constant
-        lda     #','
-        _putchar
-        lda     #'S'
-        _putchar
-        rts
+                ldy             l_len
+                jsr             print_constant
+                lda             #','
+                _putchar
+                lda             #'S'
+                _putchar
+                rts
 
 disp_am_srix:
-        lda     #'('
-        _putchar
-        ldy     l_len
-        jsr     print_constant
-        longmx
-        _puts   @str
-        shortmx
-        rts
-@str:   .byte   ",S),Y", 0
+                lda             #'('
+                _putchar
+                ldy             l_len
+                jsr             print_constant
+                longmx
+                _puts           str$
+                shortmx
+                rts
+str$:           .byte           ",S),Y", 0
 
 disp_am_blockmove:
-        ldy     #1
-        lda     [i_ptr],y
-        jsl     print_hex
-        lda     #','
-        _putchar
-        iny
-        lda     [i_ptr],y
-        jsl     print_hex
-        rts
+                ldy             #1
+                lda             [i_ptr],y
+                jsl             print_hex
+                lda             #','
+                _putchar
+                iny
+                lda             [i_ptr],y
+                jsl             print_hex
+                rts
 
 ;;
 ; Print out a string of space whose length is given in the X register.
 ; X may be zero, in which case nothing is printed.
 ;
 print_spaces:
-        cpx     #0
-        beq     :+
-        lda     #' '
-        _putchar
-        dex
-        bra     print_spaces
-:       rts
+                cpx             #0
+                beq             :+
+                lda             #' '
+                _putchar
+                dex
+                bra             print_spaces
+:               rts
 .endproc

@@ -7,18 +7,12 @@
 ; input buffer.
 ;
 
-        .include "common.inc"
-        .include "syscalls.inc"
-        .include "ascii.inc"
-        .include "stdio.inc"
-        .include "kernel/function_macros.inc"
 
-        .include "parser.inc"
 
-        .import   arg, error_loc, error_msg, ibuff
-        .importzp ibuffp, maxhex, start_loc
+                .extern         arg, error_loc, error_msg, ibuff
+                .importzp       ibuffp, maxhex, start_loc
 
-        .segment "OSROM"
+                .section        "OSROM"
 
 ;;
 ; Attempt to parse an address from ibuffp into start_loc. An address
@@ -32,25 +26,25 @@
 ; ibuffp    = Points to input buffer after any parsed address
 ; start_loc = parsed address
 ;
-.proc parse_address
-        ldxw    #4
-        jsr     parse_hex
-        beq     @done       ; No address present
-        shortm
-        lda     [ibuffp]
-        cmp     #'/'        ; Was the parsed value a bank value?
-        bne     @addr
-        lda     arg
-        sta     start_loc+2 ; set bank byte
-        longm
-        inc     ibuffp      ; Skip the "/"
-        ldxw    #4
-        jsr     parse_hex   ; Continue trying to parse an address
-        beq     @done
-@addr:  longm
-        lda     arg
-        sta     start_loc
-@done:  rts
+.proc           parse_address
+                ldx             ##4
+                jsr             parse_hex
+                beq             done$           ; No address present
+                shortm
+                lda             [ibuffp]
+                cmp             #'/'            ; Was the parsed value a bank value?
+                bne             addr$
+                lda             arg
+                sta             start_loc+2     ; set bank byte
+                longm
+                inc             ibuffp          ; Skip the "/"
+                ldx             ##4
+                jsr             parse_hex       ; Continue trying to parse an address
+                beq             done$
+addr$:          longm
+                lda             arg
+                sta             start_loc
+done$:          rts
 .endproc
 
 ;;
@@ -65,46 +59,46 @@
 ; Y = number of digits parsed
 ; n = reflects value in Y
 ;
-.proc parse_hex
-        php
-        longm
-        stz     arg
-        stz     arg + 2
-        ldyw    #0
-@next:  shortm
-        lda     [ibuffp]
-        cmp     #' '+1
-        blt     @done
-        sec
-        sbc     #'0'
-        cmp     #10
-        blt     @store
-        ora     #$20            ; shift uppercase to lowercase
-        sbc     #'a'-'0'-10
-        cmp     #10
-        blt     @done
-        cmp     #16
-        bge     @done
-@store: longm
-        asl     arg
-        rol     arg + 2
-        asl     arg
-        rol     arg + 2
-        asl     arg
-        rol     arg + 2
-        asl     arg
-        rol     arg + 2
-        shortm
-        ora     arg
-        sta     arg
-        longm
-        inc     ibuffp
-        iny
-        dex
-        bne     @next
-@done:  plp
-        cpyw    #0
-        rts
+.proc           parse_hex
+                php
+                longm
+                stz             arg
+                stz             arg + 2
+                ldy             ##0
+next$:          shortm
+                lda             [ibuffp]
+                cmp             #' '+1
+                blt             done$
+                sec
+                sbc             #'0'
+                cmp             #10
+                blt             store$
+                ora             #$20            ; shift uppercase to lowercase
+                sbc             #'a'-'0'-10
+                cmp             #10
+                blt             done$
+                cmp             #16
+                bge             done$
+store$:         longm
+                asl             arg
+                rol             arg + 2
+                asl             arg
+                rol             arg + 2
+                asl             arg
+                rol             arg + 2
+                asl             arg
+                rol             arg + 2
+                shortm
+                ora             arg
+                sta             arg
+                longm
+                inc             ibuffp
+                iny
+                dex
+                bne             next$
+done$:          plp
+                cpy             ##0
+                rts
 .endproc
 
 ;;
@@ -114,27 +108,27 @@
 ; c = 0 if character is a hex digit
 ; c = 1 if character is not a hex digit
 ;
-.proc is_hex_digit
-        php
-        shortm
-        pha
-        cmp     #'0'
-        blt     @no
-        cmp     #'9'+1
-        blt     @yes        ; it's 0..9
-        ora     #$20        ; shift uppercase to lower case
-        cmp     #'a'
-        blt     @no
-        cmp     #'f'+1
-        bge     @no
-@yes:   pla
-        plp
-        clc
-        rts
-@no:    pla
-        plp
-        sec
-        rts
+.proc           is_hex_digit
+                php
+                shortm
+                pha
+                cmp             #'0'
+                blt             no$
+                cmp             #'9'+1
+                blt             yes$            ; it's 0..9
+                ora             #$20            ; shift uppercase to lower case
+                cmp             #'a'
+                blt             no$
+                cmp             #'f'+1
+                bge             no$
+yes$:           pla
+                plp
+                clc
+                rts
+no$:            pla
+                plp
+                sec
+                rts
 .endproc
 
 ;;
@@ -144,79 +138,79 @@
 ; c = 0 if character is whitespce
 ; c = 1 if character is not whitespace
 ;
-.proc is_whitespace
-        php
-        shortm
-        cmp     #' '+1
-        blt     :+
-        plp
-        sec
-        rts
-:       plp
-        clc
-        rts
+.proc           is_whitespace
+                php
+                shortm
+                cmp             #' '+1
+                blt             :+
+                plp
+                sec
+                rts
+:               plp
+                clc
+                rts
 .endproc
 
 ;;
 ; Skip input_index ahead to either the first non-whitespace character,
 ; or the end of line NULL, whichever occurs first.
 ;
-.proc skip_whitespace
-        php
-@loop:  shortm
-        lda     [ibuffp]
-        beq     @exit
-        cmp     #' '+1
-        bge     @exit
-        longm
-        inc     ibuffp
-        bra     @loop
-@exit:  plp
-        rts
+.proc           skip_whitespace
+                php
+loop$:          shortm
+                lda             [ibuffp]
+                beq             exit$
+                cmp             #' '+1
+                bge             exit$
+                longm
+                inc             ibuffp
+                bra             loop$
+exit$:          plp
+                rts
 .endproc
 
 ;;
 ; Display an error message pointing at a location on the input line.
 ;
-.proc print_error
-        _BeginDirectPage
-          _StackFrameRTS
-          i_error_msg   .dword
-          i_error_loc   .word
-        _EndDirectPage
+.proc           print_error
+                _BeginDirectPage
+                _StackFrameRTS
+                i_error_msg     .dword
+                i_error_loc     .word
+                _EndDirectPage
 
-        _SetupDirectPage
-        lda     i_error_loc
-        sec
-        sbcw    #.loword(ibuff)
-        inc
-        tax
-        shortm
-        lda     #CR
-        _putchar
-        lda     #LF
-        _putchar
-:       lda   #' '
-        _putchar
-        dex
-        bne     :-
-        lda     #'^'
-        _putchar
-        lda     #' '
-        _putchar
-        longm
-        lda     i_error_msg + 2
-        pha
-        lda     i_error_msg
-        pha
-        _puts
-        shortm
-        lda     #CR
-        _putchar
-        lda     #LF
-        _putchar
-        longm
-        _RemoveParams
-        pld
-        rts
+                _SetupDirectPage
+                lda             i_error_loc
+                sec
+                sbc             ##.loword(ibuff)
+                inc
+                tax
+                shortm
+                lda             #CR
+                _putchar
+                lda             #LF
+                _putchar
+:               lda             #' '
+                _putchar
+                dex
+                bne             :-
+                lda             #'^'
+                _putchar
+                lda             #' '
+                _putchar
+                longm
+                lda             i_error_msg + 2
+                pha
+                lda             i_error_msg
+                pha
+                _puts
+                shortm
+                lda             #CR
+                _putchar
+                lda             #LF
+                _putchar
+                longm
+                _RemoveParams
+                pld
+                rts
 .endproc

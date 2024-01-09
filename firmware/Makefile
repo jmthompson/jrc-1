@@ -1,43 +1,41 @@
-ROM_VERSION := 0020
+SUBDIRS			:= src/boot src/lib src/core src/fs src/drivers src/monitor
+ALL_OBJS		:= $(foreach subdir,$(SUBDIRS),$(subdir)/*.o)
+LISTING			:= ln65816.lst
+BUILDFILE   := aout.elf
+TARGET			:= rom.bin
 
-AS := ca65
-LD := ld65
+AUTOGEN_FILE = $(ROOT_DIR)/include/kernel/build.h
+AUTOGEN_NEXT = $(shell expr $$(awk '/#define BUILD_NUMBER/' $(AUTOGEN_FILE) | tr -cd "[0-9]") + 1)
 
-SRCS     := $(wildcard src/*/*.s) buildinfo.s
-OBJS   	 := ${SRCS:.s=.o}
-LISTINGS := ${SRCS:.s=.l}
-ROMFILE  := rom.bin
-DUMPFILE := dump.bin
-RAMFILE  := ram.bin
-MAPFILE  := jrc-1.map
-CHIP     := W29C020C
-MEMSIM2  := /dev/memsim2
+$(TARGET): buildinfo subdirs
+	$(LD) $(LDFLAGS) --program-root sysreset --cstartup jrcos --rom-code --output-format raw --raw-multiple-memories -l jrc-1.scm $(ALL_OBJS)
+	@truncate -s 62k lorom.raw
+	@truncate -s 192k hirom.raw
+	@cat lorom.raw bank0rom.raw hirom.raw > rom.bin
+	@$(RM) lorom.raw bank0rom.raw hirom.raw
 
-${ROMFILE}: ${OBJS}
-	${LD} ${OBJS} -o ${ROMFILE} -C jrc-1.cfg -m ${MAPFILE}
+.PHONY: subdirs $(SUBDIRS)
+subdirs: $(SUBDIRS)
 
-all: ${ROMFILE}
+.PHONY: buildinfo
+buildinfo:
+	sed -i "s/#define BUILD_NUMBER .*/#define BUILD_NUMBER \"$(AUTOGEN_NEXT)\"/" $(AUTOGEN_FILE)
+	sed -i "s/#define BUILD_DATE.*/#define BUILD_DATE \"$$(date +'%Y-%m-%d')\"/" $(AUTOGEN_FILE)
 
-dump:
-	minipro -p ${CHIP} -r ${DUMPFILE}
+$(SUBDIRS):
+	$(MAKE) -C $@
 
-prog: ${ROMFILE}
-	minipro -p ${CHIP} -w ${ROMFILE}
-
-upload: ${ROMFILE}
-	memsim2 -d ${MEMSIM2} -m 27020 -r -1 ${ROMFILE}
-
+.PHONY: clean
 clean:
-	rm -f buildinfo.s ${OBJS} ${LISTINGS} ${MAPFILE} ${ROMFILE} ${RAMFILE}
+	@for i in $(SUBDIRS); do $(MAKE) -C $$i clean-subdir; done;
+	$(RM) $(TARGET) $(LISTING) $(BUILDFILE)
 
-buildinfo.s:
-	echo ".segment \"BOOTROM\"" > buildinfo.s
-	echo ".export jrcos_version" >> buildinfo.s
-	echo ".export rom_date" >> buildinfo.s
-	echo "jrcos_version: .word \$$${ROM_VERSION}" >> buildinfo.s
-	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
+.PHONY: prog
+prog: target
+	minipro -p $(CHIP) -w $(TARGET)
 
-%.o: %.s
-	${AS} -I ./include --listing ${<:.s=.l} $<
+.PHONY: upload
+upload: $(TARGET)
+	memsim2 -d $(MEMSIM2) -m 27020 -r -1 $(TARGET)
 
-.PHONY: dump buildinfo.s
+include common.mk

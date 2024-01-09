@@ -1,22 +1,22 @@
-.scope Monitor
+.scope          Monitor
 
-        .export COLON_EXPECTED
-        .export INVALID_OPERAND
-        .export UNKNOWN_COMMAND
-        .export UNKNOWN_OPCODE
-        .export UNKNOWN_REGISTER
+                .global         COLON_EXPECTED
+                .global         INVALID_OPERAND
+                .global         UNKNOWN_COMMAND
+                .global         UNKNOWN_OPCODE
+                .global         UNKNOWN_REGISTER
 
-        .segment "OSROM"
+                .section        "OSROM"
 
 COLON_EXPECTED:
-        .byte "':' expected", 0
+                .byte           "':' expected", 0
 INVALID_OPERAND:
-        .byte "Invalid operand", 0
+                .byte           "Invalid operand", 0
 UNKNOWN_COMMAND:
-        .byte "Unknown command", 0
+                .byte           "Unknown command", 0
 UNKNOWN_OPCODE:
-        .byte "Unknown opcode", 0
+                .byte           "Unknown opcode", 0
 UNKNOWN_REGISTER:
-        .byte "Unknown register", 0
+                .byte           "Unknown register", 0
 
 .endscope

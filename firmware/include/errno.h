@@ -1,0 +1,11 @@
+#define ENOSYS        1
+#define ENOTSUP       2
+#define ENXIO         3
+#define ENOMEM        4
+#define EMFILE        5
+#define ENFILE        6
+#define EIO           7
+#define EBUSY         8
+#define EINVAL        9
+#define ENOENT        10
+#define ENOMEDIUM     11
