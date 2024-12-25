@@ -1,5 +1,7 @@
-buildinfo.s
-*.l
+*.lst
 *.o
+*.a
 *.bin
-*.map
+.vscode
+*.raw
+*.elf

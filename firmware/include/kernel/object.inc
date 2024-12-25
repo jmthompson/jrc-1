@@ -1,1 +1,0 @@
-        .global new_object
