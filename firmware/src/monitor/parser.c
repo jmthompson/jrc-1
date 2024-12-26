@@ -116,7 +116,12 @@ token_t get_token(void)
 /**
  * Display a syntax error message that includes the character position.
  */
-void syntax_error(void) { printf("\nError at character position %d\n", ibuffp - buffer + 1); }
+void syntax_error(void) { printf("\nError at character position %d\n", ibuffp - buffer); }
+
+/**
+ * Return the value of a TK_LITERAL token as a uint8.
+ */
+unsigned char token_to_uint8(void) { return (unsigned char)token_to_uint16(); }
 
 /**
  * Return the value of a TK_LITERAL token as a uint16.
@@ -173,8 +178,8 @@ int parse_address(mem_addr_t *addr)
 
     addr->loc = token_to_uint16();
   } else {
-    put_token();
     addr->loc = val;
+    put_token();
   }
 
   return 0;

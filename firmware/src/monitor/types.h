@@ -39,4 +39,5 @@ typedef enum {
   TK_COMMA = 256,
   TK_LPAREN = 512,
   TK_RPAREN = 1024,
+  TK_EQUALS = 2048,
 } token_t;

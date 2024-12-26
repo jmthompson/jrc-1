@@ -8,6 +8,7 @@ extern unsigned int token_index;
 extern unsigned int token_len;
 
 extern void syntax_error(void);
+extern unsigned char token_to_uint8(void);
 extern unsigned int token_to_uint16(void);
 extern void reset_scanner(char __near *);
 extern void put_token(void);

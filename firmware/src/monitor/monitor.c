@@ -88,36 +88,43 @@ void monitor_loop(void)
     printf("\n* ");
     read_line();
     putc_seriala('\n');
-
     reset_scanner(input_buffer);
+    end_loc.ptr = start_loc.ptr;
 
     int token = get_token();
 
     if (token == TK_LITERAL) {
       if (parse_range(&start_loc, &end_loc)) {
         syntax_error();
+        continue;
       }
 
-      continue;
+      token = get_token();
     }
-
-    unsigned char cmd;
 
     if (token == TK_EOL) {
-      cmd = 'M';
-    } else if (token == TK_IDENTIFIER) {
-      cmd = toupper(*token_ptr);
-    } else {
-      syntax_error();
-      continue;
-    }
-
-    switch (cmd) {
-    case 'L':
-      disassemble();
-    case 'M':
       dump_memory();
-    default:
+    } else if (token == TK_IDENTIFIER) {
+      unsigned char cmd = toupper(*token_ptr);
+
+      switch (cmd) {
+      case 'L':
+        disassemble();
+        break;
+      case 'M':
+        dump_memory();
+        break;
+      default:
+        syntax_error();
+        break;
+      }
+    } else if (token == TK_COLON) {
+      set_memory();
+    } else if (token == TK_POUND) {
+      show_registers();
+    } else if (token == TK_EQUALS) {
+      set_register();
+    } else {
       syntax_error();
     }
   }
@@ -149,36 +156,6 @@ void monitor_start(void)
 }
 
 /*
-set_memory:
-                jsr             skip_whitespace
-                shortm
-                lda             [ibuffp]
-                cmp             #$27            ; '
-                bne             hex$
-ascii$:         longm
-                inc             ibuffp
-                shortm
-                lda             [ibuffp]
-                beq             done$
-                sta             [start_loc]
-                longm
-                inc             start_loc
-                shortm
-                bra             ascii$
-hex$:           jsr             skip_whitespace
-                ldx             ##2
-                jsr             parse_hex
-                beq             done$
-                shortm
-                lda             arg
-                sta             [start_loc]
-                longm
-                inc             start_loc
-                shortm
-                bra             hex$
-done$:          longm
-                rts
-
 ;;
 ; Perform a simulated JSL to the code at start_loc. The code will
 ; be called in full 16-bit mode.
@@ -203,99 +180,4 @@ ret$:           longmx
                 sty             y_reg
                 rts
 
-monitor_exit:
-                pla             ; pop return address of the dispatcher
-                pla
-                lda             ##0
-                clc
-                rtl
-
-xmodem_send:
-                shortm
-                lda             start_loc
-                sta             xmptr
-                lda             start_loc+1
-                sta             xmptr+1
-                lda             start_loc+2
-                sta             xmptr+2
-                lda             end_loc
-                sta             xmeofp
-                lda             end_loc+1
-                sta             xmeofp+1
-                lda             end_loc+2
-                sta             xmeofp+2
-                jsr             XModemSend
-                longm
-                rts
-
-xmodem_receive:
-                lda             start_loc
-                sta             xmptr
-                shortm
-                lda             start_loc+2
-                sta             xmptr+2
-                jsr             XModemRcv
-                longm
-                rts
-
-set_register:
-                shortm
-                lda             [ibuffp]        ; grab two chars so we can test for 'DB'
-                cmp             #'A'
-                beq             a$
-                cmp             #'B'
-                beq             b$
-                cmp             #'D'
-                beq             d$
-                cmp             #'P'
-                beq             p$
-                cmp             #'X'
-                beq             x$
-                cmp             #'Y'
-                beq             y$
-                cmp             #'m'
-                beq             mw$
-                cmp             #'x'
-                beq             xw$
-err$:           longm
-                lda             ibuffp
-                pha
-                pea             .hiword(Monitor::UNKNOWN_REGISTER)
-                pea             .loword(Monitor::UNKNOWN_REGISTER)
-                jsr             print_error
-                rts
-a$:             longm
-                lda             arg
-                sta             a_reg
-                rts
-b$:             lda             arg
-                sta             b_reg
-                longm
-                rts
-d$:             longm
-                lda             arg
-                sta             d_reg
-                rts
-p$:             lda             arg
-                sta             p_reg
-                longm
-                rts
-x$:             longm
-                lda             arg
-                sta             x_reg
-                rts
-y$:             longm
-                lda             arg
-                sta             y_reg
-                rts
-mw$:            lda             arg
-                and             #1
-                sta             m_width
-                longm
-                rts
-xw$:            lda             arg
-                and             #1
-                sta             x_width
-                longm
-                rts
 */

@@ -136,11 +136,11 @@ static unsigned int print_instruction(mem_addr_t ptr)
     break;
   case pcr:
     offset = (int)ptr.ptr[1] + 2;
-    printf("%04X", ptr.ptr + offset);
+    printf("%04X", ptr.loc + offset);
     break;
   case pcrl:
     offset = *((int *)ptr.ptr + 1) + 2;
-    printf("%04X", ptr.ptr + offset);
+    printf("%04X", ptr.loc + offset);
     break;
   case ai:
   case di:

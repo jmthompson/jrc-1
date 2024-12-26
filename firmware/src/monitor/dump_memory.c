@@ -5,14 +5,17 @@
 
 void dump_memory(void)
 {
-  while (start_loc.loc <= end_loc.loc) {
-    mem_loc_t row_end = start_loc.loc | 0x0007;
-    mem_loc_t row_start = start_loc.loc - 1;
+  while (1) {
+    mem_loc_t row_end = start_loc.loc;
+    mem_loc_t row_start = start_loc.loc;
+
+    row_end |= 0x0007;
+    if (end_loc.loc < row_end) row_end = end_loc.loc;
+    ++row_end;
 
     printf("%02x/%04X:", start_loc.bank, start_loc.loc);
 
-    start_loc.loc = row_start;
-    while ((start_loc.loc != row_end) && (start_loc.loc != end_loc.loc)) {
+    while (start_loc.loc != row_end) {
       printf(" %02X", *start_loc.ptr);
       ++start_loc.loc;
     }
@@ -20,7 +23,7 @@ void dump_memory(void)
     printf(" | ");
 
     start_loc.loc = row_start;
-    while ((start_loc.loc != row_end) && (start_loc.loc != end_loc.loc)) {
+    while (start_loc.loc != row_end) {
       char c = *start_loc.ptr & 0x7F;
 
       if (!isprint(c)) c = '?';
@@ -31,7 +34,6 @@ void dump_memory(void)
 
     putc_seriala('\n');
 
-    // Stop if we've rolled over to the start of the bank
-    if (!++start_loc.loc) break;
+    if (end_loc.loc == (row_end - 1)) break;
   }
 }
