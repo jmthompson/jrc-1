@@ -9,8 +9,8 @@ const char __far brk_banner[] = "*** Break ***\n\0";
 const char __far nmi_banner[] = "*** NMI ***\n\0";
 const char __far start_banner[] = "Monitor Ready.\n\0";
 
-__attribute__((simple_call)) int getc_seriala(void);
-__attribute__((simple_call)) void putc_seriala(char character);
+SIMPLE_CALL int getc_seriala(void);
+SIMPLE_CALL void putc_seriala(char character);
 
 static void capture_registers(void)
 {

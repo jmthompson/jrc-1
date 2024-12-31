@@ -10,8 +10,8 @@
 #include "parser.h"
 #include "globals.h"
 
-__attribute__((simple_call)) int getc_seriala(void);
-__attribute__((simple_call)) void putc_seriala(char character);
+SIMPLE_CALL int getc_seriala(void);
+SIMPLE_CALL void putc_seriala(char character);
 
 token_t token_type;
 char __near *token_ptr;

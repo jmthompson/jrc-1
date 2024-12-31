@@ -8,6 +8,9 @@
 #define __near
 #define __far
 #define __far24
+#define SIMPLE_CALL extern
+#else
+#define SIMPLE_CALL __attribute__((simple_call))
 #endif
 
 typedef unsigned int mem_loc_t;
