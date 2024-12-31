@@ -3,27 +3,65 @@
  * limited set of token types: hexadecimal literals, identifiers, and string literals, plus a
  * few single-character tokens.
  */
+#include <ctype.h>
+#include <stdio.h>
+#include <calypsi/intrinsics65816.h>
+#include <kernel/console.h>
 #include "parser.h"
 #include "globals.h"
-#include <ctype.h>
-#include <kernel/console.h>
-#include <stdio.h>
+
+__attribute__((simple_call)) int getc_seriala(void);
+__attribute__((simple_call)) void putc_seriala(char character);
 
 token_t token_type;
 char __near *token_ptr;
 unsigned int token_len;
 unsigned int token_index;
 
-// Internal pointer to the input buffer; used to determine token starting offsets
-static char __near *buffer;
+// The input buffer
+#define IBUFFSZ 256
+static char __near input_buffer[IBUFFSZ];
 
 // Internal pointer to current scanning position in the input buffer
+#define IBUFFSZ 256
 static char __near *ibuffp;
 
 /**
- * Reset the scanner to point to the start of a new input buffer.
+ * Read a line of input to input_buffer. Input stops when ENTER
+ * is received or the buffer fills.
  */
-void reset_scanner(char __near *new_buffer) { buffer = ibuffp = new_buffer; }
+unsigned int read_line()
+{
+  size_t count = 0;
+  char __near *pos = input_buffer;
+
+  while (count < IBUFFSZ - 1) {
+    int ch = getc_seriala();
+
+    if (ch < 0) {
+      __wait_for_interrupt();
+    } else if ((ch == BS) && (count > 0)) {
+      putc_seriala((char)ch);
+      pos--;
+      count--;
+    } else if (ch == CR) {
+      break;
+    } else if (ch >= ' ') {
+      *pos++ = (char)ch;
+      putc_seriala((char)ch);
+      count++;
+    }
+  }
+
+  *pos = 0;
+
+  return count;
+}
+
+/**
+ * Reset the scanner to point to the start of the input buffer.
+ */
+void reset_scanner(void) { ibuffp = input_buffer; }
 
 /**
  * "Put back" the last token by Rewinding ibuffp back to token_ptr.
@@ -80,6 +118,10 @@ token_t get_token(void)
       token_type = TK_RPAREN;
     } else if (c == '.') {
       token_type = TK_PERIOD;
+    } else if (c == '=') {
+      token_type = TK_EQUALS;
+    } else if (c == '!') {
+      token_type = TK_EXCLAMATION;
     } else {
       return -1;
     }
@@ -116,7 +158,10 @@ token_t get_token(void)
 /**
  * Display a syntax error message that includes the character position.
  */
-void syntax_error(void) { printf("\nError at character position %d\n", ibuffp - buffer); }
+void parse_error(const unsigned char __far *reason)
+{
+  printf("\nError at character position %d: %s\n", ibuffp - input_buffer + 1, reason);
+}
 
 /**
  * Return the value of a TK_LITERAL token as a uint8.

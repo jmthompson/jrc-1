@@ -1,10 +1,9 @@
-#include "monitor.h"
+#include <ctype.h>
+#include <kernel/console.h>
 #include "commands.h"
 #include "globals.h"
 #include "parser.h"
-#include <calypsi/intrinsics65816.h>
-#include <ctype.h>
-#include <kernel/console.h>
+#include "messages.h"
 
 const char __far brk_banner[] = "*** Break ***\n\0";
 const char __far nmi_banner[] = "*** NMI ***\n\0";
@@ -12,9 +11,6 @@ const char __far start_banner[] = "Monitor Ready.\n\0";
 
 __attribute__((simple_call)) int getc_seriala(void);
 __attribute__((simple_call)) void putc_seriala(char character);
-
-static char __near input_buffer[IBUFFSZ];
-static char __near *ibuffp;
 
 static void capture_registers(void)
 {
@@ -52,50 +48,20 @@ static void show_registers(void)
   );
 }
 
-/**
- * Read a line of input to input_buffer. Input stops when ENTER
- * is received or the buffer fills.
- */
-static void read_line()
-{
-  size_t count = 0;
-  char __near *pos = input_buffer;
-
-  while (count < IBUFFSZ - 1) {
-    int ch = getc_seriala();
-
-    if (ch < 0) {
-      __wait_for_interrupt();
-    } else if ((ch == BS) && (count > 0)) {
-      putc_seriala((char)ch);
-      pos--;
-      count--;
-    } else if (ch == CR) {
-      break;
-    } else if (ch >= ' ') {
-      *pos++ = (char)ch;
-      putc_seriala((char)ch);
-      count++;
-    }
-  }
-
-  *pos = 0;
-}
-
 void monitor_loop(void)
 {
   while (1) {
     printf("\n* ");
     read_line();
     putc_seriala('\n');
-    reset_scanner(input_buffer);
+    reset_scanner();
     end_loc.ptr = start_loc.ptr;
 
     int token = get_token();
 
     if (token == TK_LITERAL) {
       if (parse_range(&start_loc, &end_loc)) {
-        syntax_error();
+        parse_error(ADDRESS_PARSE_ERROR);
         continue;
       }
 
@@ -108,24 +74,30 @@ void monitor_loop(void)
       unsigned char cmd = toupper(*token_ptr);
 
       switch (cmd) {
+      case 'G':
+        run_code();
+        break;
       case 'L':
         disassemble();
         break;
       case 'M':
         dump_memory();
         break;
+      case 'R':
+        set_register();
+        break;
       default:
-        syntax_error();
+        parse_error(UNKNOWN_COMMAND);
         break;
       }
     } else if (token == TK_COLON) {
       set_memory();
     } else if (token == TK_POUND) {
       show_registers();
-    } else if (token == TK_EQUALS) {
-      set_register();
+    } else if (token == TK_EXCLAMATION) {
+      start_assembler();
     } else {
-      syntax_error();
+      parse_error(UNKNOWN_COMMAND);
     }
   }
 }

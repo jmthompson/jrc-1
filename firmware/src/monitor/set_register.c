@@ -1,12 +1,67 @@
-#include <ctype.h>
-#include <stdio.h>
-#include <kernel/console.h>
 #include "globals.h"
+#include "messages.h"
 #include "parser.h"
+#include <ctype.h>
+#include <kernel/console.h>
+#include <stdio.h>
 
 void set_register(void)
 {
   token_t token = get_token();
+
+  if ((token != TK_LITERAL) && (token != TK_IDENTIFIER)) {
+    parse_error(UNEXPECTED_TOKEN);
+    return;
+  }
+  if (token_len != 1) {
+    parse_error(UNKNOWN_REGISTER);
+    return;
+  }
+
+  unsigned char reg = *token_ptr;
+
+  if (get_token() != TK_EQUALS) {
+    parse_error(UNEXPECTED_TOKEN);
+    return;
+  }
+
+  token = get_token();
+  if (token != TK_LITERAL) {
+    parse_error(UNEXPECTED_TOKEN);
+    return;
+  }
+
+  unsigned int value = token_to_uint16();
+
+  switch (reg) {
+  case 'A':
+    a_reg = value;
+    break;
+  case 'B':
+    b_reg = value & 0xFF;
+    break;
+  case 'D':
+    d_reg = value;
+    break;
+  case 'P':
+    d_reg = value & 0xFF;
+    break;
+  case 'X':
+    x_reg = value;
+    break;
+  case 'Y':
+    y_reg = value;
+    break;
+  case 'm':
+    m_width = value & 0x01;
+    break;
+  case 'x':
+    x_width = value & 0x01;
+    break;
+  default:
+    parse_error(UNKNOWN_REGISTER);
+    break;
+  }
 }
 #if 0
                 shortm

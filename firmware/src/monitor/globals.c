@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "monitor.h"
+#include "types.h"
 
 unsigned int a_reg = 0x0401;
 unsigned int d_reg = 0x0402;
@@ -17,18 +17,3 @@ unsigned int x_width = 1;
 
 mem_addr_t start_loc;
 mem_addr_t end_loc;
-
-char __near input_buffer[IBUFFSZ];
-
-unsigned int m_width;
-unsigned int x_width;
-
-/*
-arg:            .space          4
-instr:          .space          2
-instr_len:      .space          2
-operand:        .space          4
-operand_type:   .space          2
-operand_size:   .space          2
-token:          .space          2
-*/

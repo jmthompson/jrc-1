@@ -5,7 +5,7 @@
 /*
  * Instruction nnemonics
  */
-char __far instr_mnemonics[][4] = {
+const char __far instr_mnemonics[][4] = {
   "ADC", // $00
   "AND", // $01
   "ASL", // $02
@@ -102,7 +102,7 @@ char __far instr_mnemonics[][4] = {
   "\0\0\0"
 };
 
-instr_t __far opcode_instr[] = {
+const instr_t __far opcode_instr[] = {
   BRK,
   ORA,
   COP,
@@ -361,7 +361,7 @@ instr_t __far opcode_instr[] = {
   SBC
 };
 
-operand_am_t __far opcode_am[] = {
+const operand_am_t __far opcode_am[] = {
   d,
   dxi,
   d,
@@ -621,7 +621,7 @@ operand_am_t __far opcode_am[] = {
 };
 
 /* Opcode lengths for each instruction type */
-unsigned int __far am_lengths[] = {
+const unsigned int __far am_lengths[] = {
   2,    // immediate8
   3,    // immediate16
   3,    // absolute

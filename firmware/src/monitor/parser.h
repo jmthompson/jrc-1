@@ -7,10 +7,11 @@ extern char __near *token_ptr;
 extern unsigned int token_index;
 extern unsigned int token_len;
 
-extern void syntax_error(void);
+extern void parse_error(const unsigned char __far *);
 extern unsigned char token_to_uint8(void);
 extern unsigned int token_to_uint16(void);
-extern void reset_scanner(char __near *);
+extern unsigned int read_line(void);
+extern void reset_scanner(void);
 extern void put_token(void);
 extern token_t get_token(void);
 extern int parse_address(mem_addr_t *);

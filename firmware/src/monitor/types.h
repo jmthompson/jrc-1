@@ -27,17 +27,18 @@ typedef union {
 } mem_addr_t;
 
 typedef enum {
-  TK_ERROR = -1,
-  TK_EOL = 1,
-  TK_LITERAL = 2,
-  TK_STRING = 4,
-  TK_IDENTIFIER = 8,
-  TK_PERIOD = 16,
-  TK_SLASH = 32,
-  TK_COLON = 64,
-  TK_POUND = 128,
-  TK_COMMA = 256,
-  TK_LPAREN = 512,
-  TK_RPAREN = 1024,
-  TK_EQUALS = 2048,
+  TK_ERROR1,
+  TK_EOL,
+  TK_LITERAL,
+  TK_STRING,
+  TK_IDENTIFIER,
+  TK_PERIOD,
+  TK_SLASH,
+  TK_COLON,
+  TK_POUND,
+  TK_COMMA,
+  TK_LPAREN,
+  TK_RPAREN,
+  TK_EQUALS,
+  TK_EXCLAMATION
 } token_t;

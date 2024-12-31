@@ -129,8 +129,8 @@ typedef enum {
 
 typedef unsigned char opcode_t;
 
-extern operand_am_t __far opcode_am[];
-extern char __far instr_mnemonics[][4];
-extern instr_t __far opcode_instr[];
-extern operand_am_t __far opcode_am[];
-extern unsigned int __far am_lengths[];
+extern const operand_am_t __far opcode_am[];
+extern const char __far instr_mnemonics[][4];
+extern const instr_t __far opcode_instr[];
+extern const operand_am_t __far opcode_am[];
+extern const unsigned int __far am_lengths[];

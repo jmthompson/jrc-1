@@ -1,3 +1,7 @@
+void start_assembler(void)
+{
+}
+
 #if 0
 ; *******************************
 ; *  JRC-1 65816 SBC Firmware   *
