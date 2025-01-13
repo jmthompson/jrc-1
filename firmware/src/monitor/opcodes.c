@@ -1,650 +1,365 @@
 #include "globals.h"
 #include "opcodes.h"
-#include "operand.h"
 
 /*
  * Instruction nnemonics
  */
-const char __far instr_mnemonics[][4] = {
-  "ADC", // $00
-  "AND", // $01
-  "ASL", // $02
-  "BIT", // $03
-  "BRK", // $04
-  "CLC", // $05
-  "CLD", // $06
-  "CLI", // $07
-  "CLV", // $08
-  "CMP", // $09
-  "COP", // $0A
-  "CPX", // $0B
-  "CPY", // $0C
-  "DEC", // $0D
-  "DEX", // $0E
-  "DEY", // $0F
-  "EOR", // $10
-  "INC", // $11
-  "INX", // $12
-  "INY", // $13
-  "JML", // $14
-  "JMP", // $15
-  "JSL", // $16
-  "JSR", // $17
-  "LDA", // $18
-  "LDX", // $19
-  "LDY", // $1A
-  "LSR", // $1B
-  "MVN", // $1C
-  "MVP", // $1D
-  "NOP", // $1E
-  "ORA", // $1F
-  "PEA", // $20
-  "PEI", // $21
-  "PHA", // $22
-  "PHB", // $23
-  "PHD", // $24
-  "PHK", // $25
-  "PHP", // $26
-  "PHX", // $27
-  "PHY", // $28
-  "PLA", // $29
-  "PLB", // $2A
-  "PLD", // $2B
-  "PLP", // $2C
-  "PLX", // $2D
-  "PLY", // $2E
-  "REP", // $2F
-  "ROL", // $30
-  "ROR", // $31
-  "RTI", // $32
-  "RTL", // $33
-  "RTS", // $34
-  "SBC", // $35
-  "SEC", // $36
-  "SED", // $37
-  "SEI", // $38
-  "SEP", // $39
-  "STA", // $3A
-  "STP", // $3B
-  "STX", // $3C
-  "STY", // $3D
-  "STZ", // $3E
-  "TAX", // $3F
-  "TAY", // $40
-  "TCD", // $41
-  "TCS", // $42
-  "TDC", // $43
-  "TRB", // $44
-  "TSB", // $45
-  "TSC", // $46
-  "TSX", // $47
-  "TXA", // $48
-  "TXS", // $49
-  "TXY", // $4A
-  "TYA", // $4B
-  "TYX", // $4C
-  "WAI", // $4D
-  "WDC", // $4E
-  "WDM", // $4F
-  "XBA", // $50
-  "XCE", // $51
-  "BCC", // $52
-  "BCS", // $53
-  "BEQ", // $54
-  "BMI", // $55
-  "BNE", // $56
-  "BPL", // $57
-  "BRA", // $58
-  "BVC", // $59
-  "BVS", // $5A
-  "BRL", // $5B
-  "PER", // $5C
-  "\0\0\0"
+const char __far mnemonics[][4] = {
+    "ADC", // $00
+    "AND", // $01
+    "ASL", // $02
+    "BIT", // $03
+    "BRK", // $04
+    "CLC", // $05
+    "CLD", // $06
+    "CLI", // $07
+    "CLV", // $08
+    "CMP", // $09
+    "COP", // $0A
+    "CPX", // $0B
+    "CPY", // $0C
+    "DEC", // $0D
+    "DEX", // $0E
+    "DEY", // $0F
+    "EOR", // $10
+    "INC", // $11
+    "INX", // $12
+    "INY", // $13
+    "JML", // $14
+    "JMP", // $15
+    "JSL", // $16
+    "JSR", // $17
+    "LDA", // $18
+    "LDX", // $19
+    "LDY", // $1A
+    "LSR", // $1B
+    "MVN", // $1C
+    "MVP", // $1D
+    "NOP", // $1E
+    "ORA", // $1F
+    "PEA", // $20
+    "PEI", // $21
+    "PHA", // $22
+    "PHB", // $23
+    "PHD", // $24
+    "PHK", // $25
+    "PHP", // $26
+    "PHX", // $27
+    "PHY", // $28
+    "PLA", // $29
+    "PLB", // $2A
+    "PLD", // $2B
+    "PLP", // $2C
+    "PLX", // $2D
+    "PLY", // $2E
+    "REP", // $2F
+    "ROL", // $30
+    "ROR", // $31
+    "RTI", // $32
+    "RTL", // $33
+    "RTS", // $34
+    "SBC", // $35
+    "SEC", // $36
+    "SED", // $37
+    "SEI", // $38
+    "SEP", // $39
+    "STA", // $3A
+    "STP", // $3B
+    "STX", // $3C
+    "STY", // $3D
+    "STZ", // $3E
+    "TAX", // $3F
+    "TAY", // $40
+    "TCD", // $41
+    "TCS", // $42
+    "TDC", // $43
+    "TRB", // $44
+    "TSB", // $45
+    "TSC", // $46
+    "TSX", // $47
+    "TXA", // $48
+    "TXS", // $49
+    "TXY", // $4A
+    "TYA", // $4B
+    "TYX", // $4C
+    "WAI", // $4D
+    "WDC", // $4E
+    "WDM", // $4F
+    "XBA", // $50
+    "XCE", // $51
+    "BCC", // $52
+    "BCS", // $53
+    "BEQ", // $54
+    "BMI", // $55
+    "BNE", // $56
+    "BPL", // $57
+    "BRA", // $58
+    "BVC", // $59
+    "BVS", // $5A
+    "BRL", // $5B
+    "PER", // $5C
+    "\0\0\0"
 };
 
-const instr_t __far opcode_instr[] = {
-  BRK,
-  ORA,
-  COP,
-  ORA,
-  TSB,
-  ORA,
-  ASL,
-  ORA,
-  PHP,
-  ORA,
-  ASL,
-  PHD,
-  TSB,
-  ORA,
-  ASL,
-  ORA,
-  BPL,
-  ORA,
-  ORA,
-  ORA,
-  TRB,
-  ORA,
-  ASL,
-  ORA,
-  CLC,
-  ORA,
-  INC,
-  TCS,
-  TRB,
-  ORA,
-  ASL,
-  ORA,
-  JSR,
-  AND,
-  JSL,
-  AND,
-  BIT,
-  AND,
-  ROL,
-  AND,
-  PLP,
-  AND,
-  ROL,
-  PLD,
-  BIT,
-  AND,
-  ROL,
-  AND,
-  BMI,
-  AND,
-  AND,
-  AND,
-  BIT,
-  AND,
-  ROL,
-  AND,
-  SEC,
-  AND,
-  DEC,
-  TSC,
-  BIT,
-  AND,
-  ROL,
-  AND,
-  RTI,
-  EOR,
-  WDM,
-  EOR,
-  MVP,
-  EOR,
-  LSR,
-  EOR,
-  PHA,
-  EOR,
-  LSR,
-  PHK,
-  JMP,
-  EOR,
-  LSR,
-  EOR,
-  BVC,
-  EOR,
-  EOR,
-  EOR,
-  MVN,
-  EOR,
-  LSR,
-  EOR,
-  CLI,
-  EOR,
-  PHY,
-  TCD,
-  JMP,
-  EOR,
-  LSR,
-  EOR,
-  RTS,
-  ADC,
-  PER,
-  ADC,
-  STZ,
-  ADC,
-  ROR,
-  ADC,
-  PLA,
-  ADC,
-  ROR,
-  RTL,
-  JMP,
-  ADC,
-  ROR,
-  ADC,
-  BVS,
-  ADC,
-  ADC,
-  ADC,
-  STZ,
-  ADC,
-  ROR,
-  ADC,
-  SEI,
-  ADC,
-  PLY,
-  TDC,
-  JMP,
-  ADC,
-  ROR,
-  ADC,
-  BRA,
-  STA,
-  BRL,
-  STA,
-  STY,
-  STA,
-  STX,
-  STA,
-  DEY,
-  BIT,
-  TXA,
-  PHB,
-  STY,
-  STA,
-  STX,
-  STA,
-  BCC,
-  STA,
-  STA,
-  STA,
-  STY,
-  STA,
-  STX,
-  STA,
-  TYA,
-  STA,
-  TXS,
-  TXY,
-  STZ,
-  STA,
-  STZ,
-  STA,
-  LDY,
-  LDA,
-  LDX,
-  LDA,
-  LDY,
-  LDA,
-  LDX,
-  LDA,
-  TAY,
-  LDA,
-  TAX,
-  PLB,
-  LDY,
-  LDA,
-  LDX,
-  LDA,
-  BCS,
-  LDA,
-  LDA,
-  LDA,
-  LDY,
-  LDA,
-  LDX,
-  LDA,
-  CLV,
-  LDA,
-  TSX,
-  TYX,
-  LDY,
-  LDA,
-  LDX,
-  LDA,
-  CPY,
-  CMP,
-  REP,
-  CMP,
-  CPY,
-  CMP,
-  DEC,
-  CMP,
-  INY,
-  CMP,
-  DEX,
-  WAI,
-  CPY,
-  CMP,
-  DEC,
-  CMP,
-  BNE,
-  CMP,
-  CMP,
-  CMP,
-  PEI,
-  CMP,
-  DEC,
-  CMP,
-  CLD,
-  CMP,
-  PHX,
-  STP,
-  JML,
-  CMP,
-  DEC,
-  CMP,
-  CPX,
-  SBC,
-  SEP,
-  SBC,
-  CPX,
-  SBC,
-  INC,
-  SBC,
-  INX,
-  SBC,
-  NOP,
-  XBA,
-  CPX,
-  SBC,
-  INC,
-  SBC,
-  BEQ,
-  SBC,
-  SBC,
-  SBC,
-  PEA,
-  SBC,
-  INC,
-  SBC,
-  SED,
-  SBC,
-  PLX,
-  XCE,
-  JSR,
-  SBC,
-  INC,
-  SBC
+const opcode_t __far opcodes[256] = {
+    {BRK, d,           2},
+    {ORA, dxi,         2},
+    {COP, d,           2},
+    {ORA, sr,          2},
+    {TSB, d,           2},
+    {ORA, d,           2},
+    {ASL, d,           2},
+    {ORA, dil,         2},
+    {PHP, implied,     1},
+    {ORA, immediate_m, 2},
+    {ASL, implied,     1},
+    {PHD, implied,     1},
+    {TSB, absolute,    3},
+    {ORA, absolute,    3},
+    {ASL, absolute,    3},
+    {ORA, al,          4},
+    {BPL, pcr,         2},
+    {ORA, dix,         2},
+    {ORA, di,          2},
+    {ORA, srix,        2},
+    {TRB, d,           2},
+    {ORA, dxx,         2},
+    {ASL, dxx,         2},
+    {ORA, dixl,        2},
+    {CLC, implied,     1},
+    {ORA, axy,         3},
+    {INC, implied,     1},
+    {TCS, implied,     1},
+    {TRB, absolute,    3},
+    {ORA, axx,         3},
+    {ASL, axx,         3},
+    {ORA, alxx,        4},
+    {JSR, absolute,    3},
+    {AND, dxi,         2},
+    {JSL, al,          4},
+    {AND, sr,          2},
+    {BIT, d,           2},
+    {AND, d,           2},
+    {ROL, d,           2},
+    {AND, dil,         2},
+    {PLP, implied,     1},
+    {AND, immediate_m, 2},
+    {ROL, implied,     1},
+    {PLD, implied,     1},
+    {BIT, absolute,    3},
+    {AND, absolute,    3},
+    {ROL, absolute,    3},
+    {AND, al,          4},
+    {BMI, pcr,         2},
+    {AND, dix,         2},
+    {AND, di,          2},
+    {AND, srix,        2},
+    {BIT, dxx,         2},
+    {AND, dxx,         2},
+    {ROL, dxx,         2},
+    {AND, dixl,        2},
+    {SEC, implied,     1},
+    {AND, axy,         3},
+    {DEC, implied,     1},
+    {TSC, implied,     1},
+    {BIT, axx,         3},
+    {AND, axx,         3},
+    {ROL, axx,         3},
+    {AND, alxx,        4},
+    {RTI, implied,     1},
+    {EOR, dxi,         2},
+    {WDM, immediate8,  2},
+    {EOR, sr,          2},
+    {MVP, blockmove,   3},
+    {EOR, d,           2},
+    {LSR, d,           2},
+    {EOR, dil,         2},
+    {PHA, implied,     1},
+    {EOR, immediate_m, 2},
+    {LSR, implied,     1},
+    {PHK, implied,     1},
+    {JMP, absolute,    3},
+    {EOR, absolute,    3},
+    {LSR, absolute,    3},
+    {EOR, al,          4},
+    {BVC, pcr,         2},
+    {EOR, dix,         2},
+    {EOR, di,          2},
+    {EOR, srix,        2},
+    {MVN, blockmove,   3},
+    {EOR, dxx,         2},
+    {LSR, dxx,         2},
+    {EOR, dixl,        2},
+    {CLI, implied,     1},
+    {EOR, axy,         3},
+    {PHY, implied,     1},
+    {TCD, implied,     1},
+    {JMP, al,          4},
+    {EOR, axx,         3},
+    {LSR, axx,         3},
+    {EOR, alxx,        4},
+    {RTS, implied,     1},
+    {ADC, dxi,         2},
+    {PER, pcrl,        3},
+    {ADC, sr,          2},
+    {STZ, d,           2},
+    {ADC, d,           2},
+    {ROR, d,           2},
+    {ADC, dil,         2},
+    {PLA, implied,     1},
+    {ADC, immediate_m, 2},
+    {ROR, implied,     1},
+    {RTL, implied,     1},
+    {JMP, ai,          3},
+    {ADC, absolute,    3},
+    {ROR, absolute,    3},
+    {ADC, al,          4},
+    {BVS, pcr,         2},
+    {ADC, dix,         2},
+    {ADC, di,          2},
+    {ADC, srix,        2},
+    {STZ, dxx,         2},
+    {ADC, dxx,         2},
+    {ROR, dxx,         2},
+    {ADC, dixl,        2},
+    {SEI, implied,     1},
+    {ADC, axy,         3},
+    {PLY, implied,     1},
+    {TDC, implied,     1},
+    {JMP, axi,         3},
+    {ADC, axx,         3},
+    {ROR, axx,         3},
+    {ADC, alxx,        4},
+    {BRA, pcr,         2},
+    {STA, dxi,         2},
+    {BRL, pcrl,        3},
+    {STA, sr,          2},
+    {STY, d,           2},
+    {STA, d,           2},
+    {STX, d,           2},
+    {STA, dil,         2},
+    {DEY, implied,     1},
+    {BIT, immediate_m, 2},
+    {TXA, implied,     1},
+    {PHB, implied,     1},
+    {STY, absolute,    3},
+    {STA, absolute,    3},
+    {STX, absolute,    3},
+    {STA, al,          4},
+    {BCC, pcr,         2},
+    {STA, dix,         2},
+    {STA, di,          2},
+    {STA, srix,        2},
+    {STY, dxx,         2},
+    {STA, dxx,         2},
+    {STX, dxy,         2},
+    {STA, dixl,        2},
+    {TYA, implied,     1},
+    {STA, axy,         3},
+    {TXS, implied,     1},
+    {TXY, implied,     1},
+    {STZ, absolute,    3},
+    {STA, axx,         3},
+    {STZ, axx,         3},
+    {STA, alxx,        4},
+    {LDY, immediate_x, 2},
+    {LDA, dxi,         2},
+    {LDX, immediate_x, 2},
+    {LDA, sr,          2},
+    {LDY, d,           2},
+    {LDA, d,           2},
+    {LDX, d,           2},
+    {LDA, dil,         2},
+    {TAY, implied,     1},
+    {LDA, immediate_m, 2},
+    {TAX, implied,     1},
+    {PLB, implied,     1},
+    {LDY, absolute,    3},
+    {LDA, absolute,    3},
+    {LDX, absolute,    3},
+    {LDA, al,          4},
+    {BCS, pcr,         2},
+    {LDA, dix,         2},
+    {LDA, di,          2},
+    {LDA, srix,        2},
+    {LDY, dxx,         2},
+    {LDA, dxx,         2},
+    {LDX, dxy,         2},
+    {LDA, dixl,        2},
+    {CLV, implied,     1},
+    {LDA, axy,         3},
+    {TSX, implied,     1},
+    {TYX, implied,     1},
+    {LDY, axx,         3},
+    {LDA, axx,         3},
+    {LDX, axy,         3},
+    {LDA, alxx,        4},
+    {CPY, immediate_x, 2},
+    {CMP, dxi,         2},
+    {REP, immediate8,  2},
+    {CMP, sr,          2},
+    {CPY, d,           2},
+    {CMP, d,           2},
+    {DEC, d,           2},
+    {CMP, dil,         2},
+    {INY, implied,     1},
+    {CMP, immediate_m, 2},
+    {DEX, implied,     1},
+    {WAI, implied,     1},
+    {CPY, absolute,    3},
+    {CMP, absolute,    3},
+    {DEC, absolute,    3},
+    {CMP, al,          4},
+    {BNE, pcr,         2},
+    {CMP, dix,         2},
+    {CMP, di,          2},
+    {CMP, srix,        2},
+    {PEI, d,           2},
+    {CMP, dxx,         2},
+    {DEC, dxx,         2},
+    {CMP, dixl,        2},
+    {CLD, implied,     1},
+    {CMP, axy,         3},
+    {PHX, implied,     1},
+    {STP, implied,     1},
+    {JML, ai,          3},
+    {CMP, axx,         3},
+    {DEC, axx,         3},
+    {CMP, alxx,        4},
+    {CPX, immediate_x, 2},
+    {SBC, dxi,         2},
+    {SEP, immediate8,  2},
+    {SBC, sr,          2},
+    {CPX, d,           2},
+    {SBC, d,           2},
+    {INC, d,           2},
+    {SBC, di,          2},
+    {INX, implied,     1},
+    {SBC, immediate_m, 2},
+    {NOP, implied,     1},
+    {XBA, implied,     1},
+    {CPX, absolute,    3},
+    {SBC, absolute,    3},
+    {INC, absolute,    3},
+    {SBC, al,          4},
+    {BEQ, pcr,         2},
+    {SBC, dix,         2},
+    {SBC, di,          2},
+    {SBC, srix,        2},
+    {PEA, immediate16, 3},
+    {SBC, dxx,         2},
+    {INC, dxx,         2},
+    {SBC, dixl,        2},
+    {SED, implied,     1},
+    {SBC, axy,         3},
+    {PLX, implied,     1},
+    {XCE, implied,     1},
+    {JSR, axi,         3},
+    {SBC, axx,         3},
+    {INC, axx,         3},
+    {SBC, alxx,        4}
 };
 
-const operand_am_t __far opcode_am[] = {
-  d,
-  dxi,
-  d,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  d,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  absolute,
-  axx,
-  axx,
-  alxx,
-  absolute,
-  dxi,
-  al,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  dxx,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  axx,
-  axx,
-  axx,
-  alxx,
-  implied,
-  dxi,
-  immediate8,
-  sr,
-  blockmove,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  blockmove,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  al,
-  axx,
-  axx,
-  alxx,
-  implied,
-  dxi,
-  pcrl,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  ai,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  dxx,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  axi,
-  axx,
-  axx,
-  alxx,
-  pcr,
-  dxi,
-  pcrl,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  dxx,
-  dxx,
-  dxy,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  absolute,
-  axx,
-  axx,
-  alxx,
-  immediate_x,
-  dxi,
-  immediate_x,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  dxx,
-  dxx,
-  dxy,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  axx,
-  axx,
-  axy,
-  alxx,
-  immediate_x,
-  dxi,
-  immediate8,
-  sr,
-  d,
-  d,
-  d,
-  dil,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  d,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  ai,
-  axx,
-  axx,
-  alxx,
-  immediate_x,
-  dxi,
-  immediate8,
-  sr,
-  d,
-  d,
-  d,
-  di,
-  implied,
-  immediate_m,
-  implied,
-  implied,
-  absolute,
-  absolute,
-  absolute,
-  al,
-  pcr,
-  dix,
-  di,
-  arix,
-  immediate16,
-  dxx,
-  dxx,
-  dixl,
-  implied,
-  axy,
-  implied,
-  implied,
-  axi,
-  axx,
-  axx,
-  alxx
-};
-
-/* Opcode lengths for each instruction type */
-const unsigned int __far am_lengths[] = {
-  2,    // immediate8
-  3,    // immediate16
-  3,    // absolute
-  4,    // al
-  2,    // d
-  1,    // implied
-  2,    // dix
-  2,    // dixl
-  2,    // dxi
-  2,    // dxx
-  2,    // dxy
-  3,    // axx
-  4,    // alxx
-  3,    // axy
-  2,    // pcr
-  3,    // pcrl
-  3,    // ai
-  2,    // di
-  2,    // dil
-  3,    // axi
-  2,    // sr
-  2,    // arix
-  3,    // blockmove
-  2,    // immediate_x
-  2 ,   // immediate_m
-};
+operand_t operand;
+operand_type_t operand_type;
+unsigned int operand_size;

@@ -57,20 +57,19 @@ void monitor_loop(void)
     reset_scanner();
     end_loc.ptr = start_loc.ptr;
 
-    int token = get_token();
-
-    if (token == TK_LITERAL) {
+    get_token(TH_NONE);
+    if ((token_type == TK_CONST8) || (token_type == TK_CONST16)) {
       if (parse_range(&start_loc, &end_loc)) {
         parse_error(ADDRESS_PARSE_ERROR);
         continue;
       }
 
-      token = get_token();
+      get_token(TH_NONE);
     }
 
-    if (token == TK_EOL) {
+    if (token_type == TK_EOL) {
       dump_memory();
-    } else if (token == TK_IDENTIFIER) {
+    } else if (token_type == TK_COMMAND) {
       unsigned char cmd = toupper(*token_ptr);
 
       switch (cmd) {
@@ -90,11 +89,11 @@ void monitor_loop(void)
         parse_error(UNKNOWN_COMMAND);
         break;
       }
-    } else if (token == TK_COLON) {
+    } else if (token_type == TK_COLON) {
       set_memory();
-    } else if (token == TK_POUND) {
+    } else if (token_type == TK_POUND) {
       show_registers();
-    } else if (token == TK_EXCLAMATION) {
+    } else if (token_type == TK_EXCLAMATION) {
       start_assembler();
     } else {
       parse_error(UNKNOWN_COMMAND);

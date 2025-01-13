@@ -3,6 +3,8 @@
 #include "globals.h"
 #include <stdint.h>
 
+typedef value_t operand_t;
+
 typedef enum {
   ADC,
   AND,
@@ -121,16 +123,21 @@ typedef enum {
   dil,
   axi,
   sr,
-  arix,
+  srix,
   blockmove,
   immediate_x,
   immediate_m
-} operand_am_t;
+} operand_type_t;
 
-typedef unsigned char opcode_t;
+typedef struct {
+  instr_t instr;
+  operand_type_t operand_type;
+  unsigned int size;
+} opcode_t;
 
-extern const operand_am_t __far opcode_am[];
-extern const char __far instr_mnemonics[][4];
-extern const instr_t __far opcode_instr[];
-extern const operand_am_t __far opcode_am[];
-extern const unsigned int __far am_lengths[];
+extern operand_t operand;
+extern operand_type_t operand_type;
+extern unsigned int operand_size;
+
+extern const char __far mnemonics[][4];
+extern const opcode_t __far opcodes[256];

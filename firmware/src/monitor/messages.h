@@ -4,6 +4,7 @@
 
 extern const unsigned char __far ADDRESS_PARSE_ERROR[];
 extern const unsigned char __far COLON_EXPECTED[];
+extern const unsigned char __far INTERNAL_ERROR[];
 extern const unsigned char __far INVALID_OPERAND[];
 extern const unsigned char __far UNEXPECTED_TOKEN[];
 extern const unsigned char __far UNKNOWN_COMMAND[];

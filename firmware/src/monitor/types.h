@@ -17,10 +17,12 @@ typedef unsigned int mem_loc_t;
 typedef unsigned int mem_bank_t;
 typedef unsigned char __far *mem_ptr_t;
 
-/**
- * This struct is used to represent memory addresses
- * entered by the user as part of a monitor command.
- */
+typedef union {
+    unsigned char b[4];
+    unsigned int w[2];
+    unsigned long l;
+} value_t;
+
 typedef union {
   struct {
     mem_loc_t loc;
@@ -28,20 +30,3 @@ typedef union {
   };
   mem_ptr_t ptr;
 } mem_addr_t;
-
-typedef enum {
-  TK_ERROR1,
-  TK_EOL,
-  TK_LITERAL,
-  TK_STRING,
-  TK_IDENTIFIER,
-  TK_PERIOD,
-  TK_SLASH,
-  TK_COLON,
-  TK_POUND,
-  TK_COMMA,
-  TK_LPAREN,
-  TK_RPAREN,
-  TK_EQUALS,
-  TK_EXCLAMATION
-} token_t;

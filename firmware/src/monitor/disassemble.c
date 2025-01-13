@@ -13,9 +13,9 @@
 
 static void update_mx(const mem_ptr_t ptr)
 {
-  opcode_t opcode = *ptr;
+  unsigned int index = *ptr;
 
-  switch (opcode) {
+  switch (index) {
   case 0xC2: // REP
     if (ptr[1] & PREG_M) {
       m_width = 1;
@@ -60,15 +60,28 @@ static void print_immediate_operand(mem_ptr_t ptr, unsigned int len)
   print_constant(ptr, len);
 }
 
+static mem_loc_t calculate_relative_target(mem_addr_t ptr, const operand_type_t type)
+{
+  mem_ptr_t operand_loc = ptr.ptr + 1;
+
+  if (type == pcrl) {
+    int offset = *((int *) operand_loc);
+    return ptr.loc + offset + 3;
+  } else {
+    signed char offset = (signed char) *operand_loc;
+    return ptr.loc + offset + 2;
+  }
+}
+
 /**
  * Disassemble the instruction at the given address and return the number of byte disassembled.
  */
-static unsigned int print_instruction(mem_addr_t ptr)
+unsigned int print_instruction(mem_addr_t ptr, unsigned int m_width, unsigned int x_width)
 {
-  opcode_t opcode = *ptr.ptr;
-  instr_t instr = opcode_instr[opcode];
-  operand_am_t am = opcode_am[opcode];
-  unsigned int len = am_lengths[am];
+  const unsigned char opcode_value = *ptr.ptr;
+  const opcode_t *opcode = &opcodes[opcode_value];
+  const operand_type_t am = opcode->operand_type;
+  unsigned int len = opcode->size;
 
   if ((am == immediate_m) && (!m_width)) len++;
   if ((am == immediate_x) && (!x_width)) len++;
@@ -79,13 +92,9 @@ static unsigned int print_instruction(mem_addr_t ptr)
     printf("%02X ", ptr.ptr[i]);
   }
 
-  if (len < 4) {
-    print_spaces((4 - len) * 3);
-  }
+  if (len < 4) print_spaces((4 - len) * 3);
 
-  printf("%s   ", instr_mnemonics[instr]);
-
-  int offset;
+  printf("%s   ", mnemonics[opcode->instr]);
 
   switch (am) {
   case immediate8:
@@ -135,12 +144,8 @@ static unsigned int print_instruction(mem_addr_t ptr)
     putc_seriala('Y');
     break;
   case pcr:
-    offset = (int)ptr.ptr[1] + 2;
-    printf("%04X", ptr.loc + offset);
-    break;
   case pcrl:
-    offset = *((int *)ptr.ptr + 1) + 2;
-    printf("%04X", ptr.loc + offset);
+    printf("%04X", calculate_relative_target(ptr, am));
     break;
   case ai:
   case di:
@@ -158,7 +163,7 @@ static unsigned int print_instruction(mem_addr_t ptr)
     putc_seriala(',');
     putc_seriala('S');
     break;
-  case arix:
+  case srix:
     putc_seriala('(');
     print_constant(ptr.ptr, len);
     printf(",S),Y");
@@ -188,6 +193,6 @@ void disassemble(void)
 
   while (count--) {
     update_mx(start_loc.ptr);
-    start_loc.loc += print_instruction(start_loc);
+    start_loc.loc += print_instruction(start_loc, m_width, x_width);
   }
 }

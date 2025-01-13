@@ -3,12 +3,13 @@
  * limited set of token types: hexadecimal literals, identifiers, and string literals, plus a
  * few single-character tokens.
  */
-#include <ctype.h>
-#include <stdio.h>
-#include <calypsi/intrinsics65816.h>
-#include <kernel/console.h>
 #include "parser.h"
 #include "globals.h"
+#include "types.h"
+#include <calypsi/intrinsics65816.h>
+#include <ctype.h>
+#include <kernel/console.h>
+#include <stdio.h>
 
 SIMPLE_CALL int getc_seriala(void);
 SIMPLE_CALL void putc_seriala(char character);
@@ -17,6 +18,7 @@ token_t token_type;
 char __near *token_ptr;
 unsigned int token_len;
 unsigned int token_index;
+value_t token_value;
 
 // The input buffer
 #define IBUFFSZ 256
@@ -25,6 +27,50 @@ static char __near input_buffer[IBUFFSZ];
 // Internal pointer to current scanning position in the input buffer
 #define IBUFFSZ 256
 static char __near *ibuffp;
+
+/**
+ * Convert a constant token to its numeric equivalent.
+ */
+static void set_token_value(void)
+{
+  unsigned int len = token_len;
+  char __near *ptr = token_ptr;
+  char c;
+
+  token_value.l = 0;
+
+  for (unsigned int i = 0 ; i < token_len ; i++, ptr++) {
+    c = *ptr;
+    // if alphanumeric, uppercase it
+    if (c & 0x40) c &= ~0x20;
+
+    token_value.l <<= 4;
+
+    if ((c >= '0') && (c <= '9'))
+      token_value.l += (c - '0');
+    else
+      token_value.l += (c - 'A' + 10);
+  }
+}
+
+/* Try to promote an identifier to SREG/XREG/YREG */
+static void promote_single_char(void)
+{
+  switch (*token_ptr) {
+  case 'S':
+    token_type = TK_SREG;
+    break;
+  case 'X':
+    token_type = TK_XREG;
+    break;
+  case 'Y':
+    token_type = TK_YREG;
+    break;
+  default:
+    token_type = TK_COMMAND;
+    break;
+  }
+}
 
 /**
  * Read a line of input to input_buffer. Input stops when ENTER
@@ -60,22 +106,29 @@ unsigned int read_line()
 
 /**
  * Reset the scanner to point to the start of the input buffer.
+ * Returns a pointer to the start of the buffer.
  */
-void reset_scanner(void) { ibuffp = input_buffer; }
+char __near *reset_scanner(void) { return ibuffp = input_buffer; }
 
 /**
- * "Put back" the last token by Rewinding ibuffp back to token_ptr.
+ * "Put back" the last token by rewinding ibuffp back to token_ptr.
  */
 void put_token(void) { ibuffp = token_ptr; }
 
 /**
  * Scan an input buffer starting at ibuffp and determine the next token.
- *
  * If no valid token is found -1 will be returned. Otherwise, the token type
  * is returned, and the token information will be in token_type, token_ptr,
  * and token_len.
+ *
+ * The hints are a bitmask controlling certain behavior of the parser:
+ *
+ * TK_NO_CONST
+ * Do not allow constants. Interpret them as identifiers instead. This
+ * is useful if an expected identifier starts with valid hexadecimal chars,
+ * such as 'BPL'.
  */
-token_t get_token(void)
+token_t get_token(token_hints_t hints)
 {
   // skip any whitespace
   while (*ibuffp && isspace(*ibuffp)) {
@@ -95,10 +148,11 @@ token_t get_token(void)
   if (!c) {
     token_type = TK_EOL;
     return TK_EOL;
-  } else if (isxdigit(c)) {
-    token_type = TK_LITERAL;
+  } else if (isxdigit(c) && !(hints & TK_NO_CONST)) {
+    token_type = TK_CONST8;
     token_len = 1;
   } else if (isalpha(c)) {
+    *ibuffp = toupper(c);
     token_type = TK_IDENTIFIER;
     token_len = 1;
   } else if (c == '\'') {
@@ -116,6 +170,10 @@ token_t get_token(void)
       token_type = TK_LPAREN;
     } else if (c == ')') {
       token_type = TK_RPAREN;
+    } else if (c == '[') {
+      token_type = TK_LBRACKET;
+    } else if (c == ']') {
+      token_type = TK_RBRACKET;
     } else if (c == '.') {
       token_type = TK_PERIOD;
     } else if (c == '=') {
@@ -142,14 +200,44 @@ token_t get_token(void)
   while ((c = *ibuffp)) {
     if (token_type == TK_STRING) {
       token_len++;
-    } else if ((token_type == TK_LITERAL) && (token_len <= 4) && isxdigit(c)) {
+    } else if ((token_type == TK_IDENTIFIER) && (token_len < 255) && isalnum(c)) {
+      *ibuffp = toupper(c);
       token_len++;
-    } else if ((token_type == TK_IDENTIFIER) && (token_len <= 255) && isalnum(c)) {
-      token_len++;
+    } else if (isxdigit(c)) {
+      if (token_type == TK_CONST8) {
+        if (token_len == 2) token_type = TK_CONST16;
+        token_len++;
+      } else if (token_type == TK_CONST16) {
+        if (token_len == 4) token_type = TK_CONST24;
+        token_len++;
+      } else if (token_type == TK_CONST24) {
+        if (token_len == 6) break;
+        token_len++;
+      } else {
+        break;
+      }
     } else {
       break;
     }
     ++ibuffp;
+  }
+
+  switch (token_type) {
+  case TK_CONST8:
+  case TK_CONST16:
+  case TK_CONST24:
+    set_token_value();
+    break;
+  case TK_IDENTIFIER:
+    if (token_len == 1)
+      promote_single_char();
+    else if (token_len == 3)
+      token_type = TK_MNEMONIC;
+    else
+      token_type = -1;
+    break;
+  default:
+    break;
   }
 
   return token_type;
@@ -161,37 +249,6 @@ token_t get_token(void)
 void parse_error(const unsigned char __far *reason)
 {
   printf("\nError at character position %d: %s\n", ibuffp - input_buffer + 1, reason);
-}
-
-/**
- * Return the value of a TK_LITERAL token as a uint8.
- */
-unsigned char token_to_uint8(void) { return (unsigned char)token_to_uint16(); }
-
-/**
- * Return the value of a TK_LITERAL token as a uint16.
- */
-unsigned int token_to_uint16(void)
-{
-  unsigned int val = 0;
-  unsigned int len = token_len;
-  char __near *ptr = token_ptr;
-
-  while (len--) {
-    char c = *ptr++;
-
-    // if alphanumeric, uppercase it
-    if (c & 0x40) c &= ~0x20;
-
-    val <<= 4;
-
-    if ((c >= '0') && (c <= '9'))
-      val += (c - '0');
-    else
-      val += (c - 'A' + 10);
-  }
-
-  return val;
 }
 
 /**
@@ -207,46 +264,50 @@ unsigned int token_to_uint16(void)
  */
 int parse_address(mem_addr_t *addr)
 {
-  const unsigned int val = token_to_uint16();
-  token_t token = get_token();
+  const unsigned int first_value = token_value.w[0];
+  token_t first_type = token_type;
 
-  if (token == TK_SLASH) {
-    if (val > 255) return -1;
-    addr->bank = val;
+  switch (get_token(TH_NONE)) {
+  case TK_SLASH:
+    if (first_type != TK_CONST8) return -1;
+    addr->bank = first_value;
 
-    token = get_token();
-
-    // entering "XX/" can be used to just set the bank, but only at the end of the line.
-    if (token == TK_EOL) return 0;
-    // Otherwise the next token must be a literal
-    if (token != TK_LITERAL) return -1;
-
-    addr->loc = token_to_uint16();
-  } else {
-    addr->loc = val;
+    switch (get_token(TH_NONE)) {
+    case TK_EOL: // entering "XX/" can be used to just set the bank, but only at the end of the line.
+      return 0;
+    case TK_CONST8:
+    case TK_CONST16:
+      addr->loc = token_value.w[0];
+      return 0;
+    default:
+      return -1;
+    }
+  default:
+    addr->loc = first_value;
     put_token();
+    return 0;
   }
-
-  return 0;
 }
 
 int parse_range(mem_addr_t *start, mem_addr_t *end)
 {
   if (parse_address(start)) return -1;
-
   end->ptr = start->ptr;
 
-  token_t token = get_token();
-  if (token == TK_EOL) {
+  switch (get_token(TH_NONE)) {
+  case TK_EOL:
     return 0;
-  } else if (token == TK_PERIOD) {
-    if ((get_token() != TK_LITERAL) || parse_address(end)) {
+  case TK_PERIOD:
+    switch (get_token(TH_NONE)) {
+    case TK_CONST8:
+    case TK_CONST16:
+      end->loc = token_value.w[0];
+      return 0;
+    default:
       return -1;
     }
-  } else {
+  default:
     put_token();
     return 0;
   }
-
-  return 0;
 }
