@@ -1,17 +1,7 @@
 #pragma once
 
 #include <stddef.h>
-
-// Make VSCode stop erroring on custom Calypsi type qualifiers
-#ifdef __INTELLISENSE__
-#define __tiny
-#define __near
-#define __far
-#define __far24
-#define SIMPLE_CALL extern
-#else
-#define SIMPLE_CALL __attribute__((simple_call))
-#endif
+#include <kernel/types.h>
 
 typedef unsigned int mem_loc_t;
 typedef unsigned int mem_bank_t;
