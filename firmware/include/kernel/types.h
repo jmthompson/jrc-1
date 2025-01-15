@@ -6,7 +6,7 @@
 #define __near
 #define __far
 #define __far24
-#define SIMPLE_CALL extern
+#define SIMPLE_CALL
 #else
 #define SIMPLE_CALL __attribute__((simple_call))
 #endif
