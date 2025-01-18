@@ -4,9 +4,9 @@
  */
 
 #include <errno.h>
-#include <kernel/char_device.h>
 #include <kernel/console.h>
 #include <kernel/fs.h>
+#include <kernel/types.h>
 
 static const char __far reset_command[] = "\ec\e[7h\e)0";
 static const char __far cls_command[] = "\e[2J";
@@ -19,11 +19,7 @@ int console_poll(struct inode *, struct file *);
 int console_ioctl(struct inode *, struct file *, int, void *);
 
 struct file_ops console_ops = {
-    .seek = console_seek,
-    .read = console_read,
-    .write = console_write,
-    .poll = console_poll,
-    .ioctl = console_ioctl
+    .seek = console_seek, .read = console_read, .write = console_write, .poll = console_poll, .ioctl = console_ioctl
 };
 
 void console_init(void)
@@ -33,44 +29,18 @@ void console_init(void)
   console_clear();
 }
 
-void console_reset(void)
-{
-  printf(reset_command);
-}
+void console_reset(void) { kprintf(reset_command); }
 
-void console_clear(void)
-{
-  printf(cls_command);
-}
+void console_clear(void) { kprintf(cls_command); }
 
-void console_clear_line(void)
-{
-  printf(cll_command);
-}
+void console_clear_line(void) { kprintf(cll_command); }
 
-int console_seek(struct inode *inode, struct file *file)
-{
-  return 0;
-}
+int console_seek(struct inode *inode, struct file *file) { return 0; }
 
-int console_read(struct inode *inode, struct file *file)
-{
-  return 0;
-}
+int console_read(struct inode *inode, struct file *file) { return 0; }
 
-int console_write(struct inode *inode, struct file *file)
-{
-  return 0;
-}
+int console_write(struct inode *inode, struct file *file) { return 0; }
 
-int console_poll(struct inode *inode, struct file *file)
-{
-  return 0;
-}
+int console_poll(struct inode *inode, struct file *file) { return 0; }
 
-int console_ioctl(
-    struct inode *inode, struct file *file, int request, void *data
-)
-{
-  return -ENOTSUP;
-}
+int console_ioctl(struct inode *inode, struct file *file, int request, void *data) { return -ENOTSUP; }

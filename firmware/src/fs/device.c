@@ -1,58 +1,33 @@
 #include <errno.h>
-#include <stdlib.h>
+#include <kernel/types.h>
 #include <kernel/console.h>
-#include <kernel/block_device.h>
-#include <kernel/char_device.h>
+#include <kernel/device.h>
 
-struct block_dev *block_devices;
-struct char_dev *char_devices;
+struct block_dev block_devices[MAX_BLOCK_DEV];
+struct char_dev char_devices[MAX_CHAR_DEV];
 
-struct block_dev *find_block_device(unsigned int major)
+void device_init(void)
 {
-    struct block_dev *p = block_devices;
 
-    while (p != NULL) {
-      if (p->major == major) return p;
-      p = p->next;
-    }
-
-    return NULL;
 }
-
 int register_block_device(unsigned int major, struct block_ops *ops, void *privdata)
 {
-    if (find_block_device(major) != NULL) return -EINVAL;
+  if (block_devices[major].ops != NULL) return -EINVAL;
 
-    struct block_dev *p = malloc(sizeof(struct block_dev));
-    if (!p) return -ENOMEM;
+  block_devices[major].major = major;
+  block_devices[major].ops = ops;
+  block_devices[major].privdata = privdata;
 
-    p->next = block_devices;
-    block_devices = p;
-
-    return 0;
-}
-
-struct char_dev *find_char_device(unsigned int major)
-{
-    struct char_dev *p = char_devices;
-
-    while (p != NULL) {
-      if (p->major == major) return p;
-      p = p->next;
-    }
-
-    return NULL;
+  return 0;
 }
 
 int register_char_device(unsigned int major, struct file_ops *ops, void *privdata)
 {
-    if (find_char_device(major) != NULL) return -EINVAL;
+  if (char_devices[major].ops != NULL) return -EINVAL;
 
-    struct char_dev *p = malloc(sizeof(struct char_dev));
-    if (!p) return -ENOMEM;
+  char_devices[major].major = major;
+  char_devices[major].ops = ops;
+  char_devices[major].privdata = privdata;
 
-    p->next = char_devices;
-    char_devices = p;
-
-    return 0;
+  return 0;
 }
