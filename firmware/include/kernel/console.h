@@ -1,4 +1,6 @@
-#include <kernel/printf.h>
+#pragma once
+
+#include <kernel/types.h>
 
 #define CONSOLE_MAJOR   0
 
@@ -21,7 +23,11 @@
 #define SHIFT_OUT     14
 #define SHIFT_IN      15
 
-extern void console_init(void);
-extern void console_reset(void);
-extern void console_clear(void);
-extern void console_clear_line(void);
+int kprintf(const char* format, ...);
+int ksprintf(char* buffer, const char* format, ...);
+int ksnprintf(char* buffer, size_t count, const char* format, ...);
+
+void console_init(void);
+void console_reset(void);
+void console_clear(void);
+void console_clear_line(void);
