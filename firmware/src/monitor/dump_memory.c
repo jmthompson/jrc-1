@@ -13,14 +13,14 @@ void dump_memory(void)
     if (end_loc.loc < row_end) row_end = end_loc.loc;
     ++row_end;
 
-    printf("%02x/%04X:", start_loc.bank, start_loc.loc);
+    kprintf("%02x/%04X:", start_loc.bank, start_loc.loc);
 
     while (start_loc.loc != row_end) {
-      printf(" %02X", *start_loc.ptr);
+      kprintf(" %02X", *start_loc.ptr);
       ++start_loc.loc;
     }
 
-    printf(" | ");
+    kprintf(" | ");
 
     start_loc.loc = row_start;
     while (start_loc.loc != row_end) {

@@ -22,7 +22,6 @@ void set_memory(void)
       return;
     default:
       parse_error(UNEXPECTED_TOKEN);
-      printf("tt = %d\n", token_type);
       return;
     }
   }

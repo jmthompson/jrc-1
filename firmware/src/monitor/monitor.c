@@ -1,9 +1,10 @@
-#include <ctype.h>
-#include <kernel/console.h>
 #include "commands.h"
 #include "globals.h"
-#include "parser.h"
 #include "messages.h"
+#include "parser.h"
+#include <ctype.h>
+#include <kernel/console.h>
+#include <kernel/heap.h>
 
 const char __far brk_banner[] = "*** Break ***\n\0";
 const char __far nmi_banner[] = "*** NMI ***\n\0";
@@ -42,7 +43,7 @@ static void capture_registers(void)
 
 static void show_registers(void)
 {
-  printf(
+  kprintf(
       "A=%04X X=%04X Y=%04X P=%02X S=%04X B=%02X D=%04X PC=%04X K=%02X m=%1d x=%1d\n", a_reg, x_reg, y_reg, p_reg, s_reg, b_reg,
       d_reg, pc_reg, k_reg, m_width, x_width
   );
@@ -51,7 +52,7 @@ static void show_registers(void)
 void monitor_loop(void)
 {
   while (1) {
-    printf("\n* ");
+    kprintf("\n* ");
     read_line();
     putc_seriala('\n');
     reset_scanner();
@@ -85,6 +86,9 @@ void monitor_loop(void)
       case 'R':
         set_register();
         break;
+      case 'H':
+        dump_heap();
+        break;
       default:
         parse_error(UNKNOWN_COMMAND);
         break;
@@ -104,7 +108,7 @@ void monitor_loop(void)
 void monitor_brk(void)
 {
   capture_registers();
-  printf(brk_banner);
+  kprintf(brk_banner);
   show_registers();
   monitor_loop();
 }
@@ -112,7 +116,7 @@ void monitor_brk(void)
 void monitor_nmi(void)
 {
   capture_registers();
-  printf(nmi_banner);
+  kprintf(nmi_banner);
   show_registers();
   monitor_loop();
 }
@@ -122,33 +126,6 @@ void monitor_start(void)
   start_loc.ptr = end_loc.ptr = 0;
   m_width = x_width = 0;
 
-  printf(start_banner);
+  kprintf(start_banner);
   monitor_loop();
 }
-
-/*
-;;
-; Perform a simulated JSL to the code at start_loc. The code will
-; be called in full 16-bit mode.
-;
-run_code:
-                phk
-                pea             .loword(@ret)-1
-                shortm
-                lda             start_loc+2
-                pha
-                longm
-                lda             start_loc
-                dec
-                pha
-                lda             a_reg
-                ldx             x_reg
-                ldy             y_reg
-                rtl
-ret$:           longmx
-                sta             a_reg
-                stx             x_reg
-                sty             y_reg
-                rts
-
-*/

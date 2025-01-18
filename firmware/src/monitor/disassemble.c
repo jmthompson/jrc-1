@@ -13,22 +13,14 @@
 
 static void update_mx(const mem_ptr_t ptr)
 {
-  unsigned int index = *ptr;
-
-  switch (index) {
+  switch (ptr[0]) {
   case 0xC2: // REP
-    if (ptr[1] & PREG_M) {
-      m_width = 1;
-    } else {
-      m_width = 0;
-    }
+    if (ptr[1] & PREG_M) m_width = 0;
+    if (ptr[1] & PREG_X) x_width = 0;
     break;
   case 0xE2: // SEP
-    if (ptr[1] & PREG_X) {
-      x_width = 1;
-    } else {
-      x_width = 0;
-    }
+    if (ptr[1] & PREG_M) m_width = 1;
+    if (ptr[1] & PREG_X) x_width = 1;
     break;
   case 0xFB: // XCE
     m_width = x_width = 1;
@@ -51,7 +43,7 @@ static void print_spaces(unsigned int count)
 static void print_constant(mem_ptr_t ptr, unsigned int len)
 {
   while (--len) {
-    printf("%02X", ptr[len]);
+    kprintf("%02X", ptr[len]);
   }
 }
 static void print_immediate_operand(mem_ptr_t ptr, unsigned int len)
@@ -86,15 +78,15 @@ unsigned int print_instruction(mem_addr_t ptr, unsigned int m_width, unsigned in
   if ((am == immediate_m) && (!m_width)) len++;
   if ((am == immediate_x) && (!x_width)) len++;
 
-  printf("%02X/%04X  ", ptr.bank, ptr.loc);
+  kprintf("%02X/%04X  ", ptr.bank, ptr.loc);
 
   for (unsigned int i = 0; i < len; i++) {
-    printf("%02X ", ptr.ptr[i]);
+    kprintf("%02X ", ptr.ptr[i]);
   }
 
   if (len < 4) print_spaces((4 - len) * 3);
 
-  printf("%s   ", mnemonics[opcode->instr]);
+  kprintf("%s   ", mnemonics[opcode->instr]);
 
   switch (am) {
   case immediate8:
@@ -145,7 +137,7 @@ unsigned int print_instruction(mem_addr_t ptr, unsigned int m_width, unsigned in
     break;
   case pcr:
   case pcrl:
-    printf("%04X", calculate_relative_target(ptr, am));
+    kprintf("%04X", calculate_relative_target(ptr, am));
     break;
   case ai:
   case di:
@@ -166,11 +158,11 @@ unsigned int print_instruction(mem_addr_t ptr, unsigned int m_width, unsigned in
   case srix:
     putc_seriala('(');
     print_constant(ptr.ptr, len);
-    printf(",S),Y");
+    kprintf(",S),Y");
     putc_seriala('S');
     break;
   case blockmove:
-    printf("%02X,%02X", ptr.ptr[1], ptr.ptr[2]);
+    kprintf("%02X,%02X", ptr.ptr[1], ptr.ptr[2]);
     break;
   case immediate_m:
     print_immediate_operand(ptr.ptr, m_width ? 2 : 3);

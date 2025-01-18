@@ -248,7 +248,7 @@ token_t get_token(token_hints_t hints)
  */
 void parse_error(const unsigned char __far *reason)
 {
-  printf("\nError at character position %d: %s\n", ibuffp - input_buffer + 1, reason);
+  kprintf("\nError at character position %d: %s\n", ibuffp - input_buffer + 1, reason);
 }
 
 /**

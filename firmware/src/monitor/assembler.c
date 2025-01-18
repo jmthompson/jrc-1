@@ -100,7 +100,7 @@ static unsigned int generate_instruction()
     start_loc.ptr[i] = operand.b[i-1];
   }
 
-  printf("\x1B[2K\n"); // Clear line
+  kprintf("\x1B[2K\n"); // Clear line
   print_instruction(start_loc, operand_size, operand_size);
   start_loc.ptr += instr_len;
 
@@ -110,7 +110,7 @@ static unsigned int generate_instruction()
 void start_assembler(void)
 {
   while (1) {
-    printf("! ");
+    kprintf("! ");
     char __near *ibuffp = reset_scanner();
     token_t token;
 
