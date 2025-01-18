@@ -5,22 +5,20 @@
 
                 .rtmodel        cstartup,"jrcos"
 
-                .extern         os_start
+                .extern         os_start, initialize_heap
                 .extern         _DirectPageStart, _NearBaseAddress
                 .extern         _Dp, _Vfp
                 .extern         __initialize_sections
-                .extern         __heap_initialize, __default_heap
                 .extern         via_init,uart_init,spi_init
                 .extern         getc_seriala,putc_seriala
 
                 .global         sysreset
-                .global         __call_heap_initialize
                 .global         __data_initialization_needed
 
                 .section        stack
-                .section        heap
                 .section        directPage
                 .section        data_init_table
+                .section        heap 
 
                 .section        bootcode
 
@@ -61,18 +59,12 @@ __data_initialization_needed:
                 sta             dp:.tiny(_Dp+0)
                 jsl             long:__initialize_sections
 
-__call_heap_initialize:
                 lda             ##.word2 (.sectionStart heap)
-                sta             dp:.tiny(_Dp+6)
-                lda             ##.word0 (.sectionStart heap)
-                sta             dp:.tiny(_Dp+4)
-                lda             ##.word2 __default_heap
                 sta             dp:.tiny(_Dp+2)
-                lda             ##.word0 __default_heap
+                lda             ##.word0 (.sectionStart heap)
                 sta             dp:.tiny(_Dp+0)
-                ldx             ##.word2 (.sectionSize heap)
-                lda             ##.word0 (.sectionSize heap)
-                jsl             long:__heap_initialize
+                lda             ##.sectionSize heap
+                jsl             long:initialize_heap
 
                 cli
                 jmp             long:os_start

@@ -1,4 +1,4 @@
-SRCS := $(wildcard *.c)
+SRCS := $(wildcard *.c) $(wildcard *.s)
 
 include ../../common.mk
 

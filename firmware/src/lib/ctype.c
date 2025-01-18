@@ -1,15 +1,13 @@
-#include <ctype.h>
+#define _U 0x01
+#define _L 0x02
+#define _N 0x04
+#define _S 0x08
+#define _P 0x10
+#define _C 0x20
+#define _X 0x40
+#define _B 0x80
 
-#define _U _CTYPE_U
-#define _L _CTYPE_L
-#define _N _CTYPE_N
-#define _S _CTYPE_S
-#define _P _CTYPE_P
-#define _C _CTYPE_C
-#define _X _CTYPE_X
-#define _B _CTYPE_B
-
-static const char __attribute__((far)) ctypes[256] = {
+static const char __far ctypes[256] = {
   _C,   _C,     _C,     _C,     _C,     _C,     _C,     _C,
   _C, _C|_B|_S, _C|_S,  _C|_S,  _C|_S,  _C|_S,  _C,     _C,
   _C,   _C,     _C,     _C,     _C,     _C,     _C,     _C,
