@@ -1,4 +1,4 @@
-ROM_VERSION := 0020
+ROM_VERSION := 0060
 
 AS := ca65
 LD := ld65
