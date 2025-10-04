@@ -3,41 +3,34 @@ ROM_VERSION := 0060
 AS := ca65
 LD := ld65
 
-SRCS     := $(wildcard src/*/*.s) buildinfo.s
-OBJS   	 := ${SRCS:.s=.o}
-LISTINGS := ${SRCS:.s=.l}
-ROMFILE  := rom.bin
-DUMPFILE := dump.bin
-RAMFILE  := ram.bin
-MAPFILE  := jrc-1.map
-CHIP     := W29C020C
-MEMSIM2  := /dev/memsim2
+TARGET  := rom.bin
+SUBDIRS := jrcos basic
+CHIP    := W29C020C
+SIZE	  := 256K
+MEMSIM2	:= /dev/memsim2
 
-${ROMFILE}: ${OBJS}
-	${LD} ${OBJS} -o ${ROMFILE} -C jrc-1.cfg -m ${MAPFILE}
+all: ${TARGET}
 
-all: ${ROMFILE}
+${TARGET}: ${SUBDIRS}
+	rm -f ${TARGET}
+	for piece in ${SUBDIRS}; do \
+    cat $$piece/$$piece.bin >> ${TARGET}; \
+  done
+	truncate -s ${SIZE} ${TARGET}
 
-dump:
-	minipro -p ${CHIP} -r ${DUMPFILE}
+prog: ${TARGET}
+	minipro -p ${CHIP} -w ${TARGET}
 
-prog: ${ROMFILE}
-	minipro -p ${CHIP} -w ${ROMFILE}
-
-upload: ${ROMFILE}
-	memsim2 -d ${MEMSIM2} -m 27020 -r -1 ${ROMFILE}
+upload: ${TARGET}
+	memsim2 -d ${MEMSIM2} -m 27020 -r -1 ${TARGET}
 
 clean:
-	rm -f buildinfo.s ${OBJS} ${LISTINGS} ${MAPFILE} ${ROMFILE} ${RAMFILE}
+	for dir in ${SUBDIRS}; do \
+		make -C $$dir clean; \
+	done
+	rm -f ${TARGET}
 
-buildinfo.s:
-	echo ".segment \"BOOTROM\"" > buildinfo.s
-	echo ".export jrcos_version" >> buildinfo.s
-	echo ".export rom_date" >> buildinfo.s
-	echo "jrcos_version: .word \$$${ROM_VERSION}" >> buildinfo.s
-	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
+${SUBDIRS}:
+	$(MAKE) -C $@
 
-%.o: %.s
-	${AS} -I ./include --listing ${<:.s=.l} $<
-
-.PHONY: dump buildinfo.s
+.PHONY: all ${SUBDIRS}
