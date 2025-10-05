@@ -18,6 +18,6 @@ clean:
 	rm -f ${OBJS} ${LISTINGS} ${MAPFILE} ${TARGET}
 
 %.o: %.s
-	${AS} -I ../include --listing ${<:.s=.l} $<
+	${AS} -I ../stdlib/include -I ./include --listing ${<:.s=.l} $<
 
 .PHONY: all

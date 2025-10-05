@@ -11,7 +11,7 @@
         .include "syscalls.inc"
         .include "ascii.inc"
         .include "stdio.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .include "parser.inc"
 

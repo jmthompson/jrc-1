@@ -9,7 +9,7 @@
         .include    "errors.inc"
         .include    "kernel/device.inc"
         .include    "kernel/fs.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
         .include    "kernel/object.inc"
 
         .import   block_buffer, disks, trampoline

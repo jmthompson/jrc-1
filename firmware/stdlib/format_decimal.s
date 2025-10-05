@@ -7,7 +7,7 @@
 
         .export format_decimal
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Cnvert a 32-bit number to decimal with optional commas.

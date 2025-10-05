@@ -7,7 +7,7 @@
 
         .export strmatch
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Compare two strings in a case-sensitive manner

@@ -7,7 +7,7 @@
 
         .include    "common.inc"
         .include    "errors.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
         .include    "kernel/heap.inc"
         .include    "kernel/interrupts.inc"
         .include    "kernel/scheduler.inc"

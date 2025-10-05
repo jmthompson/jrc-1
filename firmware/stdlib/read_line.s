@@ -10,7 +10,7 @@
 
         .export     read_line
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Read a line of text from the console with simple editing

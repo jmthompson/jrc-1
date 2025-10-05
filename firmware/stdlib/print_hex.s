@@ -6,12 +6,12 @@
         .include "common.inc"
         .include "syscalls.inc"
         .include "stdio.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .export print_hex
         .export print_address
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Print the contents of the accumulator as a two-digit hexadecimal number.

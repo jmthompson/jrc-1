@@ -10,7 +10,7 @@ TARGET   := jrcos.bin
 MAPFILE  := jrcos.map
 
 ${TARGET}: ${OBJS}
-	${LD} ${OBJS} -o ${TARGET} -C jrcos.cfg -m ${MAPFILE}
+	${LD} ${OBJS} ../stdlib/stdlib.bin -o ${TARGET} -C jrcos.cfg -m ${MAPFILE}
 
 all: ${TARGET}
 
@@ -25,6 +25,6 @@ buildinfo.s:
 	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
 
 %.o: %.s
-	${AS} -I ../include --listing ${<:.s=.l} $<
+	${AS} -I ../stdlib/include -I ./include --listing ${<:.s=.l} $<
 
 .PHONY: dump buildinfo.s

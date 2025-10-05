@@ -6,13 +6,13 @@
         .include "common.inc"
         .include "syscalls.inc"
         .include "stdio.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
-        .segment "BSS"
+        .segment "LIBDATA"
 
 buffer: .res  2
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Read a single character from the console.

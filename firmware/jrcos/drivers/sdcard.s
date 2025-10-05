@@ -9,7 +9,7 @@
         .include "kernel/device.inc"
         .include "kernel/fs.inc"
         .include "kernel/heap.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .export sdcard_register
 

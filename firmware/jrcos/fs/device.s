@@ -8,7 +8,7 @@
         .include    "kernel/device.inc"
         .include    "kernel/fs.inc"
         .include    "kernel/heap.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
         .include    "kernel/object.inc"
 
         .import     devices

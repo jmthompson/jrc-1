@@ -9,7 +9,7 @@
         .include    "errors.inc"
         .include    "kernel/device.inc"
         .include    "kernel/fs.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
 
         .export     bdev_operations, dir_operations, file_operations
         .import     trampoline

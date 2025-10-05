@@ -28,7 +28,7 @@
 ;
         .include "common.inc"
         .include "errors.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
         .include "kernel/heap.inc"
 
         .import __HEAP_START__

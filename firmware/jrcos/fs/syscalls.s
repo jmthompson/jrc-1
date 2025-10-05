@@ -7,7 +7,7 @@
         .include    "errors.inc"
         .include    "kernel/device.inc"
         .include    "kernel/fs.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
         .include    "kernel/scheduler.inc"
         .include    "kernel/syscall_macros.inc"
 

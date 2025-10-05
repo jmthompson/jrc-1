@@ -7,7 +7,7 @@
 
         .export multiply_8x8
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Multiply two 8-bit numbers and return the 16-bit result.

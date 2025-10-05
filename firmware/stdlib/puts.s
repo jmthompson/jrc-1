@@ -6,9 +6,9 @@
         .include "common.inc"
         .include "syscalls.inc"
         .include "stdio.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Print a text string to the console.

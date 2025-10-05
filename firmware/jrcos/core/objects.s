@@ -9,7 +9,7 @@
 
         .include "common.inc"
         .include "errors.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
         .include "kernel/object.inc"
 
         .segment "OSROM"

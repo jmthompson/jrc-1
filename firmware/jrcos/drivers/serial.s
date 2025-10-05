@@ -16,7 +16,7 @@
         .include "fcntl.inc"
         .include "kernel/device.inc"
         .include "kernel/fs.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
         .include "kernel/linker.inc"
         .include "nxp_uart.s"
 

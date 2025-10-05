@@ -10,7 +10,7 @@
         .include "syscalls.inc"
         .include "stdio.inc"
         .include "ascii.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .include "opcode.inc"
         .include "operand.inc"

@@ -7,7 +7,7 @@
         .include "ascii.inc"
         .include "stdio.inc"
         .include "syscalls.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .export mon_show_heap
 

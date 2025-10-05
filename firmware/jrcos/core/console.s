@@ -4,7 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
 
         .export   kprint
 

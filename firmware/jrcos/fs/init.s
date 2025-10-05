@@ -10,7 +10,7 @@
         .include    "kernel/console.inc"
         .include    "kernel/device.inc"
         .include    "kernel/fs.inc"
-        .include    "kernel/function_macros.inc"
+        .include    "stack.inc"
 
         .import     dentries, devices, disks, files, inodes
         .import     format_decimal, print_hex

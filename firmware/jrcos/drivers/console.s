@@ -8,7 +8,7 @@
         .include "fcntl.inc"
         .include "kernel/device.inc"
         .include "kernel/fs.inc"
-        .include "kernel/function_macros.inc"
+        .include "stack.inc"
         .include "kernel/syscall_macros.inc"
 
         ;.export console_cll

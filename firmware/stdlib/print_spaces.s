@@ -9,7 +9,7 @@
 
         .export print_spaces
 
-        .segment "OSROM"
+        .segment "LIBCODE"
 
 ;;
 ; Print out a string of space whose length is given in the X register.
