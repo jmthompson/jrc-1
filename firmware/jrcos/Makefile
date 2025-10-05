@@ -5,12 +5,13 @@ LD := ld65
 
 SRCS     := $(wildcard */*.s) buildinfo.s
 OBJS   	 := ${SRCS:.s=.o}
+LIBS     := ../stdlib/stdlib.bin
 LISTINGS := ${SRCS:.s=.l}
 TARGET   := jrcos.bin
 MAPFILE  := jrcos.map
 
 ${TARGET}: ${OBJS}
-	${LD} ${OBJS} ../stdlib/stdlib.bin -o ${TARGET} -C jrcos.cfg -m ${MAPFILE}
+	${LD} ${OBJS} ${LIBS} -o ${TARGET} -C jrcos.cfg -m ${MAPFILE}
 
 all: ${TARGET}
 
