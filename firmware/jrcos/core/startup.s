@@ -21,15 +21,13 @@
         .import serial_init
         .import via_init
         .import spi_init
+        .import idle_task
 
         .import kprint
 
         ;; from buildinfo.s
         .import jrcos_version
         .import rom_date
-
-        .import   task_list
-        .importzp next_task
 
         .segment "BSS"
 
@@ -98,14 +96,7 @@ sysreset:
 
         jsl     fs_init
 
-        sei
-        ldaw    #.loword(task_list)
-        clc
-        adcw    #.sizeof(Task)
-        sta     next_task
-        cli
-
-:       bra     :-
+        jml     idle_task
 
 ;;
 ;

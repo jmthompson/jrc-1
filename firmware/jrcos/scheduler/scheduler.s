@@ -32,12 +32,9 @@ flag:   .res    1
         ldaw    #TASK_RUNNABLE
         sta     [current_task],y
 
-        ; Now initialize the monitor task
-        ldaw    #.loword(monitor_start)
-        ldxw    #.hiword(monitor_start)
-        jsr     start_task
         rtl
 .endproc
+
 .proc sched_yield
         shortm
         lda     #.bankbyte(@ret)
