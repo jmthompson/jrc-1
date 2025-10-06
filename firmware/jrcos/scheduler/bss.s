@@ -9,7 +9,7 @@
 
         .segment    "BSS"
 
-        .export     processes
+        .export     task_list
 
-; Process table
-processes:        .res    MAX_PROCESSES * .sizeof(Process)
+; Task table
+task_list:        .res    MAX_TASKS * .sizeof(Task)

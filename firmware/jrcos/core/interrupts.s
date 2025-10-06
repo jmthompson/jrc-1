@@ -20,7 +20,8 @@
         .import syscall_table
         .import trampoline
 
-        .importzp scparams
+        .import scheduler_tick
+        .importzp scparams, current_task, next_task
 
         .export syscop
         .export sysirq
@@ -137,12 +138,26 @@ sysirq:
         jsr     serial_irq
 
         rep     #$30
-        ply
+        jsl     scheduler_tick
+
+        lda     next_task
+        cmp     current_task
+        beq     @exit
+        ldyw    #Task::sp
+        tsc
+        sta     [current_task],y
+        lda     [next_task],y
+        tcs
+        lda     next_task
+        sta     current_task
+        lda     next_task + 2
+        sta     current_task + 2
+
+@exit:  ply
         plx
         pla
         pld
         plb
-
         rti
 
 sysnmi:

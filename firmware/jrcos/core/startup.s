@@ -28,6 +28,9 @@
         .import jrcos_version
         .import rom_date
 
+        .import   task_list
+        .importzp next_task
+
         .segment "BSS"
 
 ; General purpose JML trampoline for calling functions. First byte
@@ -75,8 +78,6 @@ sysreset:
         ; initialize the syscall table
         jsr     syscall_table_init
 
-        cli
-
         ; Now do the remaining initialization. At this point all code
         ; is running with DB set to the OS bank (BSS segment)
 
@@ -88,11 +89,23 @@ sysreset:
 
         longmx
 
+        jsl     scheduler_init
         jsr     heap_init
+
+        cli
+
         jsr     startup_banner
 
         jsl     fs_init
-        jml     scheduler_start
+
+        sei
+        ldaw    #.loword(task_list)
+        clc
+        adcw    #.sizeof(Task)
+        sta     next_task
+        cli
+
+:       bra     :-
 
 ;;
 ;

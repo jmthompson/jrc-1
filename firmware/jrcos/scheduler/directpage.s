@@ -1,11 +1,12 @@
-; * (C) 2021 Joshua M. Thompson *
+; *******************************
+; * (C) 2025 Joshua M. Thompson *
 ; *******************************
 ;
-; This file defines global direct page locations for jrcOS
+; This file defines direct page locations for the jrcOS scheduler
 
-        .exportzp   current_process
+        .exportzp   current_task, next_task
 
         .segment "ZEROPAGE"
 
-; Pointer to current process
-current_process:  .res    4
+current_task: .res    4
+next_task:    .res    4

@@ -13,7 +13,7 @@
 
         .export     sys_open, sys_seek, sys_read, sys_write
 
-        .importzp   current_process, currfd, currfile, ptr, tmp
+        .importzp   current_task, currfd, currfile, ptr, tmp
 
         .segment "OSROM"
 
@@ -67,14 +67,14 @@
         asl
         asl
         clc
-        adcw    #Process::files
+        adcw    #Task::files
         tay
         pla
-        sta     [current_process],y
+        sta     [current_task],y
         iny
         iny
         pla
-        sta     [current_process],y
+        sta     [current_task],y
         lda     currfd
         _PutParam16 o_fd
         ldaw    #0

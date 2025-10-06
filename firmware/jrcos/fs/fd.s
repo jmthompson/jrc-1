@@ -12,7 +12,7 @@
         .include    "kernel/object.inc"
         .include    "kernel/scheduler.inc"
 
-        .importzp   current_process, currfd, currfile
+        .importzp   current_task, currfd, currfile
 
         .segment "OSROM"
 
@@ -26,16 +26,16 @@
 ;
 .proc get_free_fd
         ldxw    #0
-        ldyw    #Process::files
-@loop:  lda     [current_process],y
+        ldyw    #Task::files
+@loop:  lda     [current_task],y
         iny
         iny
-        ora     [current_process],y
+        ora     [current_task],y
         beq     @found
         iny
         iny
         inx
-        cpxw    #PROC_MAX_FDS
+        cpxw    #TASK_MAX_FDS
         bne     @loop
         ldaw    #EMFILE
         sec
@@ -59,18 +59,18 @@
 ;
 .proc fd_to_file
         lda     currfd
-        cmpw    #PROC_MAX_FDS
+        cmpw    #TASK_MAX_FDS
         bge     @bad
         asl
         asl
         clc
-        adcw    #Process::files
+        adcw    #Task::files
         tay
-        lda     [current_process],y
+        lda     [current_task],y
         sta     currfile
         iny
         iny
-        lda     [current_process],y
+        lda     [current_task],y
         sta     currfile + 2
         ora     currfile
         beq     @bad

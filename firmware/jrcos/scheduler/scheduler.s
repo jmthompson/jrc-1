@@ -11,14 +11,33 @@
         .include    "kernel/linker.inc"
         .include    "kernel/scheduler.inc"
 
-        .import     processes
-        .importzp   current_process
+        .import     task_list, monitor_start
+        .importzp   current_task, next_task
 
         .segment "BSS"
 flag:   .res    1
 
         .segment "OSROM"
 
+.proc scheduler_init
+        ldaw    #.loword(task_list)
+        sta     current_task
+        sta     next_task
+        ldaw    #.hiword(task_list)
+        sta     current_task + 2
+        sta     next_task + 2
+
+        ; Initialize task 0, which is always the kernel itself
+        ldyw    #Task::state
+        ldaw    #TASK_RUNNABLE
+        sta     [current_task],y
+
+        ; Now initialize the monitor task
+        ldaw    #.loword(monitor_start)
+        ldxw    #.hiword(monitor_start)
+        jsr     start_task
+        rtl
+.endproc
 .proc sched_yield
         shortm
         lda     #.bankbyte(@ret)
@@ -44,19 +63,5 @@ flag:   .res    1
 .endproc
 
 .proc scheduler_tick
-        ldaw    #.loword(processes)
-        sta     current_process
-        ldaw    #.hiword(processes)
-        sta     current_process + 2
-        lda     f:flag
-        andw    #1
-        bne     :+
-        lda     current_process
-        clc
-        adcw    #.sizeof(Process)
-        ;sta     current_process
-:       lda     f:flag
-        inc
-        sta     f:flag
         rtl
 .endproc

@@ -3,7 +3,7 @@
 ; * (C) 2021 Joshua M. Thompson *
 ; *******************************
 ;
-; Process struct management functions
+; Task struct management functions
 
         .include    "common.inc"
         .include    "errors.inc"
@@ -12,7 +12,7 @@
         .include    "kernel/interrupts.inc"
         .include    "kernel/scheduler.inc"
 
-        .import     processes
+        .import     task_list
 
         .segment "ZEROPAGE"
 
@@ -58,13 +58,13 @@ tmp:    .res    4
 
         ; TODO: clear fd table
         ; init uid/gid/etc
-        ldyw    #Process::state
+        ldyw    #Task::state
         ldaw    #TASK_RUNNABLE
         sta     [ptr],y
-        ldyw    #Process::sp
+        ldyw    #Task::sp
         lda     bank0
         clc
-        adcw    #TASK_STACK_TOP
+        adcw    #(TASK_STACK_TOP - INT_STACK_FRAME_SIZE)
         sta     [ptr],y
 
         ; build the task stack frame
@@ -109,21 +109,21 @@ tmp:    .res    4
 ; ptr = pointer to entry
 ;
 .proc get_task_slot
-        ldaw    #.loword(processes)
+        ldaw    #.loword(task_list)
         sta     ptr
-        ldaw    #.hiword(processes)
+        ldaw    #.hiword(task_list)
         sta     ptr + 2
         ldxw    #0
-        ldyw    #Process::state
+        ldyw    #Task::state
 @loop:  lda     [ptr],y
         cmpw    #TASK_UNUSED
         beq     @done
         inx
-        cpxw    #MAX_PROCESSES
+        cpxw    #MAX_TASKS
         beq     @notfound
         lda     ptr
         clc
-        adcw    #.sizeof(Process)
+        adcw    #.sizeof(Task)
         sta     ptr
         lda     ptr + 2
         adcw    #0
