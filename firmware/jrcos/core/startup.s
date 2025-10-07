@@ -59,7 +59,7 @@ sysreset:
         ldxw    #.loword(__BSS_START__)
         txy
         iny
-        ldaw    #__BSS_SIZE__-1
+        ldaw    #__BSS_SIZE__-2
         mvn     __BSS_START__,__BSS_START__
         shortmx
 
