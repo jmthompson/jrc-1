@@ -21,7 +21,7 @@
         .import serial_init
         .import via_init
         .import spi_init
-        .import idle_task
+        .import scheduler_init, idle_task
 
         .import kprint
 

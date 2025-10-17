@@ -4,11 +4,6 @@
 ; This is very, very crude right now
 ;
 
-        .global scheduler_init
-        .global scheduler_tick
-        .global start_task
-        .global sched_yield
-
 ; Maximum number of tasks. The main limit here is
 ; bank $00 space (at least until we can do virtual memory).
 MAX_TASKS := 32
@@ -17,18 +12,19 @@ MAX_TASKS := 32
 TASK_MAX_FDS := 16
 
 .struct Task
-        pid     .word         ; [+0 ] process ID
-        root    .dword        ; [+2 ] Inode of current root
-        cwd     .dword        ; [+6 ] Inode of current working directory
-        state   .word         ; [+10] task state
-        tty     .word         ; [+12] device ID of controlling TTY
-        uid     .word         ; [+14] real user ID
-        gid     .word         ; [+16] real group ID
-        euid    .word         ; [+18] effective user ID
-        egid    .word         ; [+20] effective group ID
-        sp      .word         ; [+22] stack pointer
-        files   .dword        ; [+24] Pointer to file descriptor table
-        pad     .dword        ; [+28] pad size to 32 bytes
+        next    .dword        ; [+0 ] Pointer to next task in list
+        pid     .word         ; [+4 ] process ID
+        root    .dword        ; [+6 ] Inode of current root
+        cwd     .dword        ; [+10] Inode of current working directory
+        state   .word         ; [+14] task state
+        tty     .word         ; [+16] device ID of controlling TTY
+        uid     .word         ; [+18] real user ID
+        gid     .word         ; [+20] real group ID
+        euid    .word         ; [+22] effective user ID
+        egid    .word         ; [+24] effective group ID
+        sp      .word         ; [+26] stack pointer
+        pad     .dword        ; [+28] pad to 32 bytes
+        files   .dword 16     ; [+32] Pointers to file descriptors. The 16 is TASK_MAX_FDS
 .endstruct
 
 TASK_UNUSED   := 0            ; marker for empty process table slot

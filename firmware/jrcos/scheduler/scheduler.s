@@ -11,54 +11,40 @@
         .include    "kernel/linker.inc"
         .include    "kernel/scheduler.inc"
 
-        .import     task_list, monitor_start
-        .importzp   current_task, next_task
+        .export     scheduler_init, scheduler_tick, reschedule
 
-        .segment "BSS"
-flag:   .res    1
+        .import     task_list, build_task_list
+        .importzp   current_task, next_task
 
         .segment "OSROM"
 
 .proc scheduler_init
+        jsl     build_task_list
+
         ldaw    #.loword(task_list)
         sta     current_task
         sta     next_task
         ldaw    #.hiword(task_list)
         sta     current_task + 2
         sta     next_task + 2
-
-        ; Initialize task 0, which is always the kernel itself
-        ldyw    #Task::state
-        ldaw    #TASK_RUNNABLE
-        sta     [current_task],y
-
         rtl
 .endproc
 
-.proc sched_yield
-        shortm
-        lda     #.bankbyte(@ret)
-        pha
-        longm
-        pea     .loword(@ret)
-        php
-        phb
-        phd
-        pha
-        phx
-        phy
-        ldaw    #OS_DP
-        tcd
-        jsl     scheduler_tick
-        ply
-        plx
-        pla
-        pld
-        plb
-        rti
-@ret:   rtl
+;;
+; Schedule a new task to run.
+;
+; This implementation is horribly naive but will work for now. It just round-
+; robins through runnable tasks. If nothing is ready to run the idle task will
+; be schedule instead.
+;
+.proc reschedule
+        rtl
 .endproc
 
+;;
+; Housekeeping function called during the system tick interrupt. The main purpose
+; here is to call reschedule() to swap tasks on every tick.
+;
 .proc scheduler_tick
-        rtl
+        jml      reschedule
 .endproc

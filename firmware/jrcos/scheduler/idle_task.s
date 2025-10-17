@@ -12,7 +12,7 @@
 
         .export  idle_task
 
-        .import  monitor_start, task_list
+        .import  monitor_start, task_list, start_task
         .importzp next_task
 
         .segment "OSROM"
@@ -23,9 +23,8 @@
 ;
 .proc idle_task
         ; Start the system monitor. It will run as soon as we reschedule
-        ldaw    #.loword(monitor_start)
-        ldxw    #.hiword(monitor_start)
-        jsr     start_task
+        _PushLong monitor_start
+        jsl     start_task
 
         ; Quick and dirty reschedule, for now
         sei

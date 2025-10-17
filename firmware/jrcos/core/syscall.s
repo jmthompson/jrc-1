@@ -7,7 +7,7 @@
         .include "errors.inc"
         .include "kernel/syscall_macros.inc"
 
-        .import hw_version, jiffies, jrcos_version, monitor_start, sysreset
+        .import hw_version, jiffies, jrcos_version, monitor_start, sysreset, task_yield, task_quit
         .import sys_open, sys_seek, sys_read, sys_write
 
         .export syscall_table_init
@@ -83,8 +83,8 @@ default_table:
         DEFINE_SYSCALL  sys_get_uptime, 0        ; $01
         DEFINE_SYSCALL  sysreset, 0              ; $02
         DEFINE_SYSCALL  monitor_start, 0         ; $03
-        DEFINE_SYSCALL  0, 0                     ; $04
-        DEFINE_SYSCALL  0, 0                     ; $05
+        DEFINE_SYSCALL  task_yield, 0            ; $04
+        DEFINE_SYSCALL  task_quit, 0             ; $05
         DEFINE_SYSCALL  0, 0                     ; $06
         DEFINE_SYSCALL  0, 0                     ; $07
         DEFINE_SYSCALL  0, 0                     ; $08

@@ -11,5 +11,5 @@
 
         .export     task_list
 
-; Task table
-task_list:        .res    MAX_TASKS * .sizeof(Task)
+        .align      256
+task_list:  .res    .sizeof(Task) * MAX_TASKS
