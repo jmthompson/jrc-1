@@ -22,7 +22,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |---------------------------------|
-; | [4] Space for returned pointer  |
+; | [2] Space for returned pointer  |
 ; |---------------------------------|
 ;
 ; On exit:
@@ -30,32 +30,25 @@
 ; C = error code
 ;
 .proc allocate_file
-        _BeginDirectPage
-          _StackFrameRTS
-          o_filep   .dword
-        _EndDirectPage
-
-        _SetupDirectPage
+o_filep := $03
         pha
-        pha
-        pea     .hiword(files)
         pea     .loword(files)
         pea     NUM_FILES
         pea     .sizeof(File)
         jsr     new_object
         pla
-        sta     o_filep
-        pla
-        sta     o_filep + 2
+        sta     o_filep,s
         bcc     @found
         ldyw    #ENFILE
         bra     @exit
-@found: ldaw    #1
-        sta     [o_filep]
-        ldyw    #0
-@exit:  _RemoveParams o_filep
-        _SetExitState
-        pld
+@found: ldyw    #0
+        ldaw    #1
+        sta     (o_filep,s),y
+        dec
+        clc
+        rts
+@exit:  tya
+        sec
         rts
 .endproc
 
@@ -69,7 +62,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |---------------------|
-; | [4] Pointer to File |
+; | [2] Pointer to File |
 ; |---------------------|
 ;
 ; On exit:
@@ -79,14 +72,14 @@
 .proc release_file
         _BeginDirectPage
           _StackFrameRTS
-          i_filep   .dword
+          i_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
-        lda     [i_filep]
+        lda     (i_filep)
         beq     :+
         dec
-        sta     [i_filep]
+        sta     (i_filep)
 :       _RemoveParams
         ldaw    #0
         pld

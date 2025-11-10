@@ -17,6 +17,8 @@
         .import     console_register, sdcard_register, spi_register, via_register
         .import     trampoline
 
+        .export     fs_init, fs_startup_scan
+
         .segment "BSS"
 
 strbuff:        .res    16
@@ -27,17 +29,19 @@ strbuff:        .res    16
         jsr     console_register
         jsr     spi_register
         jsr     sdcard_register
-        jsr     via_register
+        jmp     via_register
+.endproc
+
+.proc fs_startup_scan
         jsr     disk_scan
-        jsr     show_disks
-        rtl
+        jmp     show_disks
 .endproc
 
 .proc show_disks
         _BeginDirectPage
           l_count   .word
           l_size    .dword
-          l_diskp   .dword
+          l_diskp   .word
           _StackFrameRTS
         _EndDirectPage
 
@@ -45,27 +49,23 @@ strbuff:        .res    16
         _kprint @banner
         ldaw    #.loword(disks)
         sta     l_diskp
-        ldaw    #.hiword(disks)
-        sta     l_diskp + 2
         ldaw    #NUM_DISKS
         sta     l_count
 @loop:  ldyw    #Disk::refcount
-        lda     [l_diskp],y
+        lda     (l_diskp),y
         beq     @next
         ldyw    #Disk::num_sectors
-        lda     [l_diskp],y
+        lda     (l_diskp),y
         sta     l_size
         iny
         iny
-        lda     [l_diskp],y
+        lda     (l_diskp),y
         sta     l_size + 2
         ldxw    #11
 :       lsr     l_size + 2      ; Divide block count by 2048 to get MB
         ror     l_size
         dex
         bne     :-
-        lda     l_diskp + 2
-        pha
         lda     l_diskp
         pha
         jsr     print_disk_name
@@ -97,11 +97,11 @@ strbuff:        .res    16
 .endproc
 
 ;;
-; For each registered block device, display its name and status
+; Scan all registered block devices for usable disks
 ;
 .proc disk_scan
         _BeginDirectPage
-          l_devicep   .dword
+          l_devicep   .word
           l_ops       .dword
           l_count     .word
           _StackFrameRTS
@@ -110,16 +110,12 @@ strbuff:        .res    16
         _SetupDirectPage
         ldaw    #.loword(devices)
         sta     l_devicep
-        ldaw    #.hiword(devices)
-        sta     l_devicep + 2
         ldaw    #NUM_DEVICES
         sta     l_count
 @scan:  ldyw    #Device::major
-        lda     [l_devicep],y
+        lda     (l_devicep),y
         bpl     @next               ; skip character devices
 
-        lda     l_devicep + 2
-        pha
         lda     l_devicep
         pha
         jsl     bdev_open
@@ -138,6 +134,12 @@ strbuff:        .res    16
 ;;
 ; Print the name of the given Disk
 ;
+; Stack frame (top to bottm):
+;
+; |----------------------|
+; | [2] Pointer to Disk  |
+; |----------------------|
+;
 ; On entry:
 ; A = device number
 ; 
@@ -147,25 +149,21 @@ strbuff:        .res    16
 .proc print_disk_name
         _BeginDirectPage
           l_str       .dword
-          l_devicep   .dword
+          l_devicep   .word
           _StackFrameRTS
-          i_diskp     .dword
+          i_diskp     .word
         _EndDirectPage
 
         _SetupDirectPage
         ldyw    #Disk::device
-        lda     [i_diskp],y
+        lda     (i_diskp),y
         sta     l_devicep
-        iny
-        iny
-        lda     [i_diskp],y
-        sta     l_devicep + 2
         ldyw    #Device::name
-        lda     [l_devicep],y
+        lda     (l_devicep),y
         sta     l_str
         iny
         iny
-        lda     [l_devicep],y
+        lda     (l_devicep),y
         sta     l_str + 2
         shortm
         ldyw    #0

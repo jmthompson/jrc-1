@@ -17,7 +17,7 @@
         _BeginDirectPage
           l_ops       .dword
           _StackFrameRTL
-          i_devicep   .dword
+          i_devicep   .word
         _EndDirectPage
 
         phd
@@ -26,11 +26,11 @@
         tsc
         tcd
         ldyw    #Device::ops
-        lda     [i_devicep],y
+        lda     (i_devicep),y
         sta     l_ops
         iny
         iny
-        lda     [i_devicep],y
+        lda     (i_devicep),y
         sta     l_ops + 2
         ldyw    #op
         lda     [l_ops],y
@@ -51,7 +51,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |-----------------------|
-; | [4] Pointer to Device |
+; | [2] Pointer to Device |
 ; |-----------------------|
 ;
 ; On exit:
@@ -67,7 +67,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |-----------------------|
-; | [4] Pointer to Device |
+; | [2] Pointer to Device |
 ; |-----------------------|
 ;
 ; On exit:
@@ -83,7 +83,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |----------------------------|
-; | [4] Pointer to Device      |
+; | [2] Pointer to Device      |
 ; |----------------------------|
 ; | [4] Sector number          |
 ; |----------------------------|
@@ -103,7 +103,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |----------------------------|
-; | [4] Pointer to Device      |
+; | [2] Pointer to Device      |
 ; |----------------------------|
 ; | [4] Sector number          |
 ; |----------------------------|

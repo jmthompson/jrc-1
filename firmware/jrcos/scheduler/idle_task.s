@@ -8,12 +8,11 @@
 
         .include "common.inc"
         .include "errors.inc"
+       .include "kernel/console.inc"
         .include "kernel/scheduler.inc"
 
-        .export  idle_task
-
-        .import  monitor_start, task_list, start_task
-        .importzp next_task
+        .export  idle_task_loop
+        .import  reschedule, jiffies, monitor_start
 
         .segment "OSROM"
 
@@ -21,18 +20,7 @@
 ; Start the idle task. This is only ever called from the startup/reset code.
 ; It will never exit.
 ;
-.proc idle_task
-        ; Start the system monitor. It will run as soon as we reschedule
-        _PushLong monitor_start
-        jsl     start_task
-
-        ; Quick and dirty reschedule, for now
-        sei
-        ldaw    #.loword(task_list)
-        clc
-        adcw    #.sizeof(Task)
-        sta     next_task
-        cli
-:       bra     :-
-
+.proc idle_task_loop
+        jsr     reschedule
+        bra     idle_task_loop
 .endproc

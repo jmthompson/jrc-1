@@ -27,10 +27,7 @@
 .proc get_free_fd
         ldxw    #0
         ldyw    #Task::files
-@loop:  lda     [current_task],y
-        iny
-        iny
-        ora     [current_task],y
+@loop:  lda     (current_task),y
         beq     @found
         iny
         iny
@@ -62,17 +59,11 @@
         cmpw    #TASK_MAX_FDS
         bge     @bad
         asl
-        asl
         clc
         adcw    #Task::files
         tay
-        lda     [current_task],y
+        lda     (current_task),y
         sta     currfile
-        iny
-        iny
-        lda     [current_task],y
-        sta     currfile + 2
-        ora     currfile
         beq     @bad
         ldaw    #0
         clc

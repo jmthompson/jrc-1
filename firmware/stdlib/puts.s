@@ -39,8 +39,6 @@
         bra     @size
 @go:    longm
         pha
-        pha
-        pea     0
         phy
         lda     i_str + 2
         pha
@@ -48,7 +46,6 @@
         pha
         _PushWord STDOUT
         _write
-        pla
         pla
         _RemoveParams
         pld

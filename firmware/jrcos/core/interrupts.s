@@ -137,6 +137,9 @@ sysirq:
         jsr     via_irq
         jsr     serial_irq
 
+        lda     #OS_DB
+        pha
+        plb
         rep     #$30
         jsl     scheduler_tick
 
@@ -145,13 +148,11 @@ sysirq:
         beq     @exit
         ldyw    #Task::sp
         tsc
-        sta     [current_task],y
-        lda     [next_task],y
+        sta     (current_task),y
+        lda     (next_task),y
         tcs
         lda     next_task
         sta     current_task
-        lda     next_task + 2
-        sta     current_task + 2
 
 @exit:  ply
         plx

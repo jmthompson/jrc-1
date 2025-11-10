@@ -128,9 +128,9 @@ via_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
 ;
 ; On exit:
@@ -139,8 +139,8 @@ via_ops:
 .proc via_open
         _BeginDirectPage
           _StackFrameRTL
-          i_inodep  .dword
-          i_filep   .dword
+          i_inodep  .word
+          i_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -157,9 +157,9 @@ via_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
 ;
 ; On exit:
@@ -168,8 +168,8 @@ via_ops:
 .proc via_release
         _BeginDirectPage
           _StackFrameRTL
-          i_inodep  .dword
-          i_filep   .dword
+          i_inodep  .word
+          i_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -192,7 +192,7 @@ via_ops:
 ; |-------------------------------|
 ; | [2] Whence                    |
 ; |-------------------------------|
-; | [4] Pointer to File           |
+; | [2] Pointer to File           |
 ; |-------------------------------|
 ;
 ; On exit:
@@ -201,7 +201,7 @@ via_ops:
 .proc via_seek
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
+          i_filep   .word
           i_whence  .word
           i_offset  .dword
           o_offset  .dword
@@ -223,7 +223,7 @@ via_ops:
 ; |------------------------------|
 ; | [4] Space for returned count |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
@@ -238,7 +238,7 @@ via_ops:
           _StackFrameRTL
           i_size      .dword
           i_bufferp   .dword
-          i_filep     .dword
+          i_filep     .word
           o_size      .dword
         _EndDirectPage
 
@@ -264,7 +264,7 @@ via_ops:
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -273,7 +273,7 @@ via_ops:
 .proc via_write
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
           i_bufferp   .dword
           i_size      .dword
           o_size      .dword
@@ -295,7 +295,7 @@ via_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -304,6 +304,7 @@ via_ops:
 .proc via_flush
         _BeginDirectPage
           _StackFrameRTL
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -318,7 +319,7 @@ via_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -327,6 +328,7 @@ via_ops:
 .proc via_poll
         _BeginDirectPage
           _StackFrameRTL
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -341,7 +343,7 @@ via_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -350,6 +352,7 @@ via_ops:
 .proc via_ioctl
         _BeginDirectPage
           _StackFrameRTL
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage

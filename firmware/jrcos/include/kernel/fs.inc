@@ -5,7 +5,6 @@
 ; hardware resources                                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        .global fs_init
         .global allocate_disk, attach_disk
         .global partition_scan
         .global open_file, read_file, write_file, allocate_file
@@ -20,8 +19,8 @@
 ;
 .struct Disk
         refcount      .word   ; number of references currently held to this volume
-        device        .dword  ; Pointer to owning Device
-        parent        .dword  ; Pointer to parent Disk if this is a partition
+        device        .word   ; Pointer to owning Device
+        parent        .word   ; Pointer to parent Disk if this is a partition
         start_sector  .dword  ; Starting sector of partition
         num_sectors   .dword  ; Size in sectors
 .endstruct
@@ -38,8 +37,8 @@ NUM_DISKS := 8
 ;
 .struct Inode
         refcount  .word       ; number of references currently held to this inode
-        disk      .dword      ; Pointer to owning Disk
-        num       .dword      ; inode number
+        disk      .word       ; Pointer to owning Disk
+        num       .word       ; inode number
         type      .word       ; File type (one of IT_xxxx)
         mode      .word       ; file mode bits
         uid       .word       ; user id
@@ -62,11 +61,11 @@ IT_CDEV   := 3
 ;
 .struct File
         refcount  .word       ; number of references currently held to this file
-        inode     .dword      ; Pointer to Inode representing this file
+        inode     .word       ; Pointer to Inode representing this file
         mode      .word       ; file mode bits
         flags     .word       ; open mode flags
         pos       .word       ; current read/write position
-        device    .dword      ; Device pointer, if this is an open device
+        device    .word       ; Device pointer, if this is an open device
         unit      .word       ; unit number, if this is an open device
         ops       .dword      ; Pointer to FileOperations structure
 .endstruct

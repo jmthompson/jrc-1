@@ -14,4 +14,4 @@ blockp:     .res    4
 currfd:     .res    2
 
 ; Current file pointer in use by active syscall
-currfile:   .res    4
+currfile:   .res    2

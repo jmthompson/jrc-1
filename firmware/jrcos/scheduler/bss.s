@@ -9,7 +9,10 @@
 
         .segment    "BSS"
 
-        .export     task_list
+        .export     tasks, idle_task
+
+idle_task: .res   .sizeof(Task)
 
         .align      256
-task_list:  .res    .sizeof(Task) * MAX_TASKS
+tasks:  .res    .sizeof(Task) * MAX_TASKS
+

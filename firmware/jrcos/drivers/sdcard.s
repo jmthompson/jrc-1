@@ -80,7 +80,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |-----------------------|
-; | [4] Pointer to Device |
+; | [2] Pointer to Device |
 ; |-----------------------|
 ;
 ; On exit:
@@ -88,9 +88,9 @@ sdcard_ops:
 ;
 .proc sdc_open
         _BeginDirectPage
-          l_diskp     .dword
+          l_diskp     .word
           _StackFrameRTL
-          i_devicep   .dword
+          i_devicep   .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -105,50 +105,39 @@ sdcard_ops:
         bcs     @try
         longm
         pha
-        pha
         jsr     allocate_disk
         pla
         sta     l_diskp
-        pla
-        sta     l_diskp + 2
         ldyw    #Disk::device
-        ldaw    i_devicep
-        sta     [l_diskp],y     ; device (lo)
-        iny
-        iny
-        ldaw    i_devicep + 2
-        sta     [l_diskp],y     ; device (hi)
+        lda     i_devicep
+        sta     (l_diskp),y     ; device
         iny
         iny
         ldaw    #0
-        sta     [l_diskp],y     ; parent (lo)
+        sta     (l_diskp),y     ; parent
         iny
         iny
-        sta     [l_diskp],y     ; parent (hi)
+        sta     (l_diskp),y     ; start_sector (lo)
         iny
         iny
-        sta     [l_diskp],y     ; start_sector (lo)
-        iny
-        iny
-        sta     [l_diskp],y     ; start_sector (hi)
+        sta     (l_diskp),y     ; start_sector (hi)
         iny
         iny
         lda     nr_sectors
-        sta     [l_diskp],y     ; num_sectors (lo)
+        sta     (l_diskp),y     ; num_sectors (lo)
         iny
         iny
         lda     nr_sectors + 2
-        sta     [l_diskp],y     ; num_sectors (hi)
+        sta     (l_diskp),y     ; num_sectors (hi)
         iny
         iny
         ldaw    #0
-        sta     [l_diskp],y     ; type
-        lda     l_diskp + 2
-        pha
+        sta     (l_diskp),y     ; type
         lda     l_diskp
-        pha
-        jsr     attach_disk
-        tay
+        ;pha
+        ;jsr     attach_disk
+        ;tay
+        ldyw    #0
 @exit:  _RemoveParams
         _SetExitState
         pld
@@ -164,7 +153,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |-----------------------|
-; | [4] Pointer to Device |
+; | [2] Pointer to Device |
 ; |-----------------------|
 ;
 ; On exit:
@@ -173,7 +162,7 @@ sdcard_ops:
 .proc sdc_release
         _BeginDirectPage
           _StackFrameRTL
-          i_devicep  .dword
+          i_devicep  .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -191,7 +180,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |--------------------------|
-; | [4] Pointer to Device    |
+; | [2] Pointer to Device    |
 ; |--------------------------|
 ; | [2] Request              |
 ; |--------------------------|
@@ -204,7 +193,7 @@ sdcard_ops:
 .proc sdc_ioctl
         _BeginDirectPage
           _StackFrameRTL
-          i_devicep   .dword
+          i_devicep   .word
           i_datap     .dword
           i_request   .word
         _EndDirectPage
@@ -223,7 +212,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |----------------------------|
-; | [4] Pointer to Device      |
+; | [2] Pointer to Device      |
 ; |----------------------------|
 ; | [4] Sector number          |
 ; |----------------------------|
@@ -236,7 +225,7 @@ sdcard_ops:
 .proc sdc_rdblock
         _BeginDirectPage
           _StackFrameRTL
-          i_devicep   .dword
+          i_devicep   .word
           i_bufferp   .dword
           i_sector    .dword
         _EndDirectPage
@@ -288,7 +277,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |----------------------------|
-; | [4] Pointer to Device      |
+; | [2] Pointer to Device      |
 ; |----------------------------|
 ; | [4] Sector number          |
 ; |----------------------------|
@@ -298,7 +287,7 @@ sdcard_ops:
 .proc sdc_wrblock
         _BeginDirectPage
           _StackFrameRTL
-          i_devicep   .dword
+          i_devicep   .word
           i_bufferp   .dword
           i_sector    .dword
         _EndDirectPage
@@ -357,7 +346,7 @@ sdcard_ops:
 ; Stack frame (top to bottm):
 ;
 ; |-----------------------|
-; | [4] Pointer to Device |
+; | [2] Pointer to Device |
 ; |-----------------------|
 ;
 ; On exit:
@@ -366,7 +355,7 @@ sdcard_ops:
 .proc sdc_mediachanged
         _BeginDirectPage
           _StackFrameRTL
-          i_devicep  .dword
+          i_devicep  .word
         _EndDirectPage
 
         _SetupDirectPage

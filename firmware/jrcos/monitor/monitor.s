@@ -8,7 +8,6 @@
         .include "stdio.inc"
         .include "fcntl.inc"
         .include "ascii.inc"
-        .include "kernel/syscall_macros.inc"
 
         .include "constants.inc"
 
@@ -18,6 +17,7 @@
         .import   parse_address, parse_hex, skip_whitespace, print_error
         .import   assemble, disassemble, mon_show_heap, XModemRcv, XModemSend
         .import   arg, ibuff, IBUFFSZ
+        .import   dump_stack
         .importzp cmd, end_loc, ibuffp, row_end, start_loc, xmptr, xmeofp
 
         .import   a_reg,b_reg,d_reg,p_reg,s_reg,x_reg,y_reg,pc_reg,k_reg,m_width,x_width
@@ -76,7 +76,7 @@ nmi_banner:
 start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
-monitor_start:
+.proc open_stdio
         pha
         _PushLong @console
         _PushWord 0
@@ -95,15 +95,19 @@ monitor_start:
         _PushWord O_WRONLY
         _open               ; open stderr
         pla
+        rts
+@console:
+        .asciiz "/dev/console"
+.endproc
+
+monitor_start:
+        jsr     open_stdio
         shortm
         stz     m_width
         stz     x_width
         longm
         _puts   start_banner
         bra     monitor_loop
-
-@console:
-        .asciiz "/dev/console"
 
 ;;
 ; Capture the processor registers from an IRQ/NMI/BRK stack frame
@@ -140,6 +144,11 @@ capture_registers:
 ;
 monitor_brk:
         longmx
+
+        jsr     dump_stack
+:       wai
+        bra     :-
+
         jsr     capture_registers
         _puts   brk_banner
         jsr     print_registers

@@ -10,6 +10,7 @@
         .include "kernel/fs.inc"
         .include "stack.inc"
         .include "kernel/syscall_macros.inc"
+        .include "kernel/console.inc"
 
         ;.export console_cll
         ;.export console_cls
@@ -65,9 +66,9 @@ console_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
 ;
 ; On exit:
@@ -76,8 +77,8 @@ console_ops:
 .proc console_open
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
-          i_inodep  .dword
+          i_filep   .word
+          i_inodep  .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -94,9 +95,9 @@ console_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
 ;
 ; On exit:
@@ -105,8 +106,8 @@ console_ops:
 .proc console_release
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
-          i_inodep  .dword
+          i_filep   .word
+          i_inodep  .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -129,7 +130,7 @@ console_ops:
 ; |-------------------------------|
 ; | [2] Whence                    |
 ; |-------------------------------|
-; | [4] Pointer to File           |
+; | [2] Pointer to File           |
 ; |-------------------------------|
 ;
 ; On exit:
@@ -138,7 +139,7 @@ console_ops:
 .proc console_seek
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
+          i_filep   .word
           i_whence  .word
           i_offset  .dword
           o_offset  .dword
@@ -158,13 +159,13 @@ console_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to read  |
+; | [2] Number of bytes to read  |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -174,24 +175,22 @@ console_ops:
         _BeginDirectPage
           l_nonblock  .byte
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
           i_bufferp   .dword
-          i_size      .dword
-          o_size      .dword
+          i_size      .word
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
         ldyw    #File::flags
         shortm
-        lda     [i_filep],y
+        lda     (i_filep),y
         and     #O_NONBLOCK
         sta     l_nonblock
         longm
         stz     o_size
-        stz     o_size + 2
-@loop:  lda     i_size
-        ora     i_size + 2
-        beq     @exit
+        lda     i_size
+@loop:  beq     @exit
         shortm
 @wait:  jsl     getc_seriala        ; TODO: maybe allow attaching console to serial b?
         bcc     @store
@@ -201,9 +200,9 @@ console_ops:
         bra     @exit
 @store: sta     [i_bufferp]
         longm
-        inc32   i_bufferp
-        inc32   o_size
-        dec32   i_size
+        inc     i_bufferp
+        inc     o_size
+        dec     i_size
         bra     @loop
 @exit:  _RemoveParams o_size
         ldaw    #0
@@ -218,13 +217,13 @@ console_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to write |
+; | [2] Number of bytes to write |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -233,25 +232,23 @@ console_ops:
 .proc console_write
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
           i_bufferp   .dword
-          i_size      .dword
-          o_size      .dword
+          i_size      .word
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
         stz     o_size
-        stz     o_size + 2
-@loop:  lda     i_size
-        ora     i_size + 2
-        beq     @exit
+        lda     i_size
+@loop:  beq     @exit
         shortm
         lda     [i_bufferp]
         jsl     putc_seriala        ; always blocks; no O_NONBLOCK writes
         longm
-        inc32   i_bufferp
-        inc32   o_size
-        dec32   i_size
+        inc     i_bufferp
+        inc     o_size
+        dec     i_size
         bra     @loop
 @exit:  _RemoveParams o_size
         ldaw    #0
@@ -266,7 +263,7 @@ console_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -275,7 +272,7 @@ console_ops:
 .proc console_flush
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -290,7 +287,7 @@ console_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -299,7 +296,7 @@ console_ops:
 .proc console_poll
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -314,7 +311,7 @@ console_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -323,7 +320,7 @@ console_ops:
 .proc console_ioctl
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage

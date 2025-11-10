@@ -28,12 +28,10 @@ buffer: .res  2
         longm
         sta     f:buffer
         pha
-        pha
-        _PushLong 1
+        _PushWord 1
         _PushLong buffer
         _PushWord STDOUT
         _write
-        pla
         pla
         plp
         lda     f:buffer

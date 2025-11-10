@@ -24,12 +24,10 @@ buffer: .res  2
         php
         longm
         pha
-        pha
-        _PushLong 1
+        _PushWord 1
         _PushLong buffer
         _PushWord STDIN
         _read
-        pla
         pla
         plp
         lda   f:buffer

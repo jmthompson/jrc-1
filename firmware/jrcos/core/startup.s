@@ -18,10 +18,9 @@
         .import fs_init
         .import syscall_table_init
 
-        .import serial_init
-        .import via_init
-        .import spi_init
-        .import scheduler_init, idle_task
+        .import serial_init, via_init, spi_init, fs_init, scheduler_init
+        .import fs_startup_scan, start_task, idle_task_loop
+        .import monitor_start
 
         .import kprint
 
@@ -85,18 +84,25 @@ sysreset:
         lda     #$5C                ; JML $xxyyzz
         sta     trampoline          ; Init trampoline vector
 
+        jml     os_start
+
+        .segment "OSROM"
+
+        .import   monitor_start
+os_start:
         longmx
 
-        jsl     scheduler_init
+        jsr     scheduler_init
         jsr     heap_init
+        jsr     fs_init
 
         cli
 
         jsr     startup_banner
-
-        jsl     fs_init
-
-        jml     idle_task
+        jsr     fs_startup_scan
+        _PushLong monitor_start
+        jsr     start_task
+        jmp     idle_task_loop
 
 ;;
 ;

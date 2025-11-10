@@ -4,6 +4,9 @@
 ; *******************************
 ;
 ; Task struct management functions
+;
+; Unless otherwise noted all functions in this file must be called with
+; interrupts disabled.
 
         .include    "common.inc"
         .include    "errors.inc"
@@ -13,59 +16,39 @@
         .include    "kernel/scheduler.inc"
 
         .export     build_task_list, start_task, task_quit, task_yield
+        .exportzp   task
 
-        .import     task_list
-        .import     print_hex
-        .importzp   current_task,ptr
+        .import     tasks
+        .import     print_hex, reschedule
+        .importzp   current_task,task_head,ptr
 
         .segment "ZEROPAGE"
 
-task:   .res    4
+task:   .res    2
 
         .segment "OSROM"
 
 ;;
 ; Initiliaze the task list. The list is preallocated in the BSS segment, but
-; we still need to create the linked list and initialize all of the PID fields.
+; we still need to fill in the PID values.
 ;
 .proc build_task_list
-        ldaw    #.loword(task_list)
+        ldaw    #.loword(tasks)
         sta     task
-        ldaw    #.hiword(task_list)
-        sta     task + 2
 
-        ; Task 0 is the idle task and is always runnable
-        ldyw    #Task::state
-        ldaw    #TASK_RUNNABLE
-        sta     [task],y
-
-        sei
-        ldxw    #0
-@init:  ldyw    #Task::pid
-        txa
-        sta     [task],y
-        cpxw    #MAX_TASKS-1
+        ldxw    #1
+@init:  txa
+        ldyw    #Task::pid
+        sta     (task),y
+        inx
+        cpxw    #MAX_TASKS+1
         beq     @done
         lda     task
         clc
         adcw    #.sizeof(Task)
-        sta     [task]
-        pha
-        ldyw    #Task::next + 2
-        lda     task + 2
-        sta     [task],y
-        pla
         sta     task
-        inx
         bra     @init
-@done:  ldyw    #Task::next
-        ldaw    #0
-        sta     [task],y
-        iny
-        iny
-        sta     [task],y
-        cli
-        rtl
+@done:  rts
 .endproc
 
 ;;
@@ -86,18 +69,21 @@ task:   .res    4
 .proc start_task
         jsr     get_task_slot
         bcc     @go
-        pla
-        pla
-        pla
-        pla
+        lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
         ldaw    #ENOMEM
         sec
-        rtl
+        rts
 
         ; Each process gets 1K in bank $00, so multiply pid
         ; by 1024 to get the base address of this region.
 
-@go:    lda     [task]               ; get PID
+@go:    ldyw    #Task::pid
+        lda     (task),y             ; get PID
         ldxw    #10
 :       asl
         dex
@@ -108,12 +94,12 @@ task:   .res    4
         ; init uid/gid/etc
         ldyw    #Task::state
         ldaw    #TASK_RUNNABLE
-        sta     [task],y
+        sta     (task),y
         ldyw    #Task::sp
         lda     ptr
         clc
         adcw    #(TASK_STACK_TOP - INT_STACK_FRAME_SIZE)
-        sta     [task],y
+        sta     (task),y
 
         ; build the task stack frame
         ldyw    #TASK_STACK_TOP - (INT_STACK_FRAME_SIZE - IntStackFrame::y_reg)
@@ -138,15 +124,48 @@ task:   .res    4
         lda     #0
         sta     [ptr],y         ; P
         ldyw    #TASK_STACK_TOP - (INT_STACK_FRAME_SIZE - IntStackFrame::k_reg)
-        lda     6,s
+        lda     5,s
         sta     [ptr],y         ; K
         dey
         dey
         longm
-        lda     4,s
+        lda     3,s
         sta     [ptr],y         ; PC
-@exit:  clc
-        rtl
+
+        lda     task_head
+        bne     @add
+
+        ; empty task_head, so put this task in as the first and only entry
+        lda     task
+        sta     task_head
+        ldyw    #Task::prev
+        sta     (task_head)
+        sta     (task_head),y
+        bra     @exit
+
+@add:   lda     (task_head)
+        sta     (task)          ; task.next = task_head.next
+        pha                     ; save for later
+
+        lda     task
+        sta     (task_head)     ; task_head.next = task
+
+        ldyw    #Task::prev
+        lda     task_head
+        sta     (task),y        ; task.prev = task_head
+
+        lda     task
+        sta     (1,s),y         ; task_head.next.prev = task
+        pla 
+
+@exit:  lda     1,s
+        sta     5,s
+        tsc
+        clc
+        adcw    #4
+        tcs
+        clc
+        rts
 .endproc
 
 ;;
@@ -158,8 +177,9 @@ task:   .res    4
 .proc task_quit
         ldyw    #Task::state
         ldaw    #TASK_UNUSED
-        sta     [current_task],y
-        rtl
+        sta     (current_task),y
+        ; TODO remove from task list
+        jmp     reschedule
 .endproc
 
 ;;
@@ -167,7 +187,7 @@ task:   .res    4
 ; A reschedule will then be triggered to pick a new task to run.
 ;
 .proc task_yield
-        rtl
+        rts
 .endproc
 
 ;;
@@ -178,27 +198,24 @@ task:   .res    4
 ; task = pointer to entry
 ;
 .proc get_task_slot
-        ldaw    #.loword(task_list)
+        ldaw    #.loword(tasks)
         sta     task
-        ldaw    #.hiword(task_list)
-        sta     task + 2
+        ldxw    #0
 @loop:  ldyw    #Task::state
-        lda     [task],y
+        lda     (task),y
         cmpw    #TASK_UNUSED
         beq     @done
-        lda     [task]
-        tax
-        ldyw    #Task::next + 2
-        lda     [task],y
-        sta     task + 2
-        stx     task
-        ora     task
-        bne     @loop
+        inx
+        cpx     #MAX_TASKS
+        beq     @done
+        clc
+        adcw    #.sizeof(Task)
+        sta     task
+        bra     @loop
 @done:  clc
         rts
 @notfound:
         stz     task
-        stz     task + 2
         ldaw    #ENOMEM
         sec
         rts

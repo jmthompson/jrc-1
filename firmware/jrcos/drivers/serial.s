@@ -313,9 +313,9 @@ serial_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
 ;
 ; On exit:
@@ -324,13 +324,13 @@ serial_ops:
 .proc serial_open
         _BeginDirectPage
           _StackFrameRTL
-          i_inodep  .dword
-          i_filep   .dword
+          i_inodep  .word
+          i_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
         ldyw    #File::unit
-        lda     [i_filep],y
+        lda     (i_filep),y
         cmpw    #2
         blt     @ok
         ldyw    #ENOSYS
@@ -348,16 +348,16 @@ serial_ops:
 ; Stack frame:
 ;
 ; |-----------------------|
-; | [4] Pointer to File   |
+; | [2] Pointer to File   |
 ; |-----------------------|
-; | [4] Pointer to Inode  |
+; | [2] Pointer to Inode  |
 ; |-----------------------|
 ;
 .proc serial_release
         _BeginDirectPage
           _StackFrameRTL
-          i_inodep  .dword
-          i_filep   .dword
+          i_inodep  .word
+          i_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -380,7 +380,7 @@ serial_ops:
 ; |-------------------------------|
 ; | [2] Whence                    |
 ; |-------------------------------|
-; | [4] Pointer to File           |
+; | [2] Pointer to File           |
 ; |-------------------------------|
 ;
 ; On exit:
@@ -389,7 +389,7 @@ serial_ops:
 .proc serial_seek
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
+          i_filep   .word
           i_whence  .word
           i_offset  .dword
           o_offset  .dword
@@ -415,14 +415,14 @@ serial_ops:
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 .proc serial_read
         _BeginDirectPage
           l_nonblock  .byte
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
           i_bufferp   .dword
           i_size      .dword
           o_size      .dword
@@ -430,7 +430,7 @@ serial_ops:
 
         _SetupDirectPage
         ldyw    #File::unit
-        lda     [i_filep],y
+        lda     (i_filep),y
         bne     @s2
         ldaw    #.loword(getc_seriala)
         sta     trampoline + 1
@@ -443,7 +443,7 @@ serial_ops:
         sta     trampoline + 3
 @cont:  ldyw    #File::flags
         shortm
-        lda     [i_filep],y
+        lda     (i_filep),y
         and     #O_NONBLOCK
         sta     l_nonblock
         longm
@@ -484,13 +484,13 @@ serial_ops:
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 .proc serial_write
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
           i_bufferp   .dword
           i_size      .dword
           o_size      .dword
@@ -498,7 +498,7 @@ serial_ops:
 
         _SetupDirectPage
         ldyw    #File::unit
-        lda     [i_filep],y
+        lda     (i_filep),y
         bne     @s2
         ldaw    #.loword(putc_seriala)
         sta     trampoline + 1
@@ -535,7 +535,7 @@ serial_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -544,7 +544,7 @@ serial_ops:
 .proc serial_flush
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -561,7 +561,7 @@ serial_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -570,7 +570,7 @@ serial_ops:
 .proc serial_poll
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -587,7 +587,7 @@ serial_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -596,7 +596,7 @@ serial_ops:
 .proc serial_ioctl
         _BeginDirectPage
           _StackFrameRTL
-          i_filep     .dword
+          i_filep     .word
         _EndDirectPage
 
         _SetupDirectPage

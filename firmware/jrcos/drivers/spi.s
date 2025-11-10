@@ -116,7 +116,7 @@ spi_ops:
 ; Stack frame (top to bottom):
 ;
 ; |---------------------------------------------|
-; | [4] pointer to File representing the device |
+; | [2] pointer to File representing the device |
 ; |---------------------------------------------|
 ;
 ; On exit:
@@ -126,7 +126,7 @@ spi_ops:
 .proc spi_open
         _BeginDirectPage
           _StackFrameRTL
-          i_file  .dword
+          i_file  .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -136,7 +136,7 @@ spi_ops:
         bra     @exit
 :       dec     spi_busy
         ldyw    #File::unit
-        lda     [i_file],y
+        lda     (i_file),y
         tax
         shortm
         lda     f:spi_units,x
@@ -155,7 +155,7 @@ spi_ops:
 ; Stack frame (top to bottom):
 ;
 ; |---------------------------------------------|
-; | [4] pointer to File representing the device |
+; | [2] pointer to File representing the device |
 ; |---------------------------------------------|
 ;
 ; On exit:
@@ -168,7 +168,7 @@ spi_ops:
 .proc spi_release
         _BeginDirectPage
           _StackFrameRTL
-          i_file  .dword
+          i_file  .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -196,7 +196,7 @@ spi_ops:
 ; |-------------------------------|
 ; | [2] Whence                    |
 ; |-------------------------------|
-; | [4] Pointer to File           |
+; | [2] Pointer to File           |
 ; |-------------------------------|
 ;
 ; On exit:
@@ -205,7 +205,7 @@ spi_ops:
 .proc spi_seek
         _BeginDirectPage
           _StackFrameRTL
-          i_filep   .dword
+          i_filep   .word
           i_whence  .word
           i_offset  .dword
           o_offset  .dword
@@ -226,23 +226,19 @@ spi_ops:
 ; Stack frame (top to bottom):
 ;
 ; |---------------------------------------------|
-; | [4] pointer to File representing the device |
+; | [2] pointer to File representing the device |
 ; |---------------------------------------------|
 ; | [4] Pointer to buffer                       |
 ; |---------------------------------------------|
 ; | [4] Number of bytes to transfer             |
 ; |---------------------------------------------|
 ;
-; Parameters:
-; +0 : [2] Number of bytes to exchange
-; +2 : [4] Pointer to buffer
-;
 .proc spi_xfer_bytes
         _BeginDirectPage
           _StackFrameRTL
           i_len     .dword
           i_buffer  .dword
-          i_file    .dword
+          i_file    .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -252,9 +248,9 @@ spi_ops:
         bra     @exit
 :       shortm
         ldyw    #0
-@xfer:  lda     [ptr],y
+@xfer:  lda     [i_buffer],y
         jsl     spi_transfer
-        sta     [ptr],y
+        sta     [i_buffer],y
         iny
         cpy     tmp
         bne     @xfer
@@ -269,7 +265,7 @@ spi_ops:
 .proc spi_flush
         _BeginDirectPage
           _StackFrameRTL
-          i_file    .dword
+          i_file    .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -283,7 +279,7 @@ spi_ops:
 .proc spi_poll
         _BeginDirectPage
           _StackFrameRTL
-          i_file    .dword
+          i_file    .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -297,7 +293,7 @@ spi_ops:
 .proc spi_ioctl
         _BeginDirectPage
           _StackFrameRTL
-          i_file    .dword
+          i_file    .word
         _EndDirectPage
 
         _SetupDirectPage

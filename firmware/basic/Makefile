@@ -3,6 +3,7 @@ LD := ld65
 
 SRCS     := $(wildcard *.s)
 OBJS   	 := ${SRCS:.s=.o}
+LIBS     := ../stdlib/stdlib.bin
 LISTINGS := ${SRCS:.s=.l}
 TARGET   := basic.bin
 MAPFILE  := basic.map
@@ -10,7 +11,7 @@ MAPFILE  := basic.map
 all: ${TARGET}
 
 ${TARGET}: ${OBJS}
-	${LD} ${OBJS} -o ${TARGET} -C basic.cfg -m ${MAPFILE}
+	${LD} ${OBJS} ${LIBS} -o ${TARGET} -C basic.cfg -m ${MAPFILE}
 
 all: ${TARGET}
 

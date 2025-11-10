@@ -12,19 +12,19 @@ MAX_TASKS := 32
 TASK_MAX_FDS := 16
 
 .struct Task
-        next    .dword        ; [+0 ] Pointer to next task in list
+        next    .word         ; [+0 ] Pointer to next task in list
+        prev    .word         ; [+2 ] Pointer to previous task in list
         pid     .word         ; [+4 ] process ID
-        root    .dword        ; [+6 ] Inode of current root
-        cwd     .dword        ; [+10] Inode of current working directory
-        state   .word         ; [+14] task state
-        tty     .word         ; [+16] device ID of controlling TTY
-        uid     .word         ; [+18] real user ID
-        gid     .word         ; [+20] real group ID
-        euid    .word         ; [+22] effective user ID
-        egid    .word         ; [+24] effective group ID
-        sp      .word         ; [+26] stack pointer
-        pad     .dword        ; [+28] pad to 32 bytes
-        files   .dword 16     ; [+32] Pointers to file descriptors. The 16 is TASK_MAX_FDS
+        root    .word         ; [+6] Inode of current root
+        cwd     .word         ; [+8] Inode of current working directory
+        state   .word         ; [+10] task state
+        tty     .word         ; [+12] device ID of controlling TTY
+        uid     .word         ; [+14] real user ID
+        gid     .word         ; [+16] real group ID
+        euid    .word         ; [+18] effective user ID
+        egid    .word         ; [+20] effective group ID
+        sp      .word         ; [+22] stack pointer
+        files   .word 16      ; [+24] Pointers to file descriptors. The 16 is TASK_MAX_FDS
 .endstruct
 
 TASK_UNUSED   := 0            ; marker for empty process table slot

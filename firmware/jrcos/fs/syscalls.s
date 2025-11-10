@@ -13,6 +13,7 @@
 
         .export     sys_open, sys_seek, sys_read, sys_write
 
+        .import     dump_stack
         .importzp   current_task, currfd, currfile, ptr, tmp
 
         .segment "OSROM"
@@ -50,7 +51,6 @@
         bcs     @exit
         
         pha
-        pha
         _GetParam32 i_path
         phx
         pha
@@ -58,23 +58,19 @@
         pha
         _GetParam16 i_mode
         pha
-        jsl     open_file
+        jsr     open_file
         bcc     @ok
         ply
-        ply
         bra     @exit
-@ok:    lda     currfd
-        asl
+@ok:    pla
+        sta     currfile
+        lda     currfd
         asl
         clc
         adcw    #Task::files
         tay
-        pla
-        sta     [current_task],y
-        iny
-        iny
-        pla
-        sta     [current_task],y
+        lda     currfile
+        sta     (current_task),y
         lda     currfd
         _PutParam16 o_fd
         ldaw    #0
@@ -118,8 +114,6 @@
         pha
         _PushParam32 i_offset
         _PushParam16 i_whence
-        lda   currfile + 2
-        pha
         lda   currfile
         pha
         jsl   read_file
@@ -139,7 +133,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
 ; | [4] Number of bytes to read  |
 ; |------------------------------|
@@ -156,29 +150,24 @@
         .struct
           i_fd      .word
           i_bufferp .dword
-          i_size    .dword
-          o_count   .dword
+          i_size    .word
+          o_count   .word
         .endstruct
 
         _GetParam16 i_fd
         sta   currfd
         jsr   fd_to_file
         bcs   @exit
-
         pha
-        pha
-        _PushParam32 i_size
+        _PushParam16 i_size
         _PushParam32 i_bufferp
-        lda   currfile + 2
-        pha
         lda   currfile
         pha
         jsl   read_file
         bcc   @ok
         ply
-        ply
         bra   @exit
-@ok:    _PullParam32 o_count
+@ok:    _PullParam16 o_count
         ldaw  #0
         clc
 @exit:  rtl
@@ -190,9 +179,9 @@
 ; Stack frame (top to bottm):
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to write |
+; | [2] Number of bytes to write |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
@@ -207,29 +196,25 @@
         .struct
           i_fd      .word
           i_bufferp .dword
-          i_size    .dword
-          o_count   .dword
+          i_size    .word
+          o_count   .word
         .endstruct
 
         _GetParam16 i_fd
-        sta   currfd
         jsr   fd_to_file
         bcs   @exit
 
         pha
-        pha
-        _PushParam32 i_size
+        _PushParam16 i_size
         _PushParam32 i_bufferp
-        lda   currfile + 2
-        pha
         lda   currfile
         pha
         jsl   write_file
         bcc   @ok
         ply
-        ply
+        ldaw  #0
         bra   @exit
-@ok:    _PullParam32 o_count
+@ok:    _PullParam16 o_count
         ldaw  #0
         clc
 @exit:  rtl

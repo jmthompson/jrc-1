@@ -24,7 +24,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |--------------------------------|
-; | [4] Space for returned pointer |
+; | [2] Space for returned pointer |
 ; |--------------------------------|
 ; 
 ; On exit:
@@ -34,26 +34,22 @@
 .proc allocate_disk
         _BeginDirectPage
           _StackFrameRTS
-          o_diskp   .dword
+          o_diskp   .word
         _EndDirectPage
 
         _SetupDirectPage
         pha
-        pha
-        pea     .hiword(disks)
         pea     .loword(disks)
         pea     NUM_DISKS
         pea     .sizeof(Disk)
         jsr     new_object
         pla
         sta     o_diskp
-        pla
-        sta     o_diskp + 2
         bcc     @found
         ldyw    #ENOMEM
         bra     @exit
 @found: ldaw    #1
-        sta     [o_diskp]
+        sta     (o_diskp)
         ldyw    #0
 @exit:  _RemoveParams o_diskp
         _SetExitState
@@ -68,7 +64,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |----------------------------|
-; | [4] Pointer to Disk to add |
+; | [2] Pointer to Disk to add |
 ; |----------------------------|
 ;
 ; On exit:
@@ -77,30 +73,24 @@
 ;
 .proc attach_disk
         _BeginDirectPage
-          l_count     .dword
-          l_devicep   .dword
+          l_count     .word
+          l_devicep   .word
           l_ops       .dword
-          l_newdiskp  .dword
-          l_partp     .dword
+          l_newdiskp  .word
+          l_partp     .word
           l_start     .dword
           l_size      .dword
           _StackFrameRTS
-          i_diskp   .dword
+          i_diskp     .word
         _EndDirectPage
 
         _SetupDirectPage
-        ldyw    #Disk::device + 2
-        lda     [i_diskp],y
-        sta     l_devicep + 2
-        dey
-        dey
-        lda     [i_diskp],y
+        ldyw    #Disk::device
+        lda     (i_diskp),y
         sta     l_devicep
 
         _PushLong 0                 ; Read block zero
         _PushLong block_buffer
-        lda     l_devicep + 2
-        pha
         lda     l_devicep
         pha
         jsl     bdev_rdblock
@@ -111,8 +101,6 @@
         ; Parittion entries start at offset +446
         ldaw    #.loword(block_buffer+446)
         sta     l_partp
-        ldaw    #.hiword(block_buffer+448)
-        sta     l_partp+2
 
         ; partition entry format (important parts):
         ;
@@ -124,7 +112,7 @@
         ldaw    #4          ; Max of four partitions (we don't do extended)
         sta     l_count
 @part:  ldyw    #4
-        lda     [l_partp],Y     ; get partition type
+        lda     (l_partp),y     ; get partition type
         andw    #255
         cmpw    #$0c        ; W95 FAT32 LBA
         beq     @fat
@@ -134,63 +122,52 @@
         bne     @next
 @minix:
 @fat:   ldyw    #8
-        lda     [l_partp],y
+        lda     (l_partp),y
         sta     l_start
         iny
         iny
-        lda     [l_partp],y
+        lda     (l_partp),y
         sta     l_start + 2
         iny
         iny
-        lda     [l_partp],y
+        lda     (l_partp),y
         sta     l_size
         iny
         iny
-        lda     [l_partp],y
+        lda     (l_partp),y
         sta     l_size + 2
-        pha
         pha
         jsr     allocate_disk
         pla
         sta     l_newdiskp
-        pla
-        sta     l_newdiskp + 2
         bcs     @done               ; exit on memory allocation error
         ldyw    #Disk::device
         ldaw    l_devicep
-        sta     [l_newdiskp],y  ; device (lo)
-        iny
-        iny
-        ldaw    l_devicep + 2
-        sta     [l_newdiskp],y  ; device (hi)
+        sta     (l_newdiskp),y  ; device (lo)
         iny
         iny
         ldaw    i_diskp
-        sta     [l_newdiskp],y  ; parent (lo)
-        iny
-        iny
-        ldaw    i_diskp + 2
-        sta     [l_newdiskp],y  ; parent (hi)
+        sta     (l_newdiskp),y  ; parent (lo)
         iny
         iny
         lda     l_start
-        sta     [l_newdiskp],y  ; start_sector (lo)
+        sta     (l_newdiskp),y  ; start_sector (lo)
         iny
         iny
         lda     l_start + 2
-        sta     [l_newdiskp],y  ; start_sector (hi)
+        sta     (l_newdiskp),y  ; start_sector (hi)
         iny
         iny
         lda     l_size
-        sta     [l_newdiskp],y  ; num_sectors (lo)
+        sta     (l_newdiskp),y  ; num_sectors (lo)
         iny
         iny
         lda     l_size + 2
-        sta     [l_newdiskp],y  ; num_sectors (hi)
+        sta     (l_newdiskp),y  ; num_sectors (hi)
         iny
         iny
         ldaw    #0
-        sta     [l_newdiskp],y  ; type
+        sta     (l_newdiskp),y  ; type
 @next:  dec     l_count
         beq     @done
         ldaw    l_partp

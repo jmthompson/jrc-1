@@ -3,4 +3,4 @@
         .segment  "CODE"
 
 VERSION:
-        .asciiz   "jrcOS Integrated Basic v0.1.0"
+        .asciiz   "0.1.0"

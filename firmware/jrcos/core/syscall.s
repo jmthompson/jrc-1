@@ -98,8 +98,8 @@ default_table:
 
         DEFINE_SYSCALL  sys_open, 8              ; $10
         DEFINE_SYSCALL  sys_seek, 8              ; $11
-        DEFINE_SYSCALL  sys_read, 10             ; $12
-        DEFINE_SYSCALL  sys_write, 10            ; $13
+        DEFINE_SYSCALL  sys_read, 8              ; $12
+        DEFINE_SYSCALL  sys_write, 8             ; $13
         DEFINE_SYSCALL  0, 0                     ; $14
         DEFINE_SYSCALL  0, 0                     ; $15
         DEFINE_SYSCALL  0, 0                     ; $16

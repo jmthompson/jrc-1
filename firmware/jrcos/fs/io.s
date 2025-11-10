@@ -11,7 +11,7 @@
         .include    "kernel/fs.inc"
         .include    "stack.inc"
 
-        .import     trampoline
+        .import     trampoline, dump_stack
 
         .segment "OSROM"
 
@@ -19,7 +19,7 @@
         _BeginDirectPage
           l_ops     .dword
           _StackFrameRTL
-          i_filep   .dword
+          i_filep   .word
         _EndDirectPage
 
         phd
@@ -28,11 +28,11 @@
         tsc
         tcd
         ldyw    #File::ops
-        lda     [i_filep],y
+        lda     (i_filep),y
         sta     l_ops
         iny
         iny
-        lda     [i_filep],y
+        lda     (i_filep),y
         sta     l_ops + 2
         ldyw    #op
         lda     [l_ops],y
@@ -59,7 +59,7 @@
 ; |-------------------------------|
 ; | [2] Whence                    |
 ; |-------------------------------|
-; | [4] Pointer to File           |
+; | [2] Pointer to File           |
 ; |-------------------------------|
 ;
 ; On exit:
@@ -76,13 +76,13 @@
 ; Stack frame (top to bottm):
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to read  |
+; | [2] Number of bytes to read  |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:
@@ -99,13 +99,13 @@
 ; Stack frame (top to bottm):
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to write |
+; | [2] Number of bytes to write |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Pointer to File          |
+; | [2] Pointer to File          |
 ; |------------------------------|
 ;
 ; On exit:

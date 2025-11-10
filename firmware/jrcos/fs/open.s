@@ -23,7 +23,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |---------------------------------|
-; | [4] Space for returned pointer  |
+; | [2] Space for returned pointer  |
 ; |---------------------------------|
 ; | [4] Pointer to pathname         |
 ; |---------------------------------|
@@ -39,14 +39,14 @@
 .proc open_file
         _BeginDirectPage
           l_ops     .dword
-          l_devicep .dword
-          l_inodep  .dword
-          l_procp   .dword
-          _StackFrameRTL
+          l_devicep .word
+          l_inodep  .word
+          l_procp   .word
+          _StackFrameRTS
           i_mode    .word
           i_flags   .word
           i_path    .dword
-          o_filep   .dword
+          o_filep   .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -54,16 +54,13 @@
         ; start by trying to actually find the inode
 
         pha
-        pha
         lda     i_path + 2
         pha
         lda     i_path
         pha
-        jsl     lookup_inode
+        jsr     lookup_inode
         pla
         sta     l_inodep
-        pla
-        sta     l_inodep + 2
         bcc     @alloc
         ldyw    #ENOENT
         jmp     @exit
@@ -71,40 +68,33 @@
         ; Got the inode, now try to allocate a slot for it in the global file table
 
 @alloc: pha
-        pha
         jsr     allocate_file
         pla
         sta     o_filep
-        pla
-        sta     o_filep + 2
         jcs     @put_and_exit
         ldyw    #File::inode
         lda     l_inodep
-        sta     [o_filep],y
-        iny
-        iny
-        lda     l_inodep + 2
-        sta     [o_filep],y
+        sta     (o_filep),y
         iny
         iny
         lda     i_mode
-        sta     [o_filep],y
+        sta     (o_filep),y
         iny
         iny
         lda     i_flags
-        sta     [o_filep],y
+        sta     (o_filep),y
         iny
         iny
         ldaw    #0
-        sta     [o_filep],y
+        sta     (o_filep),y
         iny
         iny
-        sta     [o_filep],y
+        sta     (o_filep),y
 
         ; Check for special handling for inodes that aren't plain files
 
         ldyw    #Inode::type
-        lda     [l_inodep],y
+        lda     (l_inodep),y
         cmpw    #IT_FILE
         beq     @file
         cmpw    #IT_BDEV
@@ -126,15 +116,12 @@
         sta     l_ops + 2
         bra     @open
 @bdev:  ldyw    #Inode::major
-        lda     [l_inodep],y
-        pha
+        lda     (l_inodep),y
         pha
         pha
         jsr     find_device
         pla
         sta     l_devicep
-        pla
-        sta     l_devicep + 2
         jcs     @put_and_exit
         ldaw    #.loword(bdev_operations)
         sta     l_ops
@@ -142,41 +129,34 @@
         sta     l_ops + 2
         bra     @dev
 @cdev:  ldyw    #Inode::major
-        lda     [l_inodep],y
         pha
-        pha
+        lda     (l_inodep),y
         pha
         jsr     find_device
         pla
         sta     l_devicep
-        pla
-        sta     l_devicep + 2
         jcs     @put_and_exit
         ldyw    #Device::ops
-        lda     [l_devicep],y
+        lda     (l_devicep),y
         sta     l_ops
         iny
         iny
-        lda     [l_devicep],y
+        lda     (l_devicep),y
         sta     l_ops + 2
 @dev:   ldyw    #File::device
         lda     l_devicep
-        sta     [o_filep],y
-        iny
-        iny
-        lda     l_devicep + 2
-        sta     [o_filep],y
+        sta     (o_filep),y
         ldyw    #Inode::minor
-        lda     [l_inodep],y
+        lda     (l_inodep),y
         ldyw    #File::unit
-        sta     [o_filep],y
+        sta     (o_filep),y
 @open:  ldyw    #File::ops
         lda     l_ops
-        sta     [o_filep],y
+        sta     (o_filep),y
         iny
         iny
         lda     l_ops + 2
-        sta     [o_filep],y
+        sta     (o_filep),y
         ldyw    #FileOperations::open
         lda     [l_ops],y
         sta     trampoline + 1
@@ -184,11 +164,7 @@
         iny
         lda     [l_ops],y
         sta     trampoline + 3
-        lda     l_inodep + 2
-        pha
         lda     l_inodep
-        pha
-        lda     o_filep + 2
         pha
         lda     o_filep
         pha
@@ -198,10 +174,8 @@
 @exit:  _RemoveParams o_filep
         _SetExitState
         pld
-        rtl
+        rts
 @put_and_exit:
-        pha                       ; save error code
-        lda     l_inodep + 2
         pha
         lda     l_inodep
         pha

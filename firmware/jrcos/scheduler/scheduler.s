@@ -13,21 +13,19 @@
 
         .export     scheduler_init, scheduler_tick, reschedule
 
-        .import     task_list, build_task_list
-        .importzp   current_task, next_task
+        .import     tasks, idle_task, build_task_list, start_task
+        .importzp   current_task, next_task, task_head, task
 
         .segment "OSROM"
 
 .proc scheduler_init
-        jsl     build_task_list
-
-        ldaw    #.loword(task_list)
+        jsr     build_task_list
+        ldaw    #.loword(idle_task)
         sta     current_task
         sta     next_task
-        ldaw    #.hiword(task_list)
-        sta     current_task + 2
-        sta     next_task + 2
-        rtl
+        stz     task_head
+        
+        rts
 .endproc
 
 ;;
@@ -38,13 +36,35 @@
 ; be schedule instead.
 ;
 .proc reschedule
-        rtl
+        lda     current_task
+        cmpw    #.loword(idle_task)
+        bne     :+
+        lda     task_head
+:       beq     @idle             ; no runnable tasks, so run the idle task
+        sta     task
+@loop:  lda     (task)
+        cmp     current_task      ; Have we looped around?
+        beq     @done
+        sta     task
+        ldyw    #Task::state
+        lda     (task),y
+        cmpw    #TASK_RUNNABLE
+        bne     @loop
+        lda     task
+        sta     next_task
+@done:  rts
+@idle:  ldaw    #.loword(idle_task)
+        sta     next_task
+        rts
 .endproc
 
 ;;
 ; Housekeeping function called during the system tick interrupt. The main purpose
 ; here is to call reschedule() to swap tasks on every tick.
+; 
+; This is called from the interrupt handler in bank 0 so it must exit with RTL.
 ;
 .proc scheduler_tick
-        jml      reschedule
+        jsr     reschedule
+        rtl
 .endproc

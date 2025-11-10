@@ -21,9 +21,9 @@
 ; Stack frame (top to bottm):
 ;
 ; |---------------------------------|
-; | [4] Space for returned pointer  |
+; | [2] Space for returned pointer  |
 ; |---------------------------------|
-; | [4] Pointer to object table     |
+; | [2] Pointer to object table     |
 ; |---------------------------------|
 ; | [2] Number of entries in table  |
 ; |---------------------------------|
@@ -36,36 +36,43 @@
 ; C,Y trashed
 ;
 .proc new_object
-        _BeginDirectPage
-          _StackFrameRTS
-          i_size        .word
-          i_count       .word
-          i_table       .dword
-          o_entry       .dword
-        _EndDirectPage
+i_size := 3
+i_count := 5
+i_table := 7
+o_entry := 9
 
-        _SetupDirectPage
-        lda     i_table
-        sta     o_entry
-        lda     i_table + 2
-        sta     o_entry + 2
+        lda     i_table,s
+        sta     o_entry,s
 @search:
-        lda     [o_entry]
+        ldyw    #0
+        lda     (o_entry,s),y
         beq     @found
-        dec     i_count
+        lda     i_count,s
+        dec
+        sta     i_count,s
         beq     @error
-        lda     o_entry
+        lda     o_entry,s
         clc
-        adc     i_size
-        sta     o_entry
+        adc     i_size,s
+        sta     o_entry,s
         bra     @search
 @found: ldaw    #1
-        sta     [o_entry]
-        ldyw    #0
-@exit:  _RemoveParams o_entry
-        _SetExitState
-        pld
+        sta     (o_entry,s),y
+        lda     1,s
+        sta     7,s
+        tsc
+        clc
+        adcw    #6
+        tcs
+        ldaw    #0
+        clc
         rts
-@error: ldyw    #ENOMEM
-        bra     @exit
+@error: lda     1,s
+        sta     7,s
+        tsc
+        clc
+        adcw    #6
+        ldaw    #ENOMEM
+        sec
+        rts
 .endproc

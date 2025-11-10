@@ -38,7 +38,7 @@
 ;
 .proc register_device
         _BeginDirectPage
-          l_ptr       .dword
+          l_ptr       .word
           _StackFrameRTS
           i_privatep  .dword
           i_ops       .dword
@@ -48,46 +48,42 @@
 
         _SetupDirectPage
         pha
-        pha
-        pea     .hiword(devices)
         pea     .loword(devices)
         pea     NUM_DEVICES
         pea     .sizeof(Device)
         jsr     new_object
         pla
         sta     l_ptr
-        pla
-        sta     l_ptr + 2
         bcc     @found
         ldyw    #ENOMEM
         bra     @exit
 @found: ldyw    #Device::name
         lda     i_name
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_name + 2
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_devicenr
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_ops
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_ops + 2
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_privatep
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         iny
         iny
         lda     i_privatep + 2
-        sta     [l_ptr],y
+        sta     (l_ptr),y
         ldyw    #0
 @exit:  _RemoveParams
         _SetExitState
@@ -101,7 +97,7 @@
 ; Stack frame (top to bottm):
 ;
 ; |--------------------------------|
-; | [4] Space for returned pointer |
+; | [2] Space for returned pointer |
 ; |--------------------------------|
 ; | [2] Device major number        |
 ; |--------------------------------|
@@ -115,17 +111,15 @@
         _BeginDirectPage
           _StackFrameRTS
           i_major     .word
-          o_devicep   .dword
+          o_devicep   .word
         _EndDirectPage
 
         _SetupDirectPage
         ldaw    #.loword(devices)
         sta     o_devicep
-        ldaw    #.hiword(devices)
-        sta     o_devicep + 2
         ldxw    #0
         ldyw    #Device::major
-@loop:  lda     [o_devicep],y
+@loop:  lda     (o_devicep),y
         cmp     i_major
         beq     @found
         inx
