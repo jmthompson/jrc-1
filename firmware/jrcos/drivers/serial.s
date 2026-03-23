@@ -409,9 +409,9 @@ serial_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to read  |
+; | [2] Number of bytes to read  |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
@@ -424,8 +424,8 @@ serial_ops:
           _StackFrameRTL
           i_filep     .word
           i_bufferp   .dword
-          i_size      .dword
-          o_size      .dword
+          i_size      .word
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -448,9 +448,7 @@ serial_ops:
         sta     l_nonblock
         longm
         stz     o_size
-        stz     o_size + 2
 @loop:  lda     i_size
-        ora     i_size + 2
         beq     @exit
         shortm
 @wait:  jsl     trampoline
@@ -462,8 +460,8 @@ serial_ops:
 @store: sta     [i_bufferp]
         longm
         inc32   i_bufferp
-        inc32   o_size
-        dec32   i_size
+        inc     o_size
+        dec     i_size
         bra     @loop
 @exit:  _RemoveParams o_size
         ldaw    #0
@@ -478,9 +476,9 @@ serial_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to write |
+; | [2] Number of bytes to write |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
@@ -492,8 +490,8 @@ serial_ops:
           _StackFrameRTL
           i_filep     .word
           i_bufferp   .dword
-          i_size      .dword
-          o_size      .dword
+          i_size      .word
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
@@ -510,17 +508,15 @@ serial_ops:
         ldaw    #.hiword(putc_serialb)
         sta     trampoline + 3
 @cont:  stz     o_size
-        stz     o_size + 2
 @loop:  lda     i_size
-        ora     i_size + 2
         beq     @exit
         shortm
         lda     [i_bufferp]
         jsl     trampoline
         longm
         inc32   i_bufferp
-        inc32   o_size
-        dec32   i_size
+        inc     o_size
+        dec     i_size
         bra     @loop
 @exit:  _RemoveParams o_size
         ldaw    #0

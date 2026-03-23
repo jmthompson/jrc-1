@@ -221,13 +221,13 @@ via_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
 ; | [2] Pointer to File          |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
-; | [4] Number of bytes to read  |
+; | [2] Number of bytes to read  |
 ; |------------------------------|
 ;
 ; On exit:
@@ -236,15 +236,14 @@ via_ops:
 .proc via_read
         _BeginDirectPage
           _StackFrameRTL
-          i_size      .dword
+          i_size      .word
           i_bufferp   .dword
           i_filep     .word
-          o_size      .dword
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
         stz     o_size
-        stz     o_size + 2
         _RemoveParams o_size
         ldaw    #0
         clc
@@ -258,9 +257,9 @@ via_ops:
 ; Stack frame:
 ;
 ; |------------------------------|
-; | [4] Space for returned count |
+; | [2] Space for returned count |
 ; |------------------------------|
-; | [4] Number of bytes to write |
+; | [2] Number of bytes to write |
 ; |------------------------------|
 ; | [4] Pointer to buffer        |
 ; |------------------------------|
@@ -275,8 +274,8 @@ via_ops:
           _StackFrameRTL
           i_filep     .word
           i_bufferp   .dword
-          i_size      .dword
-          o_size      .dword
+          i_size      .word
+          o_size      .word
         _EndDirectPage
 
         _SetupDirectPage
