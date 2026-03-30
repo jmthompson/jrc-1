@@ -94,6 +94,7 @@ Rbuff:  .res    132
 ;
 XModemSend:
         _puts   start_msg
+        shortm
         stz     errcnt      ; error counter set to 0
         stz     lastblk     ; set flag to false
         lda     #$01
@@ -117,8 +118,8 @@ XModemSend:
         beq     @ldbuff0    ; no, send the next one    
         jmp     @done       ; yes, we're done
 @ldbuff0:
-        ldx     #$02        ; init pointers
-        ldy     #$00
+        ldxw    #$02        ; init pointers
+        ldyw    #$00
         inc     blkno       ; inc block counter
         lda     blkno
         sta     Rbuff       ; save in 1st byte of buffer
@@ -138,7 +139,7 @@ XModemSend:
         inc     lastblk     ; Yes, Set last byte flag
 @ldbuff3:
         inx
-        cpx     #$82        ; Are we at the end of the 128 byte block?
+        cpxw    #$82        ; Are we at the end of the 128 byte block?
         beq     @calc_crc   ; Yes, calc CRC
         lda     #$00        ; Fill rest of 128 bytes with $00
         sta     Rbuff,X
@@ -149,7 +150,7 @@ XModemSend:
         inc     xmptr+1
 @ldbuff5:
         inx
-        cpx     #$82        ; last byte in block?
+        cpxw    #$82        ; last byte in block?
         bne     @ldbuff1    ; no, get the next
 @calc_crc:
         jsr     calc_crc
@@ -159,13 +160,13 @@ XModemSend:
         lda     crc         ; save lo byte of CRC to buffer
         sta     Rbuff,Y
 @resend:
-        ldx     #$00
+        ldxw    #$00
         putc_ser #SOH       ; send SOH
 @sendblk:
         lda     Rbuff,X     ; Send 132 bytes in buffer to the console
         putc_ser
         inx
-        cpx     #$84        ; last byte?
+        cpxw    #$84        ; last byte?
         bne     @sendblk    ; no, get next
         jsr     set_retry
         jsr     get_byte    ; Wait for Ack/Nack
@@ -184,10 +185,12 @@ XModemSend:
         bne     @resend     ; no, resend block
 @prtabort:
         jsr     flush       ; yes, too many errors, flush buffer,
+        longm
         _puts   failure_msg
         sec
         rts
-@done:  jsr     success_msg
+@done:  longm
+        _puts   success_msg
         clc
         rts
 
@@ -196,6 +199,7 @@ XModemSend:
 ;
 XModemRcv:
         _puts   start_msg
+        shortm
         lda     #$01
         sta     blkno       ; set block # to 1
 @startcrc:
@@ -219,7 +223,7 @@ XModemRcv:
         bne     @bad        ; Not SOH or EOT, so flush buffer & send NAK    
         jmp     @done       ; EOT - all done!
 @begin:
-        ldx     #$00
+        ldxw    #$00
 @getblk:
         jsr     set_retry
 @getblk1:
@@ -228,14 +232,15 @@ XModemRcv:
 @getblk2:
         sta     Rbuff,X     ; good char, save it in the rcv buffer
         inx                 ; inc buffer pointer    
-        cpx     #$84        ; <01> <FE> <128 bytes> <CRCH> <CRCL>
+        cpxw    #$84        ; <01> <FE> <128 bytes> <CRCH> <CRCL>
         bne     @getblk     ; get 132 characters
-        ldx     #$00
+        ldxw    #$00
         lda     Rbuff,X     ; get block # from buffer
         cmp     blkno       ; compare to expected block #    
         beq     @goodblk1   ; matched!
-        _puts   failure_msg ; Unexpected block number - abort    
         jsr     flush       ; mismatched - flush buffer and then do BRK
+        longm
+        _puts   failure_msg ; Unexpected block number - abort    
         sec
         rts                 ; abort, return to caller
 @goodblk1:
@@ -243,8 +248,9 @@ XModemRcv:
         inx
         cmp     Rbuff,X     ; compare with expected 1's comp of block #
         beq     @goodblk2   ; matched!
-        _puts   failure_msg ; Unexpected block number - abort    
         jsr     flush       ; mismatched - flush buffer and then do BRK
+        longm
+        _puts   failure_msg ; Unexpected block number - abort    
         sec
         rts
 @goodblk2:
@@ -259,7 +265,7 @@ XModemRcv:
 @bad:   jsr     flush       ; flush the input buffer
         putc_ser #NAK       ; send NAK to resend block
         jmp     @startblk   ; start over, get the block again            
-@good:  ldy     #$00        ; set offset to zero
+@good:  ldyw    #$00        ; set offset to zero
 @copy:  lda     Rbuff+2,Y   ; get data byte from buffer
         sta     [xmptr],Y   ; save to target
         iny
@@ -276,6 +282,7 @@ XModemRcv:
         jmp     @startblk   ; get next block
 @done:  putc_ser #ACK       ; last block, send ACK and exit.
         jsr     flush       ; get leftover characters, if any
+        longm
         _puts   success_msg
         clc
         rts
@@ -294,14 +301,14 @@ set_retry:
 
 ; wait for chr input and cycle timing loop
 get_byte:
+        longm
 @loop:  getc_ser            ; get chr from serial port, don't wait 
         bcc     @ok         ; got one, so exit
-        longm
         dec     retry       ; no character received, so dec counter
-        shortm
         bne     @loop
         sec                 ; if loop times out, SEC, else CLC and return
-@ok:    rts                 ; with character in "A"
+@ok:    shortm
+        rts                 ; with character in "A"
 
 ;
 flush:
@@ -325,7 +332,7 @@ failure_msg:
 calc_crc:
         stz     crc
         stz     crc+1
-        ldy     #$02
+        ldyw    #$02
 @loop:  lda     Rbuff,Y
         eor     crc+1   ; Quick CRC computation with lookup tables
         tax             ; updates the two bytes at crc & crc+1

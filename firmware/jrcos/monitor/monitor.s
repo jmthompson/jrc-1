@@ -145,12 +145,9 @@ capture_registers:
 monitor_brk:
         longmx
 
-        jsr     dump_stack
-:       wai
-        bra     :-
-
         jsr     capture_registers
         _puts   brk_banner
+        jsr     dump_stack
         jsr     print_registers
         bra     monitor_loop
 
@@ -444,31 +441,23 @@ monitor_exit:
         rtl
 
 xmodem_send:
-        shortm
         lda     start_loc
         sta     xmptr
-        lda     start_loc+1
-        sta     xmptr+1
         lda     start_loc+2
         sta     xmptr+2
         lda     end_loc
         sta     xmeofp
-        lda     end_loc+1
-        sta     xmeofp+1
         lda     end_loc+2
         sta     xmeofp+2
         jsr     XModemSend
-        longm
         rts
 
 xmodem_receive:
         lda     start_loc
         sta     xmptr
-        shortm
         lda     start_loc+2
         sta     xmptr+2
         jsr     XModemRcv
-        longm
         rts
 
 set_register:
