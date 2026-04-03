@@ -29,8 +29,14 @@ buffer: .res  2
         _PushWord STDIN
         _read
         pla
-        plp
+        cmpw  #0
+        beq   @empty
         lda   f:buffer
+        plp
         clc
         rtl
+@empty: plp
+        sec
+        rtl
+        
 .endproc
