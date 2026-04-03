@@ -79,15 +79,15 @@ start_banner:
 .proc open_stdio
         pha
         _PushLong @console
-        _PushWord 0
+        _PushWord O_NONBLOCK
         _PushWord O_RDONLY
         _open               ; open stdin
         pla
         pha
         _PushLong @console
-        _PushWord 0
+        _PushWord O_NONBLOCK
         _PushWord O_WRONLY
-        _open               ; open stdou
+        _open               ; open stdout
         pla
         pha
         _PushLong @console
