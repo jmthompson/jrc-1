@@ -269,7 +269,8 @@ XModemRcv:
 @copy:  lda     Rbuff+2,Y   ; get data byte from buffer
         sta     [xmptr],Y   ; save to target
         iny
-        bpl     @copy       ; stop when Y=$80
+        cpyw    #$80
+        bne     @copy       ; stop when Y=$80
         tya
         clc
         adc     xmptr
@@ -317,14 +318,14 @@ flush:
         rts                 ; else done
 
 start_msg:
-        .byte   "Begin XMODEM/CRC transfer now, or press ESC to abort.", $0d, $00
+        .byte   "Begin XMODEM/CRC transfer now, or press ESC to abort.", $0d, $0a, $00
 
 success_msg:
-        .byte   EOT,CR,EOT,CR,EOT,CR,CR
-        .byte   "Transfer successful.", $0d, 00
+        .byte   EOT,CR,LF,EOT,CR,LF,EOT,CR,LF,CR,LF
+        .byte   "Transfer successful.", $0d, $0a, 00
 
 failure_msg:
-        .byte   "Transfer failed.", $0d, 00
+        .byte   "Transfer failed.", $0d, $0a, 00
 
 ;;
 ; Calculate block CRC
@@ -342,7 +343,7 @@ calc_crc:
         lda     f:crclo,X
         sta     crc
         iny
-        cpy    #$82     ; done yet?
+        cpyw   #$82     ; done yet?
         bne    @loop    ; no, get next
         rts             ; y=82 on exit
 
