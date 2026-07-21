@@ -278,6 +278,9 @@ XModemRcv:
         lda     xmptr+1
         adc     #0
         sta     xmptr+1
+        lda     xmptr+2
+        adc     #0
+        sta     xmptr+2
         inc     blkno       ; done.  Inc the block #
         putc_ser #ACK       ; send ACK
         jmp     @startblk   ; get next block
