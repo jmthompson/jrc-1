@@ -10,8 +10,9 @@
         .include    "stack.inc"
         .include    "kernel/scheduler.inc"
         .include    "kernel/syscall_macros.inc"
+        .include    "fcntl.inc"
 
-        .export     sys_open, sys_seek, sys_read, sys_write
+        .export     sys_open, sys_seek, sys_read, sys_write, sys_fcntl
 
         .import     dump_stack
         .importzp   current_task, currfd, currfile, ptr, tmp
@@ -219,3 +220,59 @@
         clc
 @exit:  rtl
 .endproc
+
+;;
+; File descriptor control
+;
+; Stack frame (top to bottm):
+;
+; |------------------------------|
+; | [4] Argument                 |
+; |------------------------------|
+; | [2] Operation                |
+; |------------------------------|
+; | [2] File descriptor          |
+; |------------------------------|
+;
+; On exit:
+; c = 0 on success, 1 on failure
+; C = error code
+;
+.proc sys_fcntl
+        .struct
+          i_fd      .word
+          i_op      .word
+          i_arg     .word
+        .endstruct
+
+        _GetParam16 i_fd
+        sta   currfd
+        jsr   fd_to_file
+        bcs   @exit
+        _GetParam16 i_op
+        cmpw  #F_GETFL
+        bne   :+
+        ldyw  #File::flags
+        lda   (currfile),y
+        clc
+        bra   @exit
+:       cmpw  #F_SETFL
+        bne   :+
+        _GetParam16 i_arg
+        ldyw  #File::flags
+        sta   (currfile),y
+        ldaw  #0
+        clc
+        bra   @exit
+;        cmpw  #F_GETFD
+;        bne   :+
+;:       cmpw  #F_SETFD
+;        bne   :+
+:       cmpw  #F_DUPFD
+        bne   @error
+        ; put dup code here
+@error: ldaw  #EINVAL
+        sec
+@exit:  rtl
+.endproc
+

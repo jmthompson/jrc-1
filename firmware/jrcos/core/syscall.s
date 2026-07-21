@@ -8,7 +8,7 @@
         .include "kernel/syscall_macros.inc"
 
         .import hw_version, jiffies, jrcos_version, monitor_start, sysreset, task_yield, task_quit
-        .import sys_open, sys_seek, sys_read, sys_write
+        .import sys_open, sys_seek, sys_read, sys_write, sys_fcntl
 
         .export syscall_table_init
         .export syscall_table
@@ -100,7 +100,7 @@ default_table:
         DEFINE_SYSCALL  sys_seek, 8              ; $11
         DEFINE_SYSCALL  sys_read, 8              ; $12
         DEFINE_SYSCALL  sys_write, 8             ; $13
-        DEFINE_SYSCALL  0, 0                     ; $14
+        DEFINE_SYSCALL  sys_fcntl, 0             ; $14
         DEFINE_SYSCALL  0, 0                     ; $15
         DEFINE_SYSCALL  0, 0                     ; $16
         DEFINE_SYSCALL  0, 0                     ; $17
