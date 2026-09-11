@@ -414,9 +414,13 @@ set_memory:
 ; be called in full 16-bit mode.
 ;
 run_code:
+        shortm
+        phb
+        lda     b_reg
+        pha
+        plb
         phk
         pea     .loword(@ret)-1
-        shortm
         lda     start_loc+2
         pha
         longm
@@ -431,6 +435,11 @@ run_code:
         sta     a_reg
         stx     x_reg
         sty     y_reg
+        shortm
+        phb
+        pla
+        sta     b_reg
+        plb
         rts
 
 monitor_exit:
