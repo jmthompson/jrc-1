@@ -4,9 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "ascii.inc"
-        .include "stdio.inc"
-        .include "syscalls.inc"
+        .include "kernel/console.inc"
         .include "stack.inc"
 
         .export mon_show_heap
@@ -38,9 +36,9 @@
         jsl   print_address
         shortm
         lda     #' '
-        _putchar
+        _kputc
         lda     #' '
-        _putchar
+        _kputc
         ldyw    #1
         lda     [l_ptr],y
         jsl     print_hex
@@ -51,13 +49,13 @@
         and     #1
         beq     :+
         lda     #' '
-        _putchar
+        _kputc
         lda     #'*'
-        _putchar
+        _kputc
 :       lda     #CR
-        _putchar
+        _kputc
         lda     #LF
-        _putchar
+        _kputc
         longm
         lda     [l_ptr]
         andw    #$FFFC

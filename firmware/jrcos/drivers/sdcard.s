@@ -4,7 +4,6 @@
 ; *******************************
 
         .include "common.inc"
-        .include "syscalls.inc"
         .include "errors.inc"
         .include "kernel/device.inc"
         .include "kernel/fs.inc"

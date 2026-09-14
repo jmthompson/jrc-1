@@ -4,7 +4,6 @@
 ; *******************************
 
         .include "common.inc"
-        .include "ascii.inc"
         .include "kernel/console.inc"
 
         .export dump_stack

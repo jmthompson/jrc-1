@@ -15,7 +15,7 @@
         .include    "kernel/interrupts.inc"
         .include    "kernel/scheduler.inc"
 
-        .export     build_task_list, start_task, task_quit, task_yield
+        .export     build_task_list, start_task, task_quit, task_yield, suspend_task
         .exportzp   task
 
         .import     tasks
@@ -27,6 +27,12 @@
 task:   .res    2
 
         .segment "OSROM"
+
+.proc suspend_task
+        ldyw      #TASK_STOPPED
+        sta       (current_task),y
+        rts
+.endproc
 
 ;;
 ; Initiliaze the task list. The list is preallocated in the BSS segment, but

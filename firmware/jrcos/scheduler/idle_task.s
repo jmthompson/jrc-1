@@ -21,6 +21,9 @@
 ; It will never exit.
 ;
 .proc idle_task_loop
+        lda     f:$040000
+        inc
+        sta     f:$040000
         jsr     reschedule
         bra     idle_task_loop
 .endproc

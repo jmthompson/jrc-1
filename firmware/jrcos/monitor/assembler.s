@@ -7,8 +7,7 @@
 ; IIGS monitor.
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "ascii.inc"
+        .include "kernel/console.inc"
         .include "constants.inc"
         .include "opcode.inc"
         .include "operand.inc"
@@ -49,9 +48,9 @@
 .endproc
 
 .proc show_prompt
-        _puts @p
-        rts
-@p:     .byte   '!', 0
+          _kprint   @p
+          rts
+@p:       .byte     '!', 0
 .endproc
 
 ;;
@@ -205,9 +204,9 @@
         lda       operand_size
         pha
         pha                           ; use as both m and x width
-        _puts     @cll
+        _kprint   @cll
         lda       #CR
-        _putchar
+        _kputc
         longm
         jsr       print_instruction
         lda       start_loc

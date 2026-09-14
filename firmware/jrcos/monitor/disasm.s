@@ -7,9 +7,7 @@
 ; XGS debugger
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "stdio.inc"
-        .include "ascii.inc"
+        .include "kernel/console.inc"
         .include "stack.inc"
 
         .include "opcode.inc"
@@ -158,7 +156,7 @@ PREG_X  = $10
 @len:   lda     i_ptr + 2
         jsl     print_hex
         lda     #'/'
-        _putchar
+        _kputc
         lda     i_ptr + 1
         jsl     print_hex
         lda     i_ptr
@@ -169,7 +167,7 @@ PREG_X  = $10
 @hex:   lda     [i_ptr],y
         jsl     print_hex
         lda     #' '
-        _putchar
+        _kputc
         iny
         cpy     l_len
         bne     @hex
@@ -192,15 +190,15 @@ PREG_X  = $10
         clc
         adcw    #.loword(instr_mnemonics)
         pha                         ; low word
-        _puts
+        _kprint
         shortmx
         ldx     #3
         jsr     print_spaces
         jsr     print_operand
         lda     #CR
-        _putchar
+        _kputc
         lda     #LF
-        _putchar
+        _kputc
         ldx     l_len
         longmx
         _RemoveParams
@@ -255,7 +253,7 @@ print_operand:
 ;;
 print_immediate_operand:
         lda   #'#'    ; fall through to print_constant
-        _putchar
+        _kputc
 
 ;;
 ; Print the operand
@@ -302,20 +300,20 @@ disp_am_implied:
 
 disp_am_dix:
         lda     #'('
-        _putchar
+        _kputc
         jsr     print_constant
         longmx
-        _puts   @str
+        _kprint   @str
         shortmx
         rts
 @str:   .byte   "),Y", 0
 
 disp_am_dixl:
         lda     #'['
-        _putchar
+        _kputc
         jsr     print_constant
         longmx
-        _puts   @str
+        _kprint   @str
         shortmx
         rts
 @str:   .byte   "],Y", 0
@@ -323,10 +321,10 @@ disp_am_dixl:
 disp_am_dxi:
 disp_am_axi:
         lda     #'('
-        _putchar
+        _kputc
         jsr     print_constant
         longmx
-        _puts   @str
+        _kprint   @str
         shortmx
         rts
 @str:   .byte   ",X)", 0
@@ -336,9 +334,9 @@ disp_am_axx:
 disp_am_alxx:
         jsr     print_constant
         lda     #','
-        _putchar
+        _kputc
         lda     #'X'
-        _putchar
+        _kputc
         rts
 
 disp_am_dxy:
@@ -346,9 +344,9 @@ disp_am_axy:
         ldy     l_len
         jsr     print_constant
         lda     #','
-        _putchar
+        _kputc
         lda     #'Y'
-        _putchar
+        _kputc
         rts
 
 disp_am_pcr:
@@ -388,38 +386,38 @@ disp_am_pcrl:
 disp_am_ai:
 disp_am_di:
         lda     #'('
-        _putchar
+        _kputc
         ldy     l_len
         jsr     print_constant
         lda     #')'
-        _putchar
+        _kputc
         rts
 
 disp_am_dil:
         lda     #'['
-        _putchar
+        _kputc
         ldy     l_len
         jsr     print_constant
         lda     #']'
-        _putchar
+        _kputc
         rts
 
 disp_am_sr:
         ldy     l_len
         jsr     print_constant
         lda     #','
-        _putchar
+        _kputc
         lda     #'S'
-        _putchar
+        _kputc
         rts
 
 disp_am_srix:
         lda     #'('
-        _putchar
+        _kputc
         ldy     l_len
         jsr     print_constant
         longmx
-        _puts   @str
+        _kprint   @str
         shortmx
         rts
 @str:   .byte   ",S),Y", 0
@@ -429,7 +427,7 @@ disp_am_blockmove:
         lda     [i_ptr],y
         jsl     print_hex
         lda     #','
-        _putchar
+        _kputc
         iny
         lda     [i_ptr],y
         jsl     print_hex
@@ -443,7 +441,9 @@ print_spaces:
         cpx     #0
         beq     :+
         lda     #' '
-        _putchar
+        phx
+        _kputc
+        plx
         dex
         bra     print_spaces
 :       rts

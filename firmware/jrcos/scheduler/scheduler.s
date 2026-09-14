@@ -6,7 +6,6 @@
 ; Filesystem initialization code
 
         .include    "common.inc"
-        .include    "ascii.inc"
         .include    "kernel/console.inc"
         .include    "kernel/linker.inc"
         .include    "kernel/scheduler.inc"

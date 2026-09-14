@@ -4,8 +4,6 @@
 ; *******************************
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "stack.inc"
         .include "kernel/console.inc"
 
         .export phex

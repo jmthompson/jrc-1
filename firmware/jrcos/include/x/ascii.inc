@@ -1,27 +1,3 @@
-;;
-; Kernel I/O macros
-;
-
-        .import getc_seriala
-        .import putc_seriala
-        .import kprint
-
-.macro _kprint str
-.ifnblank str
-        pea     .hiword(str)
-        pea     .loword(str)
-.endif
-        jsl     kprint
-.endmacro
-
-.macro _kgetc
-        jsl     getc_seriala
-.endmacro
-
-.macro _kputc
-        jsl     putc_seriala
-.endmacro
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Definitions for various common ASCII characters ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -41,9 +41,7 @@
 ; data.   
 ;
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "stdio.inc"
-        .include "ascii.inc"
+        .include "kernel/console.inc"
 
         .importzp   lastblk
         .importzp   blkno
@@ -58,7 +56,7 @@
 
 ; Get a single character
 .macro  getc_ser
-        _getchar
+        _kgetc
 .endmacro
 
 ; Output a single character
@@ -66,7 +64,7 @@
 .ifnblank char
         lda     char
 .endif
-        _putchar
+        _kputc
 .endmacro
 
 ;
@@ -93,7 +91,7 @@ Rbuff:  .res    132
 ; pointed to by xmeofp & xmeofph.
 ;
 XModemSend:
-        _puts   start_msg
+        _kprint   start_msg
         shortm
         stz     errcnt      ; error counter set to 0
         stz     lastblk     ; set flag to false
@@ -101,7 +99,7 @@ XModemSend:
         sta     blkno       ; set block # to 1
 @wait4crc:
         jsr     set_retry
-        _getchar
+        _kgetc
         bcs     @noesc
         cmp     #ESC        ; Did someone hit ESC on the console?
         bne     @noesc
@@ -186,11 +184,11 @@ XModemSend:
 @prtabort:
         jsr     flush       ; yes, too many errors, flush buffer,
         longm
-        _puts   failure_msg
+        _kprint   failure_msg
         sec
         rts
 @done:  longm
-        _puts   success_msg
+        _kprint   success_msg
         clc
         rts
 
@@ -198,7 +196,7 @@ XModemSend:
 ;
 ;
 XModemRcv:
-        _puts   start_msg
+        _kprint   start_msg
         shortm
         lda     #$01
         sta     blkno       ; set block # to 1
@@ -240,7 +238,7 @@ XModemRcv:
         beq     @goodblk1   ; matched!
         jsr     flush       ; mismatched - flush buffer and then do BRK
         longm
-        _puts   failure_msg ; Unexpected block number - abort    
+        _kprint   failure_msg ; Unexpected block number - abort    
         sec
         rts                 ; abort, return to caller
 @goodblk1:
@@ -250,7 +248,7 @@ XModemRcv:
         beq     @goodblk2   ; matched!
         jsr     flush       ; mismatched - flush buffer and then do BRK
         longm
-        _puts   failure_msg ; Unexpected block number - abort    
+        _kprint   failure_msg ; Unexpected block number - abort    
         sec
         rts
 @goodblk2:
@@ -287,7 +285,7 @@ XModemRcv:
 @done:  putc_ser #ACK       ; last block, send ACK and exit.
         jsr     flush       ; get leftover characters, if any
         longm
-        _puts   success_msg
+        _kprint   success_msg
         clc
         rts
 

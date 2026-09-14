@@ -4,10 +4,8 @@
 ; *******************************
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "stdio.inc"
+        .include "kernel/console.inc"
         .include "fcntl.inc"
-        .include "ascii.inc"
 
         .include "constants.inc"
 
@@ -41,14 +39,14 @@ num_commands = *-commands
 
 .macro putc char
         lda char
-        _putchar
+        _kputc
 .endmacro
 
 .macro puteol
         lda #CR
-        _putchar
+        _kputc
         lda #LF
-        _putchar
+        _kputc
 .endmacro
 
 .macro puthex value
@@ -76,37 +74,12 @@ nmi_banner:
 start_banner:
         .byte   "Monitor Ready.", CR, LF, 0
 
-.proc open_stdio
-        pha
-        _PushLong @console
-        _PushWord O_NONBLOCK
-        _PushWord O_RDONLY
-        _open               ; open stdin
-        pla
-        pha
-        _PushLong @console
-        _PushWord O_NONBLOCK
-        _PushWord O_WRONLY
-        _open               ; open stdout
-        pla
-        pha
-        _PushLong @console
-        _PushWord 0
-        _PushWord O_WRONLY
-        _open               ; open stderr
-        pla
-        rts
-@console:
-        .asciiz "/dev/console"
-.endproc
-
 monitor_start:
-        jsr     open_stdio
         shortm
         stz     m_width
         stz     x_width
         longm
-        _puts   start_banner
+        _kprint   start_banner
         bra     monitor_loop
 
 ;;
@@ -146,7 +119,7 @@ monitor_brk:
         longmx
 
         jsr     capture_registers
-        _puts   brk_banner
+        _kprint   brk_banner
         jsr     dump_stack
         jsr     print_registers
         bra     monitor_loop
@@ -157,12 +130,12 @@ monitor_brk:
 monitor_nmi:
         longmx
         jsr     capture_registers
-        _puts   nmi_banner
+        _kprint   nmi_banner
         jsr     print_registers
         ; fall through
 
 monitor_loop:        
-        _puts   @prompt
+        _kprint   @prompt
         ldaw    #.hiword(ibuff)
         sta     ibuffp+2
         pha
@@ -175,9 +148,9 @@ monitor_loop:
         bcs     monitor_loop
         pha
         ldaw    #CR
-        _putchar
+        _kputc
         ldaw    #LF
-        _putchar
+        _kputc
         pla
         jsr     dispatch
         bra     monitor_loop
@@ -299,13 +272,13 @@ print_registers:
         putc    #'='
         lda     m_width
         ora     #'0'
-        _putchar
+        _kputc
         putc    #' '
         putc    #'x'
         putc    #'='
         lda     x_width
         ora     #'0'
-        _putchar
+        _kputc
         puteol
         longm
         rts
@@ -349,7 +322,7 @@ dump_memory:
         bcs     @printable
         lda     #'?'
 @printable:
-        _putchar
+        _kputc
         lda     start_loc
         cmp     row_end
         beq     @endofrow

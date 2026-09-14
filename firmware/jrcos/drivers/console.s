@@ -4,7 +4,6 @@
 ; *******************************
 
         .include "common.inc"
-        .include "ascii.inc"
         .include "fcntl.inc"
         .include "kernel/device.inc"
         .include "kernel/fs.inc"

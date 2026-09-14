@@ -4,8 +4,7 @@
 ; *******************************
 
         .include "common.inc"
-        .include "syscalls.inc"
-        .include "ascii.inc"
+        ;.include "syscalls.inc"
         .include "kernel/console.inc"
         .include "kernel/heap.inc"
         .include "kernel/linker.inc"

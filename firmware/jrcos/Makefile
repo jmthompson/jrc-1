@@ -5,8 +5,6 @@ LD := ld65
 
 SRCS     := $(wildcard */*.s) buildinfo.s
 OBJS   	 := ${SRCS:.s=.o}
-LIBS     := ../stdlib/stdlib.bin
-LISTINGS := ${SRCS:.s=.l}
 TARGET   := jrcos.bin
 MAPFILE  := jrcos.map
 
@@ -26,6 +24,6 @@ buildinfo.s:
 	date "+rom_date: .byte \"%Y-%m-%d\",0" >> buildinfo.s
 
 %.o: %.s
-	${AS} -I ../stdlib/include -I ./include --listing ${<:.s=.l} $<
+	${AS} -I ./include --listing ${<:.s=.l} $<
 
 .PHONY: dump buildinfo.s
